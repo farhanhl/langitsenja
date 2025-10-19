@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="src/style.css" />
+    <title>Langit Senja</title>
+  </head>
+  <body>
+    <div id="loading">Loading Langit Senja...</div>
+    <div id="audioPrompt">
+      <p>🎵 Klik untuk memulai musik background</p>
+      <button id="startAudioBtn">Mulai Musik</button>
+    </div>
+    <div id="ui">
+      <div id="timer">05:00</div>
+      <div id="friendCounter">Teman Ditemukan: 0/5</div>
+      <div id="controls">
+        <strong>Kontrol:</strong><br />
+        WASD / Arrow - Bergerak<br />
+        Shift - Lari<br />
+        Spacebar - Lompat<br />
+        Mouse - Putar Kamera<br />
+        E - Berinteraksi<br />
+        ESC - Menampilkan Mouse<br />
+      </div>
+      <div id="interactionPrompt">Tekan [E] untuk berinteraksi</div>
+      <div id="dialogue">
+        <div class="npc-name"></div>
+        <div class="message"></div>
+      </div>
+      <div id="winPopup" class="popup">
+        <h2>Kamu Menang! 🎉</h2>
+        <p>Kamu berhasil menemukan semua teman!</p>
+        <button onclick="closePopup()">Tutup</button>
+      </div>
+      <div id="losePopup" class="popup">
+        <h2>Kamu Kalah 😢</h2>
+        <p>Waktu habis! Kamu tidak menemukan semua teman.</p>
+        <button onclick="closePopup()">Tutup</button>
+        <button onclick="resetGame()" class="secondary">Coba Lagi</button>
+      </div>
+    </div>
+
+    <button id="muteButton" class="mute-button" onclick="toggleMute()">
+      <span class="icon">🔊</span>
+    </button>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

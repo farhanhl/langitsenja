@@ -1,0 +1,19 @@
+{
+  "name": "langit-senja",
+  "version": "1.0.0",
+  "description": "Langit Senja - A Three.js open-world exploration game",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8000 -o",
+    "dev": "npx http-server -p 8000 -c-1 -o"
+  },
+  "keywords": [
+    "threejs",
+    "game",
+    "webgl",
+    "3d"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {}
+}
