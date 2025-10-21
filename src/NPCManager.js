@@ -649,4 +649,16 @@ export class NPCManager {
     }
     return null;
   }
+
+  resetNPCs() {
+    // Reset found state for all special NPCs except Farhan
+    this.specialNPCs.forEach(npc => {
+      if (!npc.isFarhan) {
+        npc.found = false;
+        if (npc.nameTag) {
+          npc.nameTag.visible = true; // Show name tag again
+        }
+      }
+    });
+  }
 }

@@ -7,21 +7,21 @@ export class Godzilla {
     this.npcManager = npcManager;
     this.group = null;
     this.active = false;
-    this.position = { x: 125, z: -125 }; // Start dari corner kanan atas
-    this.targetPosition = { x: -125, z: 125 }; // Tujuan ke corner kiri bawah
-    this.speed = 8; // Units per second
+    this.position = { x: 125, z: -125 };
+    this.targetPosition = { x: -125, z: 125 };
+    this.speed = 8;
     this.destroyedBuildings = new Set();
     this.walkCycle = 0;
     this.roarTimer = 0;
-    this.roarInterval = 3; // Roar setiap 3 detik
-
-    // Bagian tubuh untuk animasi
+    this.roarInterval = 3;
     this.leftLeg = null;
     this.rightLeg = null;
     this.leftArm = null;
     this.rightArm = null;
     this.tail = null;
     this.head = null;
+    this.roarSound = new Audio('music/roar.mp3');
+    this.roarSound.volume = 0.7;
   }
 
   spawn() {
@@ -36,8 +36,6 @@ export class Godzilla {
 
   createGodzilla() {
     this.group = new THREE.Group();
-
-    // Body (tubuh besar hijau gelap)
     const bodyGeometry = new THREE.BoxGeometry(6, 15, 8);
     const bodyMaterial = new THREE.MeshStandardMaterial({
       color: 0x2d5016,
@@ -47,8 +45,6 @@ export class Godzilla {
     body.position.y = 15;
     body.castShadow = true;
     this.group.add(body);
-
-    // Head (kepala dengan rahang)
     const headGeometry = new THREE.BoxGeometry(4, 4, 5);
     const headMaterial = new THREE.MeshStandardMaterial({
       color: 0x3a6b1f,
@@ -58,8 +54,6 @@ export class Godzilla {
     this.head.position.set(0, 24, 2);
     this.head.castShadow = true;
     this.group.add(this.head);
-
-    // Eyes (mata merah menyala)
     const eyeGeometry = new THREE.SphereGeometry(0.4, 8, 8);
     const eyeMaterial = new THREE.MeshStandardMaterial({
       color: 0xff0000,
@@ -376,7 +370,14 @@ export class Godzilla {
   }
 
   playRoarSound() {
-    // Placeholder for sound - bisa ditambahkan Web Audio API
+    try {
+      this.roarSound.currentTime = 0; // Reset to start
+      this.roarSound.play().catch((err) => {
+        console.log('Could not play roar sound:', err);
+      });
+    } catch (error) {
+      console.log('Error playing roar sound:', error);
+    }
     console.log('🦖 ROARRRRR!!!');
   }
 

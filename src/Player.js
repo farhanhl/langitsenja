@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
 export class Player {
-    constructor(scene, camera, cityData) {
+    constructor(scene, camera, cityData, gameManager) {
         this.scene = scene;
         this.camera = camera;
         this.cityData = cityData;
+        this.gameManager = gameManager; // Added reference to game manager
 
         // Player properties
         this.position = new THREE.Vector3(0, 0.9, 0);
@@ -115,6 +116,11 @@ export class Player {
 
         document.addEventListener('mousemove', (e) => {
             if (this.isPointerLocked) {
+                // Check if game is paused
+                if (this.gameManager && this.gameManager.isPaused) {
+                    return; // Don't update camera when game is paused
+                }
+                
                 this.cameraAngle.horizontal -= e.movementX * this.mouseSensitivity;
                 this.cameraAngle.vertical -= e.movementY * this.mouseSensitivity;
 
@@ -125,6 +131,11 @@ export class Player {
     }
 
     update(delta) {
+        // Check if game is paused
+        if (this.gameManager && this.gameManager.isPaused) {
+            return; // Don't update player movement when game is paused
+        }
+        
         // Handle movement
         const moveDirection = new THREE.Vector3();
         const isSprinting = this.keys['shift'] || this.keys['ShiftLeft'] || this.keys['ShiftRight'];

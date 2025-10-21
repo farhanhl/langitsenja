@@ -10,8 +10,8 @@ export class GameManager {
     this.gameState = 'playing'; // playing, won, lost
 
     // Mission state
-    this.missionActive = true;
-    this.timeRemaining = 300; // 10 minutes in seconds
+    this.missionActive = false; // Will be set to true when user starts the game
+    this.timeRemaining = 300; // 5 minutes in seconds (changed from 10)
     this.friendsFound = 0;
     this.totalFriends = 5;
 
@@ -34,8 +34,8 @@ export class GameManager {
     // Setup interaction controls
     this.setupInteractionControls();
 
-    // Start mission
-    this.startMission();
+    // Show how to play modal first
+    this.showHowToPlay();
   }
 
   setupAudio() {
@@ -56,10 +56,7 @@ export class GameManager {
     // Flag to track if audio is initialized
     this.audioInitialized = false;
 
-    // Show audio prompt after a short delay
-    setTimeout(() => {
-      this.showAudioPrompt();
-    }, 1000);
+    // Audio prompt will be shown when user starts the game
   }
 
   showAudioPrompt() {
@@ -178,7 +175,7 @@ export class GameManager {
 
   update(delta) {
     this.checkNPCProximity();
-    if (!this.missionActive) return;
+    if (!this.missionActive || this.isPaused) return;
 
     // Update timer
     this.timeRemaining -= delta;
@@ -403,6 +400,157 @@ export class GameManager {
     setTimeout(() => {
       notification.remove();
     }, 5000);
+  }
+
+  showHowToPlay() {
+    const howToPlayModal = document.getElementById('howToPlay');
+    const startGameBtn = document.getElementById('startGameBtn');
+
+    if (howToPlayModal && startGameBtn) {
+      howToPlayModal.style.display = 'flex';
+
+      // Add event listener to the start button
+      startGameBtn.addEventListener('click', () => {
+        this.startGame();
+      });
+
+      // Also allow keyboard to start the game
+      const startGameKey = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          this.startGame();
+          document.removeEventListener('keydown', startGameKey);
+        }
+      };
+
+      document.addEventListener('keydown', startGameKey);
+    }
+  }
+
+  startGame() {
+    const howToPlayModal = document.getElementById('howToPlay');
+    if (howToPlayModal) {
+      howToPlayModal.style.display = 'none';
+    }
+
+    // Start mission first to initialize timer
+    this.missionActive = true;
+    this.isPaused = false; // Add pause state
+    this.startMission();
+
+    // Initialize audio
+    this.audioInitialized = true;
+    this.playDayMusic();
+
+    console.log('🎮 Game started! Mission active.');
+  }
+
+  togglePause() {
+    if (!this.missionActive) return; // Don't pause if mission is not active
+    
+    this.isPaused = !this.isPaused;
+    
+    if (this.isPaused) {
+      // Pause music when game is paused
+      if (this.currentMusic === 'day' && this.dayMusic) {
+        this.dayMusic.pause();
+      } else if (this.currentMusic === 'night' && this.nightMusic) {
+        this.nightMusic.pause();
+      }
+      this.showPauseMenu();
+    } else {
+      // Resume music when game is resumed
+      if (this.currentMusic === 'day' && this.dayMusic) {
+        this.dayMusic.play().catch((err) => {
+          console.log('Day music resume prevented:', err);
+        });
+      } else if (this.currentMusic === 'night' && this.nightMusic) {
+        this.nightMusic.play().catch((err) => {
+          console.log('Night music resume prevented:', err);
+        });
+      }
+      this.hidePauseMenu();
+    }
+    
+    console.log(this.isPaused ? '⏸️ Game paused' : '▶️ Game resumed');
+  }
+
+  showPauseMenu() {
+    // Show pause UI
+    const pauseMenu = document.getElementById('pauseMenu');
+    
+    if (!pauseMenu) {
+      // Create pause menu element if it doesn't exist
+      const newPauseMenu = document.createElement('div');
+      newPauseMenu.id = 'pauseMenu';
+      newPauseMenu.className = 'modal';
+      newPauseMenu.innerHTML = `
+        <div class="modal-content">
+          <h2>Permainan Dijeda ⏸️</h2>
+          <div class="instructions">
+            <p>Permainan saat ini dijeda.</p>
+            <p>Tekan ESC lagi atau klik tombol "Lanjutkan" untuk melanjutkan permainan.</p>
+          </div>
+          <button id="resumeBtn">Lanjutkan (ESC)</button>
+          <button id="quitBtn" class="secondary">Keluar ke Menu</button>
+        </div>
+      `;
+      document.body.appendChild(newPauseMenu);
+      
+      // Add event listeners to the buttons
+      document.getElementById('resumeBtn').addEventListener('click', () => {
+        this.togglePause();
+      });
+      
+      document.getElementById('quitBtn').addEventListener('click', () => {
+        this.quitToMenu();
+      });
+    } else {
+      pauseMenu.style.display = 'flex';
+    }
+  }
+
+  hidePauseMenu() {
+    const pauseMenu = document.getElementById('pauseMenu');
+    if (pauseMenu) {
+      pauseMenu.style.display = 'none';
+    }
+  }
+
+  quitToMenu() {
+    // Reset game state to show how to play again
+    this.missionActive = false;
+    this.isPaused = false;
+    
+    // Stop any playing music
+    if (this.dayMusic) {
+      this.dayMusic.pause();
+      this.dayMusic.currentTime = 0;
+    }
+    if (this.nightMusic) {
+      this.nightMusic.pause();
+      this.nightMusic.currentTime = 0;
+    }
+    this.currentMusic = null;
+    
+    this.friendsFound = 0;
+    this.timeRemaining = 300; // Reset timer
+    this.updateUI(); // Update UI to show reset values
+    
+    // Reset NPC states
+    if (this.npcManager) {
+      this.npcManager.resetNPCs();
+    }
+    
+    // Hide any active dialogue or popups
+    if (this.dialogueElement) {
+      this.dialogueElement.style.display = 'none';
+    }
+    document.getElementById('winPopup').style.display = 'none';
+    document.getElementById('losePopup').style.display = 'none';
+    this.hidePauseMenu();
+    
+    // Show how to play again
+    this.showHowToPlay();
   }
 
   updateUI() {

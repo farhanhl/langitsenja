@@ -4,6 +4,8 @@ export class SkySystem {
   constructor(scene) {
     this.scene = scene;
     this.isNight = false;
+    this.isSnowy = false; // Track if sky is currently snowy
+    this.originalSkyState = null; // Store original state before Santa
     this.sunsetColors = {
       top: new THREE.Color(0xff6b35),
       middle: new THREE.Color(0xff8c42),
@@ -13,6 +15,16 @@ export class SkySystem {
       top: new THREE.Color(0x000428),
       middle: new THREE.Color(0x004e92),
       bottom: new THREE.Color(0x001a33),
+    };
+    this.snowyColors = {
+      top: new THREE.Color(0x87ceeb), // Sky blue with snow tint
+      middle: new THREE.Color(0xb0e0e6), // Powder blue
+      bottom: new THREE.Color(0xe0f6ff), // Light blue-white
+    };
+    this.brightColors = {
+      top: new THREE.Color(0x87ceeb), // Clear sky blue
+      middle: new THREE.Color(0xb0e0e6), // Light sky blue
+      bottom: new THREE.Color(0xe0f6ff), // Bright horizon
     };
     this.clouds = [];
 
@@ -227,6 +239,183 @@ export class SkySystem {
         // Ensure sun is completely hidden
         if (this.sun) this.sun.visible = false;
         if (this.sunGlow) this.sunGlow.visible = false;
+      }
+    };
+
+    animate();
+  }
+
+  saveOriginalState() {
+    // Save the current sky colors as the original state
+    this.originalSkyState = {
+      top: this.skyMesh.material.uniforms.topColor.value.clone(),
+      middle: this.skyMesh.material.uniforms.middleColor.value.clone(),
+      bottom: this.skyMesh.material.uniforms.bottomColor.value.clone(),
+      isNight: this.isNight
+    };
+  }
+
+  transitionToSnowy() {
+    console.log('transitionToSnowy called, isSnowy:', this.isSnowy);
+    if (this.isSnowy) {
+      console.log('Already snowy, skipping transition');
+      return;
+    }
+    
+    // Save current state as original before changing
+    this.saveOriginalState();
+    this.isSnowy = true;
+    console.log('Starting snowy transition...');
+
+    // Animate sky color transition - from current colors to snowy
+    const duration = 2000; // 2 seconds
+    const startTime = Date.now();
+    
+    // Use the saved original state colors
+    const startColors = {
+      top: this.originalSkyState.top.clone(),
+      middle: this.originalSkyState.middle.clone(),
+      bottom: this.originalSkyState.bottom.clone(),
+    };
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Interpolate colors to snowy
+      this.skyMesh.material.uniforms.topColor.value.lerpColors(
+        startColors.top,
+        this.snowyColors.top,
+        progress
+      );
+      this.skyMesh.material.uniforms.middleColor.value.lerpColors(
+        startColors.middle,
+        this.snowyColors.middle,
+        progress
+      );
+      this.skyMesh.material.uniforms.bottomColor.value.lerpColors(
+        startColors.bottom,
+        this.snowyColors.bottom,
+        progress
+      );
+
+      // Fade out moon and fade in sun during snowy transition (if night)
+      if (this.isNight) {
+        if (this.moon && this.moon.material) {
+          this.moon.material.opacity = 1 - progress;
+        }
+        if (this.moonGlow && this.moonGlow.material) {
+          this.moonGlow.material.opacity = 0.2 * (1 - progress);
+        }
+        
+        // Fade in sun for snowy daylight look
+        if (this.sun && this.sun.material) {
+          this.sun.material.opacity = progress;
+          this.sun.material.transparent = true;
+        }
+        if (this.sunGlow && this.sunGlow.material) {
+          this.sunGlow.material.opacity = 0.3 * progress;
+        }
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        console.log('Snowy transition complete!');
+        // Ensure moon is hidden if it was night before
+        if (this.moon) this.moon.visible = false;
+        if (this.moonGlow) this.moonGlow.visible = false;
+        
+        // Ensure sun is visible in snowy state
+        if (this.sun) this.sun.visible = true;
+        if (this.sunGlow) this.sunGlow.visible = true;
+      }
+    };
+
+    animate();
+  }
+
+  restoreOriginalState() {
+    if (!this.isSnowy || !this.originalSkyState) {
+      console.log('Not snowy or no original state to restore');
+      return;
+    }
+    
+    console.log('Starting restoration to original state...');
+    this.isSnowy = false;
+
+    // Animate sky color transition - from snowy back to original
+    const duration = 2000; // 2 seconds
+    const startTime = Date.now();
+    const startColors = {
+      top: this.snowyColors.top.clone(),
+      middle: this.snowyColors.middle.clone(),
+      bottom: this.snowyColors.bottom.clone(),
+    };
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Interpolate colors back to original
+      this.skyMesh.material.uniforms.topColor.value.lerpColors(
+        startColors.top,
+        this.originalSkyState.top,
+        progress
+      );
+      this.skyMesh.material.uniforms.middleColor.value.lerpColors(
+        startColors.middle,
+        this.originalSkyState.middle,
+        progress
+      );
+      this.skyMesh.material.uniforms.bottomColor.value.lerpColors(
+        startColors.bottom,
+        this.originalSkyState.bottom,
+        progress
+      );
+
+      // Fade in moon if original state was night
+      if (this.originalSkyState.isNight) {
+        if (this.moon && this.moon.material) {
+          this.moon.material.opacity = progress;
+        }
+        if (this.moonGlow && this.moonGlow.material) {
+          this.moonGlow.material.opacity = 0.2 * progress;
+        }
+      }
+
+      // Fade out sun if original state was night
+      if (this.originalSkyState.isNight) {
+        if (this.sun && this.sun.material) {
+          this.sun.material.opacity = 1 - progress;
+          this.sun.material.transparent = true;
+        }
+        if (this.sunGlow && this.sunGlow.material) {
+          this.sunGlow.material.opacity = 0.3 * (1 - progress);
+        }
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        console.log('Restoration to original state complete!');
+        // Set flags based on original state
+        this.isNight = this.originalSkyState.isNight;
+        // Ensure moon is visible if original state was night
+        if (this.originalSkyState.isNight) {
+          if (this.moon) this.moon.visible = true;
+          if (this.moonGlow) this.moonGlow.visible = true;
+          if (this.sun) this.sun.visible = false;
+          if (this.sunGlow) this.sunGlow.visible = false;
+        } else {
+          if (this.moon) this.moon.visible = false;
+          if (this.moonGlow) this.moonGlow.visible = false;
+          if (this.sun) this.sun.visible = true;
+          if (this.sunGlow) this.sunGlow.visible = true;
+        }
+        
+        // Clear the original state as it's been restored
+        this.originalSkyState = null;
       }
     };
 

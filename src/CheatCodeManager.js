@@ -7,15 +7,15 @@ export class CheatCodeManager {
     this.resetDelay = 2000; // 2 seconds
 
     this.cheats = {
-      'GODZILLA': () => this.activateGodzilla(),
-      'MONSTER': () => this.activateGodzilla(),
-      'TORNADO': () => this.activateTornado(),
-      'TWISTER': () => this.activateTornado(),
-      'UFO': () => this.activateUFO(),
-      'ALIEN': () => this.activateUFO(),
-      'NIGHT': () => this.activateNight(),
-      'RAIN': () => this.activateRain(),
-      'CLEAR': () => this.activateClear()
+      GODZILLA: () => this.activateGodzilla(),
+      SANTA: () => this.activateSanta(),
+      HOREG: () => this.activateHoreg(),
+      TORNADO: () => this.activateTornado(),
+      UFO: () => this.activateUFO(),
+      ALIEN: () => this.activateUFO(),
+      NIGHT: () => this.activateNight(),
+      RAIN: () => this.activateRain(),
+      CLEAR: () => this.activateClear(),
     };
 
     // Cheat activation sound
@@ -29,7 +29,10 @@ export class CheatCodeManager {
   setupKeyListener() {
     window.addEventListener('keypress', (event) => {
       // Ignore if typing in input field
-      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      if (
+        event.target.tagName === 'INPUT' ||
+        event.target.tagName === 'TEXTAREA'
+      ) {
         return;
       }
 
@@ -74,7 +77,7 @@ export class CheatCodeManager {
   playCheatSound() {
     try {
       this.cheatSound.currentTime = 0; // Reset to start
-      this.cheatSound.play().catch(err => {
+      this.cheatSound.play().catch((err) => {
         console.log('Could not play cheat sound:', err);
       });
     } catch (error) {
@@ -97,6 +100,40 @@ export class CheatCodeManager {
     console.log('🦖 CHEAT ACTIVATED: GODZILLA');
     this.game.godzilla.spawn();
     this.showNotification('🦖 GODZILLA HAS ARRIVED! 🦖', 'danger');
+  }
+
+  activateSanta() {
+    if (!this.game.santa) {
+      console.error('santa not initialized');
+      return;
+    }
+
+    if (this.game.santa.isActive()) {
+      console.log('🦖 santa is already active!');
+      this.showNotification('santa is already rampaging!', 'warning');
+      return;
+    }
+
+    console.log('🦖 CHEAT ACTIVATED: santa');
+    this.game.santa.spawn();
+    this.showNotification('🦖 santa HAS ARRIVED! 🦖', 'danger');
+  }
+
+  activateHoreg() {
+    if (!this.game.horeg) {
+      console.error('horeg not initialized');
+      return;
+    }
+
+    if (this.game.horeg.isActive()) {
+      console.log('🦖 horeg is already active!');
+      this.showNotification('horeg is already rampaging!', 'warning');
+      return;
+    }
+
+    console.log('🦖 CHEAT ACTIVATED: horeg');
+    this.game.horeg.spawn();
+    this.showNotification('🦖 horeg HAS ARRIVED! 🦖', 'danger');
   }
 
   activateTornado() {
@@ -192,15 +229,18 @@ export class CheatCodeManager {
     // Color based on type
     switch (type) {
       case 'danger':
-        notification.style.background = 'linear-gradient(135deg, #ff0000, #cc0000)';
+        notification.style.background =
+          'linear-gradient(135deg, #ff0000, #cc0000)';
         notification.style.color = 'white';
         break;
       case 'warning':
-        notification.style.background = 'linear-gradient(135deg, #ffaa00, #ff8800)';
+        notification.style.background =
+          'linear-gradient(135deg, #ffaa00, #ff8800)';
         notification.style.color = 'white';
         break;
       case 'info':
-        notification.style.background = 'linear-gradient(135deg, #00aaff, #0088cc)';
+        notification.style.background =
+          'linear-gradient(135deg, #00aaff, #0088cc)';
         notification.style.color = 'white';
         break;
       default:

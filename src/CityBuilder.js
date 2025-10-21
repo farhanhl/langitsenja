@@ -2171,216 +2171,461 @@ export class CityBuilder {
     parentGroup.add(seat);
   }
 
-  createMasjid(x, z, name) {
+  createMasjid(
+    x,
+    z,
+    {
+      scale = 1.6,
+      rotate = 0,
+      name = 'MASJID AL-MEGAH',
+      numWorshipers = 4,
+      characterFactory = null,
+    } = {}
+  ) {
     const group = new THREE.Group();
 
-    // Main building - warna cream/putih khas masjid
-    const buildingGeometry = new THREE.BoxGeometry(16, 6, 14);
-    const buildingMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf5f5dc, // Beige/cream
-      roughness: 0.8,
-    });
-    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
-    building.position.y = 3;
-    building.castShadow = true;
-    building.receiveShadow = true;
-    group.add(building);
+    // ---------- Helper NPC ----------
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      g.add(body);
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      g.add(head);
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      g.add(leftArm, rightArm);
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      g.add(leftLeg, rightLeg);
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+    function poseWudhuHands(char) {
+      const u = char.userData;
+      if (!u) return;
+      if (u.leftArm) u.leftArm.rotation.x = THREE.MathUtils.degToRad(-35);
+      if (u.rightArm) u.rightArm.rotation.x = THREE.MathUtils.degToRad(-25);
+      if (u.body) u.body.rotation.x = THREE.MathUtils.degToRad(8);
+    }
 
-    // Kubah besar (main dome) - hijau khas masjid
-    const domeGeometry = new THREE.SphereGeometry(
-      4,
-      32,
-      16,
-      0,
-      Math.PI * 2,
-      0,
-      Math.PI / 2
+    // ---------- Tapak & halaman (compact) ----------
+    const pad = new THREE.Mesh(
+      new THREE.BoxGeometry(28, 0.08, 22),
+      new THREE.MeshStandardMaterial({ color: 0xcfcfcf, roughness: 0.95 })
     );
-    const domeMaterial = new THREE.MeshStandardMaterial({
-      color: 0x228b22, // Forest green
-      metalness: 0.3,
-      roughness: 0.4,
+    pad.position.set(0, 0.04, 0);
+    pad.receiveShadow = true;
+    group.add(pad);
+
+    const lawn = new THREE.Mesh(
+      new THREE.BoxGeometry(30, 0.02, 24),
+      new THREE.MeshStandardMaterial({ color: 0x3b7d3a, roughness: 1.0 })
+    );
+    lawn.position.set(0, 0.01, 0);
+    lawn.receiveShadow = true;
+    group.add(lawn);
+
+    // Tangga serambi
+    const stairsMat = new THREE.MeshStandardMaterial({
+      color: 0xddd6fe,
+      roughness: 0.9,
     });
-    const dome = new THREE.Mesh(domeGeometry, domeMaterial);
-    dome.position.y = 6;
+    for (let i = 0; i < 3; i++) {
+      const step = new THREE.Mesh(
+        new THREE.BoxGeometry(9, 0.12, 0.9),
+        stairsMat
+      );
+      step.position.set(0, 0.06 + i * 0.12, 5.3 + i * 0.9);
+      group.add(step);
+    }
+
+    // ---------- Hall masjid ----------
+    const hallW = 12,
+      hallD = 10,
+      hallH = 6.2;
+    const hall = new THREE.Mesh(
+      new THREE.BoxGeometry(hallW, hallH, hallD),
+      new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 })
+    );
+    hall.position.set(0, hallH / 2, 0);
+    hall.castShadow = true;
+    hall.receiveShadow = true;
+    group.add(hall);
+
+    // Kubah + bulan sabit
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(3.8, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({
+        color: 0x16a34a,
+        metalness: 0.2,
+        roughness: 0.5,
+      })
+    );
+    dome.position.set(0, hallH, 0);
     dome.castShadow = true;
     group.add(dome);
-
-    // Puncak kubah (finial)
-    const finialGeometry = new THREE.ConeGeometry(0.4, 2, 8);
-    const finialMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffd700, // Gold
-      metalness: 0.8,
-      roughness: 0.2,
-    });
-    const finial = new THREE.Mesh(finialGeometry, finialMaterial);
-    finial.position.y = 11;
-    finial.castShadow = true;
-    group.add(finial);
-
-    // Bulan sabit di puncak
-    const crescentGeometry = new THREE.TorusGeometry(
-      0.3,
-      0.08,
-      8,
-      16,
-      Math.PI * 1.5
+    const cresBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.16, 0.65, 12),
+      new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        metalness: 0.6,
+        roughness: 0.3,
+      })
     );
-    const crescent = new THREE.Mesh(crescentGeometry, finialMaterial);
-    crescent.position.y = 12;
-    crescent.rotation.z = Math.PI / 4;
-    group.add(crescent);
-
-    // Menara (tower) - di samping
-    const towerGeometry = new THREE.CylinderGeometry(1.2, 1.5, 12, 8);
-    const tower = new THREE.Mesh(towerGeometry, buildingMaterial);
-    tower.position.set(-10, 6, -6);
-    tower.castShadow = true;
-    group.add(tower);
-
-    // Kubah menara (smaller dome)
-    const towerDomeGeometry = new THREE.SphereGeometry(
-      1.5,
-      16,
-      16,
-      0,
-      Math.PI * 2,
-      0,
-      Math.PI / 2
+    cresBase.position.set(0, hallH + 3.9, 0);
+    const cres = new THREE.Mesh(
+      new THREE.TorusGeometry(0.4, 0.07, 10, 24, Math.PI * 1.2),
+      new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        metalness: 0.6,
+        roughness: 0.35,
+      })
     );
-    const towerDome = new THREE.Mesh(towerDomeGeometry, domeMaterial);
-    towerDome.position.set(-10, 12, -6);
-    towerDome.castShadow = true;
-    group.add(towerDome);
+    cres.position.set(0, hallH + 4.5, 0);
+    cres.rotation.z = Math.PI / 2;
+    group.add(cresBase, cres);
 
-    // Puncak menara
-    const towerFinial = new THREE.Mesh(finialGeometry, finialMaterial);
-    towerFinial.position.set(-10, 13.5, -6);
-    group.add(towerFinial);
+    // Menara
+    function makeMinaret(px, pz) {
+      const g = new THREE.Group();
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.0, 1.2, 9.5, 16),
+        new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9 })
+      );
+      shaft.position.y = 4.75;
+      g.add(shaft);
+      const balcony = new THREE.Mesh(
+        new THREE.TorusGeometry(1.1, 0.12, 10, 24),
+        new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.7 })
+      );
+      balcony.position.y = 7.2;
+      g.add(balcony);
+      const top = new THREE.Mesh(
+        new THREE.ConeGeometry(0.9, 1.8, 16),
+        new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.5 })
+      );
+      top.position.y = 9.2;
+      g.add(top);
+      g.position.set(px, 0, pz);
+      g.castShadow = true;
+      return g;
+    }
+    group.add(makeMinaret(-7.5, -5.5), makeMinaret(7.5, -5.5));
 
-    // Bulan sabit menara
-    const towerCrescent = new THREE.Mesh(crescentGeometry, finialMaterial);
-    towerCrescent.position.set(-10, 14.5, -6);
-    towerCrescent.rotation.z = Math.PI / 4;
-    group.add(towerCrescent);
+    // // Arcade depan (visual)
+    // const archMat = new THREE.MeshStandardMaterial({
+    //   color: 0xe2e8f0,
+    //   roughness: 0.9,
+    // });
+    // for (let i = -1; i <= 1; i++) {
+    //   const pilar = new THREE.Mesh(
+    //     new THREE.BoxGeometry(1.0, 3.2, 1.0),
+    //     archMat
+    //   );
+    //   pilar.position.set(i * 3, 1.6, hallD / 2 + 0.5);
+    //   group.add(pilar);
+    //   const arch = new THREE.Mesh(
+    //     new THREE.TorusGeometry(1.6, 0.16, 12, 32, Math.PI),
+    //     archMat
+    //   );
+    //   arch.position.set(i * 3, 3.2, hallD / 2 + 0.5);
+    //   arch.rotation.x = Math.PI / 2;
+    //   arch.rotation.z = Math.PI;
+    //   group.add(arch);
+    // }
 
-    // Pintu masuk besar (arch style)
-    const doorGeometry = new THREE.BoxGeometry(3, 4, 0.3);
-    const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
-    const door = new THREE.Mesh(doorGeometry, doorMaterial);
-    door.position.set(0, 2, 7.15);
-    door.castShadow = true;
+    // ---------- Pintu masuk (visual) ----------
+    const doorW = 2.2,
+      doorH = 3.0,
+      doorT = 0.08;
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(doorW, doorH, doorT),
+      new THREE.MeshStandardMaterial({
+        color: 0x374151,
+        roughness: 0.8,
+        metalness: 0.05,
+      })
+    );
+    door.position.set(0, 1.2 + doorH / 2 - 1.2, hallD / 2 + doorT / 2 + 0.02);
     group.add(door);
 
-    // Arch di atas pintu
-    const archGeometry = new THREE.TorusGeometry(1.5, 0.3, 8, 16, Math.PI);
-    const archMaterial = new THREE.MeshStandardMaterial({ color: 0x8b7355 });
-    const arch = new THREE.Mesh(archGeometry, archMaterial);
-    arch.position.set(0, 4, 7.2);
-    arch.rotation.x = Math.PI / 2;
-    group.add(arch);
-
-    // Jendela-jendela dengan ornamen Islamic
-    for (let i = -1; i <= 1; i++) {
-      if (i !== 0) {
-        // Skip center (door area)
-        const windowGeometry = new THREE.BoxGeometry(1.5, 2.5, 0.2);
-        const windowMaterial = new THREE.MeshStandardMaterial({
-          color: 0x4169e1,
-          transparent: true,
-          opacity: 0.6,
-        });
-        const window = new THREE.Mesh(windowGeometry, windowMaterial);
-        window.position.set(i * 5, 3.5, 7.1);
-        group.add(window);
-
-        // Window arch
-        const windowArchGeometry = new THREE.TorusGeometry(
-          0.75,
-          0.15,
-          8,
-          16,
-          Math.PI
-        );
-        const windowArch = new THREE.Mesh(windowArchGeometry, archMaterial);
-        windowArch.position.set(i * 5, 4.75, 7.15);
-        windowArch.rotation.x = Math.PI / 2;
-        group.add(windowArch);
-      }
+    // ---------- Nama masjid = TEKS biasa di atas pintu ----------
+    const nameCanvas = document.createElement('canvas');
+    nameCanvas.width = 1024;
+    nameCanvas.height = 256;
+    const nctx = nameCanvas.getContext('2d');
+    nctx.clearRect(0, 0, 1024, 256); // tanpa background/border
+    let fs = 120,
+      maxW = 920;
+    while (fs > 56) {
+      nctx.font = `bold ${fs}px Arial`;
+      if (nctx.measureText(name).width <= maxW) break;
+      fs -= 6;
     }
-
-    // Tempat wudhu (area kecil di samping)
-    const wudhuGeometry = new THREE.BoxGeometry(6, 2.5, 4);
-    const wudhu = new THREE.Mesh(wudhuGeometry, buildingMaterial);
-    wudhu.position.set(10, 1.25, -5);
-    wudhu.castShadow = true;
-    group.add(wudhu);
-
-    // Atap tempat wudhu
-    const wudhuRoofGeometry = new THREE.BoxGeometry(6.5, 0.3, 4.5);
-    const wudhuRoof = new THREE.Mesh(wudhuRoofGeometry, domeMaterial);
-    wudhuRoof.position.set(10, 2.65, -5);
-    wudhuRoof.castShadow = true;
-    group.add(wudhuRoof);
-
-    // Kran-kran wudhu
-    for (let i = 0; i < 4; i++) {
-      const faucetGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8);
-      const faucetMaterial = new THREE.MeshStandardMaterial({
-        color: 0xc0c0c0,
-        metalness: 0.7,
-      });
-      const faucet = new THREE.Mesh(faucetGeometry, faucetMaterial);
-      faucet.position.set(8 + i * 1, 1.5, -5);
-      group.add(faucet);
-    }
-
-    // Papan nama masjid
-    const signCanvas = document.createElement('canvas');
-    const signContext = signCanvas.getContext('2d');
-    signCanvas.width = 1024;
-    signCanvas.height = 256;
-
-    const gradient = signContext.createLinearGradient(
-      0,
-      0,
-      0,
-      signCanvas.height
+    nctx.fillStyle = '#111827';
+    nctx.textAlign = 'center';
+    nctx.textBaseline = 'middle';
+    nctx.fillText(name, 512, 128);
+    const nameTex = new THREE.CanvasTexture(nameCanvas);
+    nameTex.minFilter = THREE.LinearFilter;
+    nameTex.magFilter = THREE.LinearFilter;
+    const nameSign = new THREE.Mesh(
+      new THREE.PlaneGeometry(doorW + 1.2, 0.8),
+      new THREE.MeshBasicMaterial({
+        map: nameTex,
+        transparent: true,
+        side: THREE.DoubleSide,
+      })
     );
-    gradient.addColorStop(0, '#228b22');
-    gradient.addColorStop(1, '#006400');
-    signContext.fillStyle = gradient;
-    signContext.fillRect(0, 0, signCanvas.width, signCanvas.height);
+    nameSign.position.set(
+      0,
+      door.position.y + doorH / 2 + 0.5,
+      hallD / 2 + 0.06
+    );
+    group.add(nameSign);
 
-    signContext.strokeStyle = '#ffd700';
-    signContext.lineWidth = 8;
-    signContext.strokeRect(8, 8, signCanvas.width - 16, signCanvas.height - 16);
+    // ---------- Interior (visual saja) ----------
+    const carpet = new THREE.Mesh(
+      new THREE.BoxGeometry(hallW - 1, 0.05, hallD - 2),
+      new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.95 })
+    );
+    carpet.position.set(0, 0.03, -0.4);
+    carpet.receiveShadow = true;
+    group.add(carpet);
 
-    signContext.font = 'bold 70px Arial';
-    signContext.fillStyle = '#ffffff';
-    signContext.strokeStyle = '#000000';
-    signContext.lineWidth = 3;
-    signContext.textAlign = 'center';
-    signContext.textBaseline = 'middle';
-    signContext.strokeText(name, signCanvas.width / 2, signCanvas.height / 2);
-    signContext.fillText(name, signCanvas.width / 2, signCanvas.height / 2);
-
-    const signTexture = new THREE.CanvasTexture(signCanvas);
-    const signGeometry = new THREE.PlaneGeometry(8, 2);
-    const signMaterial = new THREE.MeshBasicMaterial({
-      map: signTexture,
-      side: THREE.DoubleSide,
+    const lineMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.8,
     });
-    const signMesh = new THREE.Mesh(signGeometry, signMaterial);
-    signMesh.position.set(0, 5, 7.2);
-    group.add(signMesh);
+    for (let i = 0; i < 4; i++) {
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(hallW - 1.4, 0.02, 0.06),
+        lineMat
+      );
+      stripe.position.set(0, 0.04, -3.5 + i * 2.0);
+      group.add(stripe);
+    }
+    const mihrab = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.4, 1.4, 0.5, 24, 1, true, Math.PI, Math.PI),
+      new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        roughness: 0.9,
+        side: THREE.DoubleSide,
+      })
+    );
+    mihrab.position.set(0, 1.2, -hallD / 2 + 0.4);
+    mihrab.rotation.x = Math.PI / 2;
+    group.add(mihrab);
 
-    group.position.set(x + 5, 0, z);
-    group.rotation.y = 600;
+    const lamp = new THREE.PointLight(0xffe8b5, 1.05, 24, 2.0);
+    lamp.position.set(0, 5.4, 0);
+    group.add(lamp);
+
+    // ---------- RUANG WUDHU (enterable) ----------
+    const wRoom = new THREE.Group();
+    const rw = 9,
+      rd = 5.5,
+      rh = 3;
+
+    const wFloor = new THREE.Mesh(
+      new THREE.BoxGeometry(rw, 0.05, rd),
+      new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 1.0 })
+    );
+    wFloor.position.set(hallW / 2 + rw / 2 + 1.2, 0.025, 1.4);
+    wFloor.receiveShadow = true;
+    wRoom.add(wFloor);
+
+    const roomX = wFloor.position.x,
+      roomZ = wFloor.position.z;
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: 0xe5e7eb,
+      roughness: 0.9,
+    });
+    const t = 0.2;
+
+    const wLeft = new THREE.Mesh(new THREE.BoxGeometry(t, rh, rd), wallMat);
+    wLeft.position.set(roomX - rw / 2, rh / 2, roomZ);
+    wRoom.add(wLeft);
+    const wRight = new THREE.Mesh(new THREE.BoxGeometry(t, rh, rd), wallMat);
+    wRight.position.set(roomX + rw / 2, rh / 2, roomZ);
+    wRoom.add(wRight);
+    const wBack = new THREE.Mesh(new THREE.BoxGeometry(rw, rh, t), wallMat);
+    wBack.position.set(roomX, rh / 2, roomZ - rd / 2);
+    wRoom.add(wBack);
+
+    // Depan dengan pintu lebar (ruang wudhu bisa dimasuki)
+    const doorWudhuW = 2.8,
+      segLen = (rw - doorWudhuW) / 2;
+    const wFrontL = new THREE.Mesh(
+      new THREE.BoxGeometry(segLen, rh, t),
+      wallMat
+    );
+    wFrontL.position.set(
+      roomX - (doorWudhuW / 2 + segLen / 2),
+      rh / 2,
+      roomZ + rd / 2
+    );
+    const wFrontR = new THREE.Mesh(
+      new THREE.BoxGeometry(segLen, rh, t),
+      wallMat
+    );
+    wFrontR.position.set(
+      roomX + (doorWudhuW / 2 + segLen / 2),
+      rh / 2,
+      roomZ + rd / 2
+    );
+    wRoom.add(wFrontL, wFrontR);
+
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(rw + 0.2, 0.12, rd + 0.2),
+      new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.85 })
+    );
+    roof.position.set(roomX, rh + 0.06, roomZ);
+    wRoom.add(roof);
+
+    // Palung & air
+    const trough = new THREE.Mesh(
+      new THREE.BoxGeometry(rw - 1.2, 0.35, 0.7),
+      new THREE.MeshStandardMaterial({
+        color: 0x64748b,
+        roughness: 0.7,
+        metalness: 0.1,
+      })
+    );
+    trough.position.set(roomX, 0.35, roomZ - rd / 2 + 0.9);
+    wRoom.add(trough);
+    const water = new THREE.Mesh(
+      new THREE.BoxGeometry(rw - 1.5, 0.06, 0.45),
+      new THREE.MeshStandardMaterial({
+        color: 0x66c3ff,
+        transparent: true,
+        opacity: 0.6,
+      })
+    );
+    water.position.set(roomX, 0.4, roomZ - rd / 2 + 0.9);
+    wRoom.add(water);
+
+    // Keran & aliran
+    const tapMat = new THREE.MeshStandardMaterial({
+      color: 0xbdbdbd,
+      metalness: 0.6,
+      roughness: 0.4,
+    });
+    for (let i = 0; i < 5; i++) {
+      const tx = roomX - (rw / 2 - 1) + i * ((rw - 2) / 4);
+      const pipe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.055, 0.055, 0.35, 10),
+        tapMat
+      );
+      pipe.position.set(tx, 1.0, roomZ - rd / 2 + 0.2);
+      pipe.rotation.x = Math.PI / 2;
+      const spout = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.35, 10),
+        tapMat
+      );
+      spout.position.set(tx, 0.86, roomZ - rd / 2 + 0.4);
+      const flow = new THREE.Mesh(
+        new THREE.ConeGeometry(0.05, 0.22, 8),
+        new THREE.MeshStandardMaterial({
+          color: 0x66c3ff,
+          transparent: true,
+          opacity: 0.7,
+        })
+      );
+      flow.position.set(tx, 0.78, roomZ - rd / 2 + 0.55);
+      flow.rotation.x = -Math.PI / 2;
+      wRoom.add(pipe, spout, flow);
+    }
+
+    // Pijakan
+    for (let i = 0; i < 5; i++) {
+      const bx = roomX - (rw / 2 - 1) + i * ((rw - 2) / 4);
+      const bench = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.2, 0.4),
+        new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.95 })
+      );
+      bench.position.set(bx, 0.1, roomZ - rd / 2 + 1.2);
+      wRoom.add(bench);
+    }
+
+    group.add(wRoom);
+
+    // ---------- NPC wudhu ----------
+    const wSpots = [
+      { x: roomX - (rw / 2 - 1), z: roomZ - rd / 2 + 1.0 },
+      { x: roomX - (rw / 2 - 1) + (rw - 2) / 4, z: roomZ - rd / 2 + 1.0 },
+      { x: roomX - (rw / 2 - 1) + (2 * (rw - 2)) / 4, z: roomZ - rd / 2 + 1.0 },
+      { x: roomX - (rw / 2 - 1) + (4 * (rw - 2)) / 4, z: roomZ - rd / 2 + 1.0 },
+    ];
+    for (let i = 0; i < Math.min(numWorshipers, wSpots.length); i++) {
+      const s = wSpots[i];
+      const c = characterFactory
+        ? characterFactory(i % 2 ? 0x2563eb : 0x22c55e, 1.0)
+        : makeMinecraftCharacterWithJoints(i % 2 ? 0x2563eb : 0x22c55e, 1.0);
+      c.position.set(s.x, 0, s.z);
+      c.rotation.y = THREE.MathUtils.degToRad(-90);
+      poseWudhuHands(c);
+      group.add(c);
+    }
+
+    // ---------- Pencahayaan ----------
+    const yardLight = new THREE.PointLight(0xfff1d0, 0.8, 32, 2.0);
+    yardLight.position.set(0, 7, 6.5);
+    group.add(yardLight);
+
+    // ---------- Transform ----------
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+
+    // ---------- Registrasi COLLIDER ----------
     this.scene.add(group);
 
-    const bbox = new THREE.Box3().setFromObject(group);
-    this.buildings.push({ mesh: group, boundingBox: bbox, name: name });
+    // ✅ Hall masjid = collider utuh (blok total)
+    hall.updateMatrixWorld(true);
+    const hallBox = new THREE.Box3().setFromObject(hall);
+    this.buildings.push({
+      mesh: hall,
+      boundingBox: hallBox,
+      name: 'Masjid (Hall Collider)',
+    });
+
+    // ❌ Ruang wudhu tanpa collider → bisa dimasuki.
+
+    return group;
   }
 
   createPosRonda(x, z) {
@@ -3087,257 +3332,413 @@ export class CityBuilder {
     this.buildings.push({ mesh: group, boundingBox: bbox, name: name });
   }
 
-  createAngkringan(x, z, scale = 1.6) {
+  // ======================================================
+  // ANGKRINGAN (Cart-Only Collider, Enterable)
+  // ======================================================
+  // Player bebas masuk; hanya GEROBak yang didaftarkan sebagai collider.
+  // - Penjual: berdiri di balik gerobak
+  // - Pelanggan: 2 orang lesehan, pegang piring + gelas di samping
+  // Opsi:
+  // - scale, rotate
+  // - name
+  // - characterFactory(color, scale)
+  createAngkringan(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      name = 'ANGKRINGAN',
+      characterFactory = null,
+    } = {}
+  ) {
     const group = new THREE.Group();
 
-    // === (kodemu sama persis; tidak diubah) ===
-    // Gerobak body (kayu)
-    const cartBodyGeometry = new THREE.BoxGeometry(3, 1.2, 2);
-    const cartBodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0x8b4513,
-      roughness: 0.9,
-    });
-    const cartBody = new THREE.Mesh(cartBodyGeometry, cartBodyMaterial);
-    cartBody.position.y = 0.8;
+    // -------- Helpers: NPC fallback + pose --------
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      body.castShadow = true;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      head.castShadow = true;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      leftArm.castShadow = rightArm.castShadow = true;
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      leftLeg.castShadow = rightLeg.castShadow = true;
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+
+    function poseLesehan(char) {
+      if (char.userData?.leftLeg && char.userData?.rightLeg) {
+        const s = char.userData.scale || 1;
+        const { leftLeg, rightLeg, leftArm, rightArm, body } = char.userData;
+        leftLeg.rotation.x = THREE.MathUtils.degToRad(90);
+        rightLeg.rotation.x = THREE.MathUtils.degToRad(90);
+        leftLeg.position.y = -0.15 * s;
+        leftLeg.position.z = 0.18 * s;
+        rightLeg.position.y = -0.15 * s;
+        rightLeg.position.z = 0.18 * s;
+        if (leftArm) leftArm.rotation.x = THREE.MathUtils.degToRad(15);
+        if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(10);
+        if (body)
+          body.rotation.z = THREE.MathUtils.degToRad(Math.random() * 6 - 3);
+      }
+    }
+    function poseVendor(char) {
+      if (!char.userData) return;
+      if (char.userData.leftArm)
+        char.userData.leftArm.rotation.x = THREE.MathUtils.degToRad(-20);
+      if (char.userData.rightArm)
+        char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-10);
+    }
+
+    // -------- Area lantai & tikar --------
+    const ground = new THREE.Mesh(
+      new THREE.BoxGeometry(10, 0.05, 8),
+      new THREE.MeshStandardMaterial({ color: 0x8f8f8f, roughness: 0.95 })
+    );
+    ground.position.set(0, 0.025, 0);
+    ground.receiveShadow = true;
+    group.add(ground);
+
+    function makeMat(px, pz, color = 0x8b5a2b) {
+      const mat = new THREE.Mesh(
+        new THREE.BoxGeometry(3.4, 0.04, 2.4),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
+      );
+      mat.position.set(px, 0.02, pz);
+      mat.receiveShadow = true;
+      return mat;
+    }
+    group.add(makeMat(-2.6, 1.5, 0x8b5a2b), makeMat(2.6, 1.2, 0x996633));
+
+    // -------- Gerobak angkringan --------
+    const cart = new THREE.Group();
+
+    const cartBody = new THREE.Mesh(
+      new THREE.BoxGeometry(3, 1.2, 2),
+      new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.9 })
+    );
+    cartBody.position.set(0, 0.8, 0);
     cartBody.castShadow = true;
-    group.add(cartBody);
+    cart.add(cartBody);
 
-    // Roda gerobak (4 roda)
-    const wheelGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 16);
-    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
-
+    const wheelGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.12, 16);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
     [
-      { x: -1.3, z: -0.8 },
-      { x: 1.3, z: -0.8 },
-      { x: -1.3, z: 0.8 },
-      { x: 1.3, z: 0.8 },
-    ].forEach((pos) => {
-      const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-      wheel.position.set(pos.x, 0.15, pos.z);
-      wheel.rotation.z = Math.PI / 2;
-      wheel.castShadow = true;
-      group.add(wheel);
+      [-1.2, -0.8],
+      [1.2, -0.8],
+      [-1.2, 0.8],
+      [1.2, 0.8],
+    ].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.position.set(wx, 0.18, wz);
+      w.rotation.z = Math.PI / 2;
+      w.castShadow = true;
+      cart.add(w);
     });
 
-    // Kanopi/atap gerobak (kain)
-    const canopyGeometry = new THREE.BoxGeometry(3.5, 0.1, 2.5);
-    const canopyMaterial = new THREE.MeshStandardMaterial({
-      color: 0xff6347,
-      roughness: 0.7,
-    });
-    const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
-    canopy.position.y = 2.5;
+    const canopy = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 0.1, 2.5),
+      new THREE.MeshStandardMaterial({ color: 0xff6347, roughness: 0.7 })
+    );
+    canopy.position.set(0, 2.5, 0);
     canopy.castShadow = true;
-    group.add(canopy);
+    cart.add(canopy);
 
-    // Tiang penyangga kanopi
-    const poleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 5, 8);
-    const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x666666 });
-
+    const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.8, 8);
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x666666 });
     [
-      { x: -1.6, z: -1.1 },
-      { x: 1.6, z: -1.1 },
-      { x: -1.6, z: 1.1 },
-      { x: 1.6, z: 1.1 },
-    ].forEach((pos) => {
-      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-      pole.position.set(pos.x, 0, pos.z);
-      group.add(pole);
+      [-1.6, -1.1],
+      [1.6, -1.1],
+      [-1.6, 1.1],
+      [1.6, 1.1],
+    ].forEach(([px, pz]) => {
+      const p = new THREE.Mesh(poleGeo, poleMat);
+      p.position.set(px, 1.6, pz);
+      cart.add(p);
     });
 
-    // Lampu gantung
-    const lampGeometry = new THREE.SphereGeometry(0.25, 16, 16);
-    const lampMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffa500,
-      emissive: 0xffa500,
-      emissiveIntensity: 0.8,
-    });
-    const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
-    lamp.position.set(0, 2.2, 0);
-    group.add(lamp);
-
-    // Kabel lampu
-    const cableGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8);
-    const cableMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
-    const cable = new THREE.Mesh(cableGeometry, cableMaterial);
+    const cable = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8),
+      new THREE.MeshStandardMaterial({ color: 0x000000 })
+    );
     cable.position.set(0, 2.35, 0);
-    group.add(cable);
+    cart.add(cable);
 
-    // Termos besar (2 buah)
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.25, 16, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xffa500,
+        emissive: 0xffa500,
+        emissiveIntensity: 0.8,
+      })
+    );
+    bulb.position.set(0, 2.2, 0);
+    cart.add(bulb);
+    const point = new THREE.PointLight(0xffddaa, 1.0, 10, 2.0);
+    point.position.set(0, 2.2, 0);
+    cart.add(point);
+
+    // termos, kompor, api, panci
     for (let i = 0; i < 2; i++) {
-      const thermosGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.7, 16);
-      const thermosMaterial = new THREE.MeshStandardMaterial({
-        color: i === 0 ? 0xff0000 : 0x0000ff,
-        metalness: 0.6,
-        roughness: 0.3,
-      });
-      const thermos = new THREE.Mesh(thermosGeometry, thermosMaterial);
+      const thermos = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.2, 0.7, 16),
+        new THREE.MeshStandardMaterial({
+          color: i === 0 ? 0xff0000 : 0x0000ff,
+          metalness: 0.6,
+          roughness: 0.3,
+        })
+      );
       thermos.position.set(-1 + i * 0.8, 1.75, -0.7);
       thermos.castShadow = true;
-      group.add(thermos);
-
-      const lidGeometry = new THREE.CylinderGeometry(0.22, 0.22, 0.15, 16);
-      const lidMaterial = new THREE.MeshStandardMaterial({
-        color: 0xc0c0c0,
-        metalness: 0.8,
-      });
-      const lid = new THREE.Mesh(lidGeometry, lidMaterial);
-      lid.position.set(-1 + i * 0.8, 2.17, -0.7);
-      group.add(lid);
-
-      const handleGeometry = new THREE.TorusGeometry(
-        0.12,
-        0.03,
-        8,
-        16,
-        Math.PI
+      cart.add(thermos);
+      const lid = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22, 0.22, 0.15, 16),
+        new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8 })
       );
-      const handle = new THREE.Mesh(handleGeometry, lidMaterial);
-      handle.position.set(-1 + i * 0.8, 2.1, -0.7);
-      handle.rotation.x = Math.PI / 2;
-      group.add(handle);
+      lid.position.set(-1 + i * 0.8, 2.17, -0.7);
+      cart.add(lid);
     }
+    const stove = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4, 0.15, 0.3),
+      new THREE.MeshStandardMaterial({ color: 0x4169e1 })
+    );
+    stove.position.set(1, 1.5, -0.5);
+    stove.castShadow = true;
+    cart.add(stove);
 
-    // Tusuk sate
+    const fire = new THREE.Mesh(
+      new THREE.ConeGeometry(0.08, 0.15, 8),
+      new THREE.MeshStandardMaterial({
+        color: 0xff4500,
+        emissive: 0xff4500,
+        emissiveIntensity: 1,
+      })
+    );
+    fire.position.set(1, 1.65, -0.5);
+    cart.add(fire);
+
+    const pot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.12, 0.2, 16),
+      new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7 })
+    );
+    pot.position.set(1, 1.75, -0.5);
+    pot.castShadow = true;
+    cart.add(pot);
+
+    // tusuk sate + nampan makanan
     for (let i = 0; i < 8; i++) {
-      const skewersGeometry = new THREE.BoxGeometry(0.15, 0.6, 0.05);
-      const skewersMaterial = new THREE.MeshStandardMaterial({
-        color: 0xa0522d,
-      });
-      const skewers = new THREE.Mesh(skewersGeometry, skewersMaterial);
-      skewers.position.set(-1.2 + i * 0.35, 1.6, 0.5);
-      skewers.rotation.z = Math.PI / 6;
-      skewers.castShadow = true;
-      group.add(skewers);
+      const skew = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 0.6, 0.05),
+        new THREE.MeshStandardMaterial({ color: 0xa0522d })
+      );
+      skew.position.set(-1.2 + i * 0.35, 1.6, 0.5);
+      skew.rotation.z = Math.PI / 6;
+      skew.castShadow = true;
+      cart.add(skew);
     }
-
-    // Nampan + makanan
     for (let i = 0; i < 3; i++) {
-      const trayGeometry = new THREE.BoxGeometry(0.6, 0.05, 0.5);
-      const trayMaterial = new THREE.MeshStandardMaterial({ color: 0xd3d3d3 });
-      const tray = new THREE.Mesh(trayGeometry, trayMaterial);
+      const tray = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.05, 0.5),
+        new THREE.MeshStandardMaterial({ color: 0xd3d3d3 })
+      );
       tray.position.set(-0.8 + i * 0.8, 1.45, 0.2);
-      group.add(tray);
-
+      cart.add(tray);
       for (let j = 0; j < 4; j++) {
-        const foodGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.12);
-        const foodMaterial = new THREE.MeshStandardMaterial({
-          color: 0xd2691e,
-        });
-        const food = new THREE.Mesh(foodGeometry, foodMaterial);
+        const food = new THREE.Mesh(
+          new THREE.BoxGeometry(0.12, 0.08, 0.12),
+          new THREE.MeshStandardMaterial({ color: 0xd2691e })
+        );
         food.position.set(
           -0.8 + i * 0.8 - 0.15 + (j % 2) * 0.3,
           1.5,
           0.1 + Math.floor(j / 2) * 0.25
         );
-        group.add(food);
+        cart.add(food);
       }
     }
 
-    // Kompor, api, panci
-    const stoveGeometry = new THREE.BoxGeometry(0.4, 0.15, 0.3);
-    const stoveMaterial = new THREE.MeshStandardMaterial({ color: 0x4169e1 });
-    const stove = new THREE.Mesh(stoveGeometry, stoveMaterial);
-    stove.position.set(1, 1.5, -0.5);
-    stove.castShadow = true;
-    group.add(stove);
+    // papan nama kanvas (auto-fit, orientasi benar)
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width = 1024;
+    signCanvas.height = 256;
+    const sctx = signCanvas.getContext('2d');
+    sctx.fillStyle = '#ffcc00';
+    sctx.fillRect(0, 0, 1024, 256);
+    sctx.strokeStyle = '#000000';
+    sctx.lineWidth = 8;
+    sctx.strokeRect(8, 8, 1008, 240);
+    let fs = 120;
+    const maxW = 900;
+    while (fs > 60) {
+      sctx.font = `bold ${fs}px Arial`;
+      if (sctx.measureText(name).width <= maxW) break;
+      fs -= 6;
+    }
+    sctx.fillStyle = '#ff0000';
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'middle';
+    sctx.fillText(name, 512, 128);
+    const signTex = new THREE.CanvasTexture(signCanvas);
+    signTex.minFilter = THREE.LinearFilter;
+    signTex.magFilter = THREE.LinearFilter;
 
-    const fireGeometry = new THREE.ConeGeometry(0.08, 0.15, 8);
-    const fireMaterial = new THREE.MeshStandardMaterial({
-      color: 0xff4500,
-      emissive: 0xff4500,
-      emissiveIntensity: 1,
-    });
-    const fire = new THREE.Mesh(fireGeometry, fireMaterial);
-    fire.position.set(1, 1.65, -0.5);
-    group.add(fire);
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.6, 0.9),
+      new THREE.MeshBasicMaterial({
+        map: signTex,
+        transparent: true,
+        side: THREE.DoubleSide,
+      })
+    );
+    sign.position.set(0, 2.8, 0);
+    sign.rotation.y = 0;
+    cart.add(sign);
 
-    const potGeometry = new THREE.CylinderGeometry(0.15, 0.12, 0.2, 16);
-    const potMaterial = new THREE.MeshStandardMaterial({
-      color: 0x888888,
-      metalness: 0.7,
-    });
-    const pot = new THREE.Mesh(potGeometry, potMaterial);
-    pot.position.set(1, 1.75, -0.5);
-    pot.castShadow = true;
-    group.add(pot);
+    // posisi gerobak
+    cart.position.set(0, 0, -1.8);
+    group.add(cart);
 
-    // Tikar lesehan
-    const matGeometry = new THREE.BoxGeometry(2.5, 0.05, 2.5);
-    const matMaterial = new THREE.MeshStandardMaterial({
-      color: 0x8b4513,
-      roughness: 0.9,
-    });
-    const mat = new THREE.Mesh(matGeometry, matMaterial);
-    mat.position.set(-3, 0.025, 0);
-    mat.receiveShadow = true;
-    group.add(mat);
+    // -------- NPC: Penjual (berdiri) --------
+    const vendor = characterFactory
+      ? characterFactory(0xb45309, 1.0)
+      : makeMinecraftCharacterWithJoints(0xb45309, 1.0);
+    vendor.position.set(0, 0, -2.9);
+    vendor.rotation.y = 0;
+    poseVendor(vendor);
+    group.add(vendor);
 
-    // Kursi plastik
-    for (let i = 0; i < 3; i++) {
-      const smallChairGeometry = new THREE.BoxGeometry(0.4, 0.08, 0.4);
-      const smallChairMaterial = new THREE.MeshStandardMaterial({
-        color: i % 2 === 0 ? 0xff0000 : 0x0000ff,
-      });
-      const smallChair = new THREE.Mesh(smallChairGeometry, smallChairMaterial);
-      smallChair.position.set(-3.5 + i * 0.8, 0.2, -0.5 + (i % 2) * 0.8);
-      smallChair.castShadow = true;
-      group.add(smallChair);
+    // -------- NPC: 2 pelanggan lesehan (pegang piring + gelas di samping) --------
+    const sitSpots = [
+      { x: -2.8, z: 1.3, face: 15 },
+      { x: 2.6, z: 1.1, face: 160 },
+    ];
+
+    function makePlate() {
+      const plate = new THREE.Group();
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.18, 0.03, 24),
+        new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.6 })
+      );
+      base.position.y = 0.015;
+      plate.add(base);
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.17, 0.015, 8, 24),
+        new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.7 })
+      );
+      rim.rotation.x = Math.PI / 2;
+      plate.add(rim);
+      return plate;
+    }
+    function makeGlass() {
+      return new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.05, 0.12, 12),
+        new THREE.MeshStandardMaterial({
+          color: 0xb97a57,
+          roughness: 0.6,
+          metalness: 0.05,
+        })
+      );
     }
 
-    // Papan nama — tingkatkan resolusi agar tetap tajam saat discale
-    const signCanvas = document.createElement('canvas');
-    const signContext = signCanvas.getContext('2d');
-    signCanvas.width = 1024; // ↑ dari 512
-    signCanvas.height = 256; // ↑ dari 128
+    for (let i = 0; i < 2; i++) {
+      const spot = sitSpots[i];
+      const color = i % 2 ? 0x2563eb : 0x22c55e;
+      const npc = characterFactory
+        ? characterFactory(color, 1.0)
+        : makeMinecraftCharacterWithJoints(color, 1.0);
+      npc.position.set(spot.x, 0.46, spot.z);
+      npc.rotation.y = THREE.MathUtils.degToRad(spot.face);
+      poseLesehan(npc);
+      group.add(npc);
 
-    signContext.fillStyle = '#ffcc00';
-    signContext.fillRect(0, 0, signCanvas.width, signCanvas.height);
-    signContext.strokeStyle = '#000000';
-    signContext.lineWidth = 10;
-    signContext.strokeRect(
-      10,
-      10,
-      signCanvas.width - 20,
-      signCanvas.height - 20
-    );
-    signContext.fillStyle = '#ff0000';
-    signContext.font = 'bold 120px Arial';
-    signContext.textAlign = 'center';
-    signContext.textBaseline = 'middle';
-    signContext.fillText(
-      'ANGKRINGAN',
-      signCanvas.width / 2,
-      signCanvas.height / 2
-    );
+      const plate = makePlate();
+      if (npc.userData?.rightArm) {
+        const s = npc.userData.scale || 1;
+        plate.position.set(0, -0.35 * s, 0.12 * s);
+        plate.rotation.x = THREE.MathUtils.degToRad(10);
+        npc.userData.rightArm.add(plate);
+      } else {
+        const p = plate.clone();
+        p.position.set(spot.x + 0.18, 0.06, spot.z + 0.06);
+        group.add(p);
+      }
 
-    const signTexture = new THREE.CanvasTexture(signCanvas);
-    // Saran: biar lebih tajam, matikan mipmaps & pakai filter linear
-    signTexture.generateMipmaps = false;
-    signTexture.minFilter = THREE.LinearFilter;
-    signTexture.magFilter = THREE.LinearFilter;
+      const glass = makeGlass();
+      glass.position.set(spot.x + 0.22, 0.1, spot.z - 0.05);
+      group.add(glass);
+    }
 
-    const signGeometry = new THREE.PlaneGeometry(2, 0.5);
-    const signMaterial = new THREE.MeshBasicMaterial({
-      map: signTexture,
-      transparent: true,
-      side: THREE.DoubleSide,
-    });
-    const signMesh = new THREE.Mesh(signGeometry, signMaterial);
-    signMesh.position.set(0, 2.8, 0);
-    group.add(signMesh);
+    // -------- Lampu ambience --------
+    const warm = new THREE.PointLight(0xffe3b1, 0.8, 12, 2.0);
+    warm.position.set(-2.6, 2.2, 1.5);
+    group.add(warm);
 
-    // === APPLY SCALE & PLACE ===
+    // -------- Transform & register --------
     group.position.set(x, 0, z);
-    group.scale.set(scale, scale, scale); // <<-- pembesaran di sini
-
-    // Pastikan world matrix up-to-date sebelum hitung bbox
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
     group.updateMatrixWorld(true);
 
-    // Recompute bounding box setelah discale
-    const bbox = new THREE.Box3().setFromObject(group);
+    // Tambahkan ke scene
     this.scene.add(group);
-    this.buildings.push({ mesh: group, boundingBox: bbox, name: 'Angkringan' });
+
+    // ✅ Hanya GERObak yang jadi collider (player tetap bisa masuk & lesehan)
+    cart.updateMatrixWorld(true);
+    const cartBox = new THREE.Box3().setFromObject(cart);
+    this.buildings.push({
+      mesh: cart,
+      boundingBox: cartBox,
+      name: 'Angkringan - Gerobak',
+    });
+
+    // Tidak mendaftarkan bbox untuk seluruh group.
+    return group;
   }
 
   createWarteg(x, z, name) {
@@ -5228,18 +5629,6 @@ export class CityBuilder {
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
 
-    const sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(4.2, 1.0),
-      new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        side: THREE.DoubleSide,
-      })
-    );
-    sign.position.set(0, 2.1, 1.3);
-    sign.rotation.y = Math.PI; // hadap depan
-    group.add(sign);
-
     // ---------- Lampu malam ----------
     const light = new THREE.PointLight(0xffe3b1, 1.0, 20, 2.0);
     light.position.set(-6.5, 2.3, 4.5);
@@ -5857,18 +6246,6 @@ export class CityBuilder {
     tex.generateMipmaps = false;
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
-
-    const sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(5.0, 1.2),
-      new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        side: THREE.DoubleSide,
-      })
-    );
-    sign.position.set(0, 1.8, 8.9);
-    sign.rotation.y = 0; // tidak terbalik
-    group.add(sign);
 
     // --- Lighting kerja malam (sedikit warm) ---
     const workLight = new THREE.PointLight(0xffe3b1, 0.9, 20, 2.0);
