@@ -19,31 +19,31 @@ export class CityBuilder {
 
     // Create buildings in organized blocks
     // Hapus semua rumah - this.createHouses();
-    this.createSchools();
+    // this.createSchools();
+    // this.createShops();
     this.createPark();
     this.createLake();
-    this.createShops();
     this.createBasketballCourt(0, 0);
 
     // Create new buildings - Masjid, Pos Ronda, SPBU, Rental PS, Warnet
-    this.createMasjid(75, 75, 'MASJID AL-HIDAYAH');
-    this.createPosRonda(75, -100);
-    this.createSPBU(-80, 45, 'SPBU', { rotate: 34.54 });
-    this.createRentalPlayStation(-75, -100, 'RENTAL PS');
-    this.createWarnet(100, 0, 'WARNET 24 JAM');
+    // this.createPosRonda(75, -100);
+    // this.createSPBU(-80, 45, 'SPBU', { rotate: 34.54 });
+    // this.createRentalPlayStation(-75, -100, 'RENTAL PS');
+    // this.createWarnet(100, 0, 'WARNET 24 JAM');
 
-    // Create newest buildings - Angkringan, Warteg, Kapster Box, Laundry, Tambal Ban
+    // // Create newest buildings - Angkringan, Warteg, Kapster Box, Laundry, Tambal Ban
+    // this.createWarteg(-100, -50, 'WARTEG BAROKAH');
+    // this.createKapsterBox(110, -50);
+    // this.createLaundry(110, 50, 'LAUNDRY EXPRESS');
+    // this.createTambalBan(0, -110);
+    this.createMasjid(75, 75, 'MASJID AL-HIDAYAH');
     this.createAngkringan(-100, 50);
     this.createAngkringan(-115, 50);
-    this.createWarteg(-100, -50, 'WARTEG BAROKAH');
-    this.createKapsterBox(110, -50);
-    this.createLaundry(110, 50, 'LAUNDRY EXPRESS');
-    this.createTambalBan(0, -110);
     this.createPangkalanOjek(-30, 7.5, { rotate: 90 });
     this.createPemancingan(-77, 0, { rotate: 270 });
     this.createCoffeeShop(-35, -40, { rotate: 90 });
     this.createConstructionSite(-90, 85, { rotate: 180 });
-    this.createLapanganBolaJalanan(-88, -40);
+    this.createLapanganBolaJalanan(-88, -40, { numPlayers: 4 });
 
     // Create traffic lights at intersections
     this.createTrafficLights();
@@ -1506,12 +1506,6 @@ export class CityBuilder {
   }
 
   createTrafficLights() {
-    // Traffic lights at major intersections
-    // Intersections: (-60,-60), (-60,-20), (-60,20), (-60,60)
-    //                (-20,-60), (-20,-20), (-20,20), (-20,60)
-    //                (20,-60), (20,-20), (20,20), (20,60)
-    //                (60,-60), (60,-20), (60,20), (60,60)
-
     const intersections = [
       { x: -60, z: -60 },
       { x: -60, z: -20 },

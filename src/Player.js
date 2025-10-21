@@ -171,6 +171,9 @@ export class Player {
         this.position.y += this.velocity.y * delta;
         this.position.z += this.velocity.z * delta;
 
+        // Map boundary check (prevent player from leaving the map)
+        this.enforceMapBoundaries();
+
         // Ground collision
         const groundY = this.getGroundHeight(this.position.x, this.position.z);
         if (this.position.y <= groundY) {
@@ -250,6 +253,18 @@ export class Player {
 
         // Look at player
         this.camera.lookAt(this.position.x, this.position.y + 1, this.position.z);
+    }
+
+    enforceMapBoundaries() {
+        // Map boundaries (based on ground size of 250 units centered at 0,0)
+        // So boundaries are from -125 to 125 in both X and Z dimensions
+        const mapBoundary = 124; // A little less than 125 to account for player size
+        
+        // Clamp X position to stay within map boundaries
+        this.position.x = Math.max(-mapBoundary, Math.min(mapBoundary, this.position.x));
+        
+        // Clamp Z position to stay within map boundaries
+        this.position.z = Math.max(-mapBoundary, Math.min(mapBoundary, this.position.z));
     }
 
     getPosition() {
