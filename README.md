@@ -9,6 +9,7 @@ A Three.js-based open-world web game inspired by Grand Theft Auto, featuring a m
 ## Features
 
 ### City Environment
+
 - **Flat terrain** with organized city layout
 - **Road network** connecting all areas
 - **Sidewalks** for pedestrian NPCs
@@ -20,6 +21,7 @@ A Three.js-based open-world web game inspired by Grand Theft Auto, featuring a m
   - Supermarkets and local shops
 
 ### NPCs
+
 - **30 walking NPCs** - Different colored characters walking on sidewalks
 - **5 motorcycles** - Driving on roads
 - **3 cars** - Different colors, driving on roads
@@ -32,27 +34,30 @@ All characters use Minecraft-style low-poly graphics for consistent visual style
 ### Game Mechanics
 
 #### Controls
+
 - **WASD** or **Arrow Keys** - Move player
 - **Shift** - Sprint
 - **Spacebar** - Jump
 - **Mouse** - Rotate camera (click to lock pointer)
 
 #### Mission System
+
 - **Objective:** Find 5 hidden friends within 10 minutes
 - **Win condition:** Find all 5 friends before time runs out
 - **Lose condition:** Time expires before finding all friends
 
 #### Special NPCs to Find
 
-| Name      | Location                      | Dialogue                                 |
-| --------- | ----------------------------- | ---------------------------------------- |
-| Ariman    | Park                          | "Yah aku ketawan."                       |
-| Putra     | SMK TELESANDI                 | "Waduh, kamu nemuin aku juga."           |
-| Ananda    | SMPN 11 BEKASI                | "Hehe, kamu jago banget nyarinya."       |
-| Zait      | Konoha Mart                   | "Astaga, aku gak nyangka kamu nemu aku." |
-| Mahardika | Lake                          | "Haha, ketahuan juga deh aku."           |
+| Name       | Location       | Dialogue                                 |
+| ---------- | -------------- | ---------------------------------------- |
+| Ariman     | Park           | "Yah aku ketawan."                       |
+| Putra      | SMK TELESANDI  | "Waduh, kamu nemuin aku juga."           |
+| Ananda     | SMPN 11 BEKASI | "Hehe, kamu jago banget nyarinya."       |
+| Zait       | Konoha Mart    | "Astaga, aku gak nyangka kamu nemu aku." |
+| Mahardhika | Lake           | "Haha, ketahuan juga deh aku."           |
 
 ### Atmosphere
+
 - **Sunset sky** with gradient colors
 - **Animated clouds** drifting across the sky
 - **Day/night transition** when losing (night mode)
@@ -70,11 +75,13 @@ All characters use Minecraft-style low-poly graphics for consistent visual style
 ### Win/Lose Conditions
 
 **Win:**
+
 - Find all 5 friends within 10 minutes
 - Popup appears: "Kamu Menang! 🎉"
 - Click "Tutup" to close and continue exploring
 
 **Lose:**
+
 - Time runs out before finding all friends
 - Sky transitions to night mode
 - Popup appears: "Kamu Kalah 😢"
@@ -85,12 +92,14 @@ All characters use Minecraft-style low-poly graphics for consistent visual style
 ## Technical Details
 
 ### Technologies Used
+
 - **Three.js r160** - 3D graphics library
 - **Vanilla JavaScript** (ES6 modules)
 - **HTML5 Canvas**
 - **WebGL**
 
 ### Project Structure
+
 ```
 /
 ├── index.html           # Main HTML entry point

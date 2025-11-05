@@ -55,7 +55,7 @@ export class NPCManager {
 
       if (!path) continue;
 
-      const npc = this.createMinecraftCharacter(color, 0.7);
+      const npc = this.createMinecraftCharacter(color);
 
       // Random position along path
       const t = Math.random();
@@ -235,7 +235,7 @@ export class NPCManager {
     group.add(backWheel);
 
     // Rider (scale 0.6 = 0.5 * 1.2)
-    const rider = this.createMinecraftCharacter(0x00aaff, 0.6);
+    const rider = this.createMinecraftCharacter(0x00aaff);
     rider.position.y = 1.2;
     group.add(rider);
 
@@ -446,7 +446,7 @@ export class NPCManager {
         dialogue: 'Astaga, aku gak nyangka kamu nemu aku.',
       }, // Di depan Konoha Mart (bangunan di -40,5, depth 8, jadi depan di z=9+4)
       {
-        name: 'Mahardika',
+        name: 'Mahardhika',
         position: { x: -8, z: 28 },
         // position: { x: -15, z: 40 },
         dialogue: 'Haha, ketahuan juga deh aku.',
@@ -454,7 +454,7 @@ export class NPCManager {
     ];
 
     specialCharacters.forEach((char) => {
-      const npc = this.createMinecraftCharacter(0xff00ff, 0.8);
+      const npc = this.createMinecraftCharacter(0xff00ff);
       npc.position.set(char.position.x, 0.9, char.position.z);
 
       // Create name tag
@@ -475,9 +475,8 @@ export class NPCManager {
   }
 
   createFarhanNPC() {
-    const farhan = this.createMinecraftCharacter(0xffd700, 0.8);
-    farhan.position.set(-5, 0.9, -40); // Di samping air mancur (bukan di tengah)
-
+    const farhan = this.createMinecraftCharacter(0xffd700);
+    farhan.position.set(0, 0.9, -35);
     const nameTag = this.createNameTag('Farhan Hadi Lutfi');
     nameTag.position.y = 2.5;
     farhan.add(nameTag);
@@ -492,7 +491,7 @@ export class NPCManager {
       dialogueNight: 'Sudah malam, harusnya kamu pulang...',
       found: false,
       isMission: false,
-      isFarhan: true, // Special flag untuk Farhan
+      isFarhan: true,
       nameTag: nameTag,
     });
   }
@@ -652,7 +651,7 @@ export class NPCManager {
 
   resetNPCs() {
     // Reset found state for all special NPCs except Farhan
-    this.specialNPCs.forEach(npc => {
+    this.specialNPCs.forEach((npc) => {
       if (!npc.isFarhan) {
         npc.found = false;
         if (npc.nameTag) {

@@ -95,13 +95,13 @@ All NPCs use **Minecraft-style low-poly graphics**.
 
 Each special NPC has a **floating name bubble text** above their head.
 
-| Name      | Location                                        | Dialogue (Indonesian)                    |
-| --------- | ----------------------------------------------- | ---------------------------------------- |
-| Ariman    | In the park                                     | “Yah aku ketawan.”                       |
-| Putra     | In front of SMK TELEKOMUNIKASI TELESANDI BEKASI | “Waduh, kamu nemuin aku juga.”           |
-| Ananda    | In front of SMPN 11 BEKASI                      | “Hehe, kamu jago banget nyarinya.”       |
-| Zait      | In front of Konoha Mart                         | “Astaga, aku gak nyangka kamu nemu aku.” |
-| Mahardika | Near the lake                                   | “Haha, ketahuan juga deh aku.”           |
+| Name       | Location                                        | Dialogue (Indonesian)                    |
+| ---------- | ----------------------------------------------- | ---------------------------------------- |
+| Ariman     | In the park                                     | “Yah aku ketawan.”                       |
+| Putra      | In front of SMK TELEKOMUNIKASI TELESANDI BEKASI | “Waduh, kamu nemuin aku juga.”           |
+| Ananda     | In front of SMPN 11 BEKASI                      | “Hehe, kamu jago banget nyarinya.”       |
+| Zait       | In front of Konoha Mart                         | “Astaga, aku gak nyangka kamu nemu aku.” |
+| Mahardhika | Near the lake                                   | “Haha, ketahuan juga deh aku.”           |
 
 ### Additional Non-Mission NPC
 
