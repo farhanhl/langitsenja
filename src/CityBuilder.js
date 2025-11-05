@@ -16,6 +16,8 @@ export class CityBuilder {
     this.createPark();
     this.createLake();
     this.createBasketballCourt(0, 0);
+    // this.createTambalBan(0, 0);
+    this.createPosRonda(0, 0);
     this.createAngkringan(-100, 50);
     this.createAngkringan(-115, 50);
     this.createConstructionSite(-90, 85, { rotate: 180 });
@@ -812,19 +814,766 @@ export class CityBuilder {
     this.scene.add(group);
   }
 
+  createPosRonda(
+    x,
+    z,
+    {
+      scale = 1.3,
+      rotate = 0,
+      characterFactory = null,
+      npcScale = 0.9,
+      name = 'Pos Ronda',
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    // ================= Helpers =================
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      body.castShadow = true;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      head.castShadow = true;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      leftArm.castShadow = rightArm.castShadow = true;
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      leftLeg.castShadow = rightLeg.castShadow = true;
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+
+    function poseSit(char) {
+      if (!char.userData) return;
+      const s = char.userData.scale || 1;
+      const { leftLeg, rightLeg, leftArm, rightArm, body } = char.userData;
+
+      // duduk santai
+      if (leftLeg && rightLeg) {
+        leftLeg.rotation.x = THREE.MathUtils.degToRad(85);
+        rightLeg.rotation.x = THREE.MathUtils.degToRad(85);
+        leftLeg.position.y = -0.15 * s;
+        rightLeg.position.y = -0.15 * s;
+        leftLeg.position.z = 0.17 * s;
+        rightLeg.position.z = 0.17 * s;
+      }
+      if (leftArm) leftArm.rotation.x = THREE.MathUtils.degToRad(-5);
+      if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(-8);
+      if (body)
+        body.rotation.z = THREE.MathUtils.degToRad(Math.random() * 2 - 1);
+    }
+
+    function makeGlass(colorHex = 0x6f4e37) {
+      // kopi coklat
+      const g = new THREE.Group();
+      const cup = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.055, 0.1, 14),
+        new THREE.MeshStandardMaterial({
+          color: colorHex,
+          roughness: 0.55,
+          metalness: 0.05,
+        })
+      );
+      cup.position.y = 0.05;
+      g.add(cup);
+      const foam = new THREE.Mesh(
+        new THREE.CircleGeometry(0.048, 16),
+        new THREE.MeshStandardMaterial({ color: 0x2e1a12, roughness: 0.6 })
+      );
+      foam.rotation.x = -Math.PI / 2;
+      foam.position.y = 0.1;
+      g.add(foam);
+      return g;
+    }
+
+    // ================= Lantai / panggung pos =================
+    const deck = new THREE.Mesh(
+      new THREE.BoxGeometry(6.2, 0.15, 6.2),
+      new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.85 })
+    );
+    deck.position.set(0, 0.075, 0);
+    deck.receiveShadow = true;
+    group.add(deck);
+
+    // paving/beton tipis di bawah panggung
+    const pad = new THREE.Mesh(
+      new THREE.BoxGeometry(8, 0.06, 8),
+      new THREE.MeshStandardMaterial({ color: 0xa7a7a7, roughness: 0.95 })
+    );
+    pad.position.set(0, 0.03, 0);
+    pad.receiveShadow = true;
+    group.add(pad);
+
+    // ================= Struktur pos: tiang + atap seng =================
+    const hut = new THREE.Group();
+
+    // hitung ketinggian tiang dari permukaan deck → underside atap
+    const groundTopY = deck.position.y + deck.geometry.parameters.height / 2; // 0.075
+    const roofY = 2.6; // center atap
+    const roofHalfH = 0.08; // half thickness atap
+    const canopyUnderY = roofY - roofHalfH; // underside
+    const eps = 0.01;
+    const poleH = Math.max(0.8, canopyUnderY - groundTopY - eps);
+
+    // tiang (nempel deck)
+    const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, poleH, 12);
+    const poleMat = new THREE.MeshStandardMaterial({
+      color: 0x6b7280,
+      roughness: 0.6,
+      metalness: 0.15,
+    });
+    [
+      [-2.8, -2.8],
+      [2.8, -2.8],
+      [-2.8, 2.8],
+      [2.8, 2.8],
+    ].forEach(([px, pz]) => {
+      const p = new THREE.Mesh(poleGeo, poleMat);
+      p.position.set(px, groundTopY + poleH / 2, pz);
+      p.castShadow = true;
+      p.receiveShadow = true;
+      hut.add(p);
+    });
+
+    // balok pengikat atas
+    const beamMat = new THREE.MeshStandardMaterial({
+      color: 0x5a4632,
+      roughness: 0.8,
+    });
+    const beamX = new THREE.Mesh(
+      new THREE.BoxGeometry(6.2, 0.1, 0.12),
+      beamMat
+    );
+    beamX.position.set(0, canopyUnderY - 0.05, -2.8);
+    const beamX2 = beamX.clone();
+    beamX2.position.z = 2.8;
+    const beamZ = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.1, 6.2),
+      beamMat
+    );
+    beamZ.position.set(-2.8, canopyUnderY - 0.05, 0);
+    const beamZ2 = beamZ.clone();
+    beamZ2.position.x = 2.8;
+    hut.add(beamX, beamX2, beamZ, beamZ2);
+
+    // atap seng datar sedikit miring
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(6.6, 0.16, 6.6),
+      new THREE.MeshStandardMaterial({
+        color: 0x2c3e50,
+        roughness: 0.6,
+        metalness: 0.2,
+      })
+    );
+    roof.position.set(0, roofY, 0);
+    roof.rotation.x = THREE.MathUtils.degToRad(-3);
+    roof.castShadow = true;
+    roof.receiveShadow = true;
+    hut.add(roof);
+
+    // list tepi atap
+    const drip = new THREE.Mesh(
+      new THREE.BoxGeometry(6.7, 0.06, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 })
+    );
+    drip.position.set(0, roofY - 0.06, -3.25);
+    hut.add(drip);
+
+    // pagar rendah (setengah)
+    const railMat = new THREE.MeshStandardMaterial({
+      color: 0x7b5737,
+      roughness: 0.85,
+    });
+    const railH = 0.7;
+    const railTh = 0.08;
+    const railFront = new THREE.Mesh(
+      new THREE.BoxGeometry(6.2, railH, railTh),
+      railMat
+    );
+    railFront.position.set(0, 0.35 + groundTopY, 3.0);
+    const railBack = railFront.clone();
+    railBack.position.z = -3.0;
+    const railLeft = new THREE.Mesh(
+      new THREE.BoxGeometry(railTh, railH, 6.2),
+      railMat
+    );
+    railLeft.position.set(-3.0, 0.35 + groundTopY, 0);
+    const railRight = railLeft.clone();
+    railRight.position.x = 3.0;
+    hut.add(railFront, railBack, railLeft, railRight);
+
+    // papan nama "Pos Ronda"
+    function createTextPlane(
+      text,
+      {
+        font = 'bold 56px Inter, Arial, sans-serif',
+        fg = '#FFFFFF',
+        bg = 'rgba(0,0,0,0)',
+        w = 1024,
+        h = 256,
+        maxWidthPx = 920,
+      } = {}
+    ) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+      let fs = 56;
+      const fam = 'Inter, Arial, sans-serif';
+      while (fs >= 24) {
+        ctx.font = `bold ${fs}px ${fam}`;
+        if (ctx.measureText(text).width <= maxWidthPx) break;
+        fs -= 2;
+      }
+      ctx.font = `bold ${fs}px ${fam}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = fg;
+      ctx.shadowColor = 'rgba(0,0,0,0.35)';
+      ctx.shadowBlur = 8;
+      ctx.fillText(text, w / 2, h / 2);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.anisotropy = 8;
+      tex.needsUpdate = true;
+
+      const planeH = 0.45;
+      const planeW = planeH * (w / h);
+      const geo = new THREE.PlaneGeometry(planeW, planeH);
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+      return new THREE.Mesh(geo, mat);
+    }
+
+    const signBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 0.55, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 })
+    );
+    signBoard.position.set(0, roofY - 0.35, -3.05);
+    signBoard.castShadow = true;
+    hut.add(signBoard);
+
+    const signText = createTextPlane('Pos Ronda', { fg: '#FFFFFF' });
+    signText.position.set(0, roofY - 0.35, -3.01);
+    hut.add(signText);
+
+    // lampu gantung tengah
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 16, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xffcc88,
+        emissive: 0xffcc88,
+        emissiveIntensity: 0.7,
+      })
+    );
+    bulb.position.set(0, roofY - 0.55, 0);
+    hut.add(bulb);
+    const lamp = new THREE.PointLight(0xffe3b1, 0.9, 10, 2.0);
+    lamp.position.copy(bulb.position);
+    hut.add(lamp);
+
+    // meja kecil + bangku papan
+    const table = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: 0x5e3b16, roughness: 0.85 })
+    );
+    table.position.set(0, groundTopY + 0.45, 0);
+    hut.add(table);
+    const tableStem = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 0.45, 12),
+      new THREE.MeshStandardMaterial({ color: 0x4b2f12, roughness: 0.85 })
+    );
+    tableStem.position.set(0, groundTopY + 0.225, 0);
+    hut.add(tableStem);
+
+    // bangku memanjang dua sisi
+    function addBench(px, pz, rotY = 0) {
+      const seat = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.08, 0.45),
+        new THREE.MeshStandardMaterial({ color: 0x7b5737, roughness: 0.85 })
+      );
+      seat.position.set(px, groundTopY + 0.42, pz);
+      seat.rotation.y = rotY;
+      seat.castShadow = true;
+      hut.add(seat);
+
+      const legGeo = new THREE.BoxGeometry(0.08, 0.42, 0.08);
+      const legMat = new THREE.MeshStandardMaterial({
+        color: 0x5a4632,
+        roughness: 0.85,
+      });
+      const legOffsets = [
+        [-0.8, -0.18],
+        [0.8, -0.18],
+        [-0.8, 0.18],
+        [0.8, 0.18],
+      ];
+      legOffsets.forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, legMat);
+        // rotasi lokal bangku
+        const v = new THREE.Vector3(lx, -0.21, lz).applyAxisAngle(
+          new THREE.Vector3(0, 1, 0),
+          rotY
+        );
+        leg.position.set(px + v.x, groundTopY + 0.21, pz + v.z);
+        leg.castShadow = true;
+        hut.add(leg);
+      });
+    }
+    addBench(-1.2, -0.9, THREE.MathUtils.degToRad(15));
+    addBench(1.2, 0.9, THREE.MathUtils.degToRad(195));
+
+    // tempatkan seluruh pos
+    hut.position.set(0, 0, 0);
+    group.add(hut);
+
+    // ================= NPC: 2 orang ngopi =================
+    const standY = 0.45 * npcScale; // referensi ketinggian karakter
+
+    const npc1 = characterFactory
+      ? characterFactory(0x2563eb, npcScale)
+      : makeMinecraftCharacterWithJoints(0x2563eb, npcScale);
+    npc1.position.set(-1.25, groundTopY + 0.42 + 0.01, -0.9); // di atas bangku
+    npc1.rotation.y = THREE.MathUtils.degToRad(25);
+    poseSit(npc1);
+    hut.add(npc1);
+
+    const npc2 = characterFactory
+      ? characterFactory(0x22c55e, npcScale)
+      : makeMinecraftCharacterWithJoints(0x22c55e, npcScale);
+    npc2.position.set(1.25, groundTopY + 0.42 + 0.01, 0.9); // bangku seberang
+    npc2.rotation.y = THREE.MathUtils.degToRad(205);
+    poseSit(npc2);
+    hut.add(npc2);
+
+    // gelas kopi di tangan kanan masing-masing
+    const cup1 = makeGlass();
+    const cup2 = makeGlass();
+    if (npc1.userData?.rightArm) {
+      const s = npc1.userData.scale || 1;
+      cup1.position.set(0, -0.33 * s, 0.11 * s);
+      npc1.userData.rightArm.add(cup1);
+    }
+    if (npc2.userData?.rightArm) {
+      const s = npc2.userData.scale || 1;
+      cup2.position.set(0, -0.33 * s, 0.11 * s);
+      npc2.userData.rightArm.add(cup2);
+    }
+
+    // animasi ngobrol ringan (angguk kepala & tangan)
+    const t0 = Math.random() * 1000;
+    group.onBeforeRender = (_, __, camera, renderer) => {
+      const t = performance.now() * 0.001;
+      const a1 = Math.sin(t * 1.6 + t0) * 0.08;
+      const a2 = Math.sin(t * 1.4 + t0 + 1.3) * 0.08;
+
+      if (npc1.userData?.head) npc1.userData.head.rotation.y = a1;
+      if (npc2.userData?.head) npc2.userData.head.rotation.y = -a2;
+
+      if (npc1.userData?.rightArm)
+        npc1.userData.rightArm.rotation.x =
+          THREE.MathUtils.degToRad(-8) + Math.sin(t * 1.2) * 0.05;
+      if (npc2.userData?.rightArm)
+        npc2.userData.rightArm.rotation.x =
+          THREE.MathUtils.degToRad(-10) + Math.sin(t * 1.1 + 0.7) * 0.05;
+    };
+
+    // ================= Transform & collider =================
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+
+    this.scene.add(group);
+
+    // collider hanya untuk struktur pos (bukan NPC)
+    hut.updateMatrixWorld(true);
+    const bbox = new THREE.Box3().setFromObject(hut);
+    this.buildings.push({
+      mesh: hut,
+      boundingBox: bbox,
+      name,
+    });
+
+    return group;
+  }
+
+  createTambalBan(
+    x,
+    z,
+    {
+      scale = 1.2,
+      rotate = 0,
+      characterFactory = null,
+      npcScale = 0.9,
+      mechanicBack = 0.4,
+      name = 'Tambal Ban',
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      body.castShadow = true;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      head.castShadow = true;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      leftArm.castShadow = rightArm.castShadow = true;
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      leftLeg.castShadow = rightLeg.castShadow = true;
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+
+    function poseMechanic(char) {
+      if (!char.userData) return;
+      const { leftArm, rightArm } = char.userData;
+      if (leftArm) leftArm.rotation.x = THREE.MathUtils.degToRad(-25);
+      if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(-5);
+    }
+
+    // --- Lantai/Pondasi beton ---
+    const pad = new THREE.Mesh(
+      new THREE.BoxGeometry(10, 0.06, 8),
+      new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0.95 })
+    );
+    pad.position.set(0, 0.03, 0);
+    pad.receiveShadow = true;
+    group.add(pad);
+
+    // --- Karpet kerja karet (anti licin) ---
+    const rubber = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.04, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.85 })
+    );
+    rubber.position.set(-1.8, 0.02, 0.4);
+    rubber.receiveShadow = true;
+    group.add(rubber);
+
+    // --- Kanopi + tiang nempel tanah ---
+    const stall = new THREE.Group();
+
+    const canopy = new THREE.Mesh(
+      new THREE.BoxGeometry(4.2, 0.12, 3.2),
+      new THREE.MeshStandardMaterial({
+        color: 0x2c3e50,
+        roughness: 0.6,
+        metalness: 0.1,
+      })
+    );
+    canopy.position.set(0, 2.4, 0);
+    canopy.castShadow = true;
+    stall.add(canopy);
+
+    // hitung tinggi tiang (groundTopY → canopyUnderY)
+    const groundHalfH = pad.geometry.parameters.height / 2; // 0.03
+    const groundTopY = pad.position.y + groundHalfH; // 0.06
+    const canopyHalfH = canopy.geometry.parameters.height / 2; // 0.06
+    const canopyUnderY = canopy.position.y - canopyHalfH; // 2.34
+    const eps = 0.01;
+    const poleHeight = Math.max(0.1, canopyUnderY - groundTopY - eps);
+
+    const poleGeo = new THREE.CylinderGeometry(0.06, 0.06, poleHeight, 16);
+    const poleMat = new THREE.MeshStandardMaterial({
+      color: 0x6b7280,
+      roughness: 0.5,
+      metalness: 0.2,
+    });
+    [
+      [-1.9, -1.4],
+      [1.9, -1.4],
+      [-1.9, 1.4],
+      [1.9, 1.4],
+    ].forEach(([px, pz]) => {
+      const pole = new THREE.Mesh(poleGeo, poleMat);
+      pole.position.set(px, groundTopY + poleHeight / 2, pz);
+      pole.castShadow = true;
+      pole.receiveShadow = true;
+      stall.add(pole);
+    });
+
+    // talang sederhana (list) di tepi canopy
+    const lip = new THREE.Mesh(
+      new THREE.BoxGeometry(4.3, 0.06, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.6 })
+    );
+    lip.position.set(0, canopy.position.y - 0.05, -1.6);
+    lip.castShadow = true;
+    stall.add(lip);
+
+    // --- Meja alat ---
+    const bench = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.1, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.8 })
+    );
+    bench.position.set(0.6, 1.0, -0.6);
+    bench.castShadow = true;
+    stall.add(bench);
+
+    const benchLegGeo = new THREE.BoxGeometry(0.08, 0.9, 0.08);
+    [
+      [0.2, 0.55],
+      [1.0, 0.55],
+      [0.2, -0.55],
+      [1.0, -0.55],
+    ].forEach(([bx, bz]) => {
+      const leg = new THREE.Mesh(
+        benchLegGeo,
+        new THREE.MeshStandardMaterial({ color: 0x5e3b16, roughness: 0.8 })
+      );
+      leg.position.set(bx, 0.55, bz);
+      leg.castShadow = true;
+      stall.add(leg);
+    });
+
+    // --- Kompresor angin ---
+    const tank = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.3, 0.9, 24),
+      new THREE.MeshStandardMaterial({
+        color: 0x1e40af,
+        metalness: 0.5,
+        roughness: 0.4,
+      })
+    );
+    tank.rotation.z = Math.PI / 2; // rebah
+    tank.position.set(-1.4, 0.35, 0.2);
+    tank.castShadow = true;
+    stall.add(tank);
+
+    const motor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.35, 0.35),
+      new THREE.MeshStandardMaterial({
+        color: 0x374151,
+        metalness: 0.3,
+        roughness: 0.6,
+      })
+    );
+    motor.position.set(-1.0, 0.55, 0.2);
+    motor.castShadow = true;
+    stall.add(motor);
+
+    // roda kecil untuk kompresor
+    const wheelGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.06, 16);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    [
+      [-1.7, 0.12],
+      [-1.1, 0.12],
+    ].forEach(([wx, wy]) => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.rotation.z = Math.PI / 2;
+      w.position.set(wx, wy, 0.45);
+      w.castShadow = true;
+      stall.add(w);
+    });
+
+    // --- Selang angin (pakai torus sebagai lengkungan + silinder) ---
+    const hose = new THREE.Group();
+    const hoseMat = new THREE.MeshStandardMaterial({
+      color: 0x222222,
+      roughness: 0.9,
+    });
+    // segmen lurus
+    const hoseStraight = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 1.1, 12),
+      hoseMat
+    );
+    hoseStraight.rotation.z = Math.PI / 2;
+    hoseStraight.position.set(-1.25, 0.5, 0.35);
+    hose.add(hoseStraight);
+    // elbow torus
+    const elbow = new THREE.Mesh(
+      new THREE.TorusGeometry(0.22, 0.03, 8, 20, Math.PI / 2),
+      hoseMat
+    );
+    elbow.rotation.set(0, 0, Math.PI / 2);
+    elbow.position.set(-0.7, 0.5, 0.35);
+    hose.add(elbow);
+    // segmen ke ban kerja
+    const hoseStraight2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 0.9, 12),
+      hoseMat
+    );
+    hoseStraight2.rotation.x = Math.PI / 2;
+    hoseStraight2.position.set(-0.48, 0.5, 0.0);
+    hose.add(hoseStraight2);
+    stall.add(hose);
+
+    // --- Tumpukan ban bekas ---
+    function addTire(px, py, pz, r = 0.35, t = 0.08) {
+      const tire = new THREE.Mesh(
+        new THREE.TorusGeometry(r, t, 14, 24),
+        new THREE.MeshStandardMaterial({
+          color: 0x0f0f10,
+          roughness: 0.7,
+          metalness: 0.05,
+        })
+      );
+      tire.rotation.x = Math.PI / 2;
+      tire.position.set(px, py, pz);
+      tire.castShadow = true;
+      stall.add(tire);
+      return tire;
+    }
+    addTire(1.5, 0.18, 0.4);
+    addTire(1.3, 0.36, 0.45);
+    addTire(1.7, 0.18, 0.1);
+    addTire(1.45, 0.54, 0.35, 0.33, 0.07);
+
+    // --- Kursi kecil (bangku plastik) ---
+    const stool = new THREE.Mesh(
+      new THREE.BoxGeometry(0.35, 0.38, 0.35),
+      new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 })
+    );
+    stool.position.set(-0.8, 0.19, -0.1);
+    stool.castShadow = true;
+    stall.add(stool);
+
+    // --- Lampu kerja ---
+    const workLight = new THREE.PointLight(0xffe3b1, 0.9, 10, 2.0);
+    workLight.position.set(0, 2.2, 0);
+    stall.add(workLight);
+
+    // Posisi stall relatif pad
+    stall.position.set(0, 0, 0.0);
+    group.add(stall);
+
+    // --- Mekanik berdiri (bukan lesehan) ---
+    const mechanic = characterFactory
+      ? characterFactory(0x374151, npcScale)
+      : makeMinecraftCharacterWithJoints(0x374151, npcScale);
+
+    // hitung offset berdiri natural: origin di tengah badan → kaki nempel tanah
+    const standY = 0.45 * npcScale;
+    mechanic.position.set(0.2, standY, -0.6 - mechanicBack);
+    mechanic.rotation.y = THREE.MathUtils.degToRad(-15);
+    poseMechanic(mechanic);
+    group.add(mechanic);
+
+    // --- Ambient tambahan ---
+    const ambient = new THREE.PointLight(0xffddaa, 0.5, 12, 2.0);
+    ambient.position.set(-1.2, 2.0, 0.8);
+    group.add(ambient);
+
+    // --- Transform global & register collider ---
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+
+    this.scene.add(group);
+
+    // collider hanya untuk area stall (kanopi + meja + kompresor), bukan seluruh group
+    stall.updateMatrixWorld(true);
+    const bbox = new THREE.Box3().setFromObject(stall);
+    this.buildings.push({
+      mesh: stall,
+      boundingBox: bbox,
+      name,
+    });
+
+    return group;
+  }
+
   createAngkringan(
     x,
     z,
     {
       scale = 1.4,
       rotate = 0,
-      name = 'ANGKRINGAN',
       characterFactory = null,
+      npcScale = 0.85,
+      vendorBack = 0.7,
     } = {}
   ) {
     const group = new THREE.Group();
 
-    // -------- Helpers: NPC fallback + pose --------
     function makeMinecraftCharacterWithJoints(color, cScale = 1) {
       const g = new THREE.Group();
 
@@ -889,8 +1638,8 @@ export class CityBuilder {
         leftLeg.rotation.x = THREE.MathUtils.degToRad(90);
         rightLeg.rotation.x = THREE.MathUtils.degToRad(90);
         leftLeg.position.y = -0.15 * s;
-        leftLeg.position.z = 0.18 * s;
         rightLeg.position.y = -0.15 * s;
+        leftLeg.position.z = 0.18 * s;
         rightLeg.position.z = 0.18 * s;
         if (leftArm) leftArm.rotation.x = THREE.MathUtils.degToRad(15);
         if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(10);
@@ -898,6 +1647,7 @@ export class CityBuilder {
           body.rotation.z = THREE.MathUtils.degToRad(Math.random() * 6 - 3);
       }
     }
+
     function poseVendor(char) {
       if (!char.userData) return;
       if (char.userData.leftArm)
@@ -906,7 +1656,7 @@ export class CityBuilder {
         char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-10);
     }
 
-    // -------- Area lantai & tikar --------
+    // ---------- GROUND ----------
     const ground = new THREE.Mesh(
       new THREE.BoxGeometry(10, 0.05, 8),
       new THREE.MeshStandardMaterial({ color: 0x8f8f8f, roughness: 0.95 })
@@ -926,7 +1676,7 @@ export class CityBuilder {
     }
     group.add(makeMat(-2.6, 1.5, 0x8b5a2b), makeMat(2.6, 1.2, 0x996633));
 
-    // -------- Gerobak angkringan --------
+    // ---------- GERObak ----------
     const cart = new THREE.Group();
 
     const cartBody = new THREE.Mesh(
@@ -960,7 +1710,15 @@ export class CityBuilder {
     canopy.castShadow = true;
     cart.add(canopy);
 
-    const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.8, 8);
+    // ✅ TIANG NEMPEL TANAH (auto height dari ground → underside canopy)
+    const groundHalfH = ground.geometry.parameters.height / 2; // 0.025
+    const groundTopY = ground.position.y + groundHalfH; // 0.05
+    const canopyHalfH = canopy.geometry.parameters.height / 2; // 0.05
+    const canopyUnderY = canopy.position.y - canopyHalfH; // 2.45
+    const eps = 0.01;
+    const poleHeight = Math.max(0.1, canopyUnderY - groundTopY - eps);
+
+    const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, poleHeight, 12);
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x666666 });
     [
       [-1.6, -1.1],
@@ -969,10 +1727,13 @@ export class CityBuilder {
       [1.6, 1.1],
     ].forEach(([px, pz]) => {
       const p = new THREE.Mesh(poleGeo, poleMat);
-      p.position.set(px, 1.6, pz);
+      p.position.set(px, groundTopY + poleHeight / 2, pz);
+      p.castShadow = true;
+      p.receiveShadow = true;
       cart.add(p);
     });
 
+    // Kabel & lampu
     const cable = new THREE.Mesh(
       new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8),
       new THREE.MeshStandardMaterial({ color: 0x000000 })
@@ -990,11 +1751,12 @@ export class CityBuilder {
     );
     bulb.position.set(0, 2.2, 0);
     cart.add(bulb);
+
     const point = new THREE.PointLight(0xffddaa, 1.0, 10, 2.0);
     point.position.set(0, 2.2, 0);
     cart.add(point);
 
-    // termos, kompor, api, panci
+    // ✅ BARANG DAGANGAN (termos, kompor, api, panci, sate, nampan, makanan)
     for (let i = 0; i < 2; i++) {
       const thermos = new THREE.Mesh(
         new THREE.CylinderGeometry(0.2, 0.2, 0.7, 16),
@@ -1007,6 +1769,7 @@ export class CityBuilder {
       thermos.position.set(-1 + i * 0.8, 1.75, -0.7);
       thermos.castShadow = true;
       cart.add(thermos);
+
       const lid = new THREE.Mesh(
         new THREE.CylinderGeometry(0.22, 0.22, 0.15, 16),
         new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8 })
@@ -1014,6 +1777,7 @@ export class CityBuilder {
       lid.position.set(-1 + i * 0.8, 2.17, -0.7);
       cart.add(lid);
     }
+
     const stove = new THREE.Mesh(
       new THREE.BoxGeometry(0.4, 0.15, 0.3),
       new THREE.MeshStandardMaterial({ color: 0x4169e1 })
@@ -1041,7 +1805,6 @@ export class CityBuilder {
     pot.castShadow = true;
     cart.add(pot);
 
-    // tusuk sate + nampan makanan
     for (let i = 0; i < 8; i++) {
       const skew = new THREE.Mesh(
         new THREE.BoxGeometry(0.15, 0.6, 0.05),
@@ -1052,6 +1815,7 @@ export class CityBuilder {
       skew.castShadow = true;
       cart.add(skew);
     }
+
     for (let i = 0; i < 3; i++) {
       const tray = new THREE.Mesh(
         new THREE.BoxGeometry(0.6, 0.05, 0.5),
@@ -1073,57 +1837,18 @@ export class CityBuilder {
       }
     }
 
-    // papan nama kanvas (auto-fit, orientasi benar)
-    const signCanvas = document.createElement('canvas');
-    signCanvas.width = 1024;
-    signCanvas.height = 256;
-    const sctx = signCanvas.getContext('2d');
-    sctx.fillStyle = '#ffcc00';
-    sctx.fillRect(0, 0, 1024, 256);
-    sctx.strokeStyle = '#000000';
-    sctx.lineWidth = 8;
-    sctx.strokeRect(8, 8, 1008, 240);
-    let fs = 120;
-    const maxW = 900;
-    while (fs > 60) {
-      sctx.font = `bold ${fs}px Arial`;
-      if (sctx.measureText(name).width <= maxW) break;
-      fs -= 6;
-    }
-    sctx.fillStyle = '#ff0000';
-    sctx.textAlign = 'center';
-    sctx.textBaseline = 'middle';
-    sctx.fillText(name, 512, 128);
-    const signTex = new THREE.CanvasTexture(signCanvas);
-    signTex.minFilter = THREE.LinearFilter;
-    signTex.magFilter = THREE.LinearFilter;
-
-    const sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.6, 0.9),
-      new THREE.MeshBasicMaterial({
-        map: signTex,
-        transparent: true,
-        side: THREE.DoubleSide,
-      })
-    );
-    sign.position.set(0, 2.8, 0);
-    sign.rotation.y = 0;
-    cart.add(sign);
-
-    // posisi gerobak
     cart.position.set(0, 0, -1.8);
     group.add(cart);
 
-    // -------- NPC: Penjual (berdiri) --------
     const vendor = characterFactory
-      ? characterFactory(0xb45309, 1.0)
-      : makeMinecraftCharacterWithJoints(0xb45309, 1.0);
-    vendor.position.set(0, 0, -2.9);
-    vendor.rotation.y = 0;
+      ? characterFactory(0xb45309, npcScale)
+      : makeMinecraftCharacterWithJoints(0xb45309, npcScale);
+    const standY = 1 * npcScale;
+    vendor.position.set(0, standY, -2.9 - vendorBack);
+
     poseVendor(vendor);
     group.add(vendor);
 
-    // -------- NPC: 2 pelanggan lesehan (pegang piring + gelas di samping) --------
     const sitSpots = [
       { x: -2.8, z: 1.3, face: 15 },
       { x: 2.6, z: 1.1, face: 160 },
@@ -1145,6 +1870,7 @@ export class CityBuilder {
       plate.add(rim);
       return plate;
     }
+
     function makeGlass() {
       return new THREE.Mesh(
         new THREE.CylinderGeometry(0.045, 0.05, 0.12, 12),
@@ -1160,9 +1886,9 @@ export class CityBuilder {
       const spot = sitSpots[i];
       const color = i % 2 ? 0x2563eb : 0x22c55e;
       const npc = characterFactory
-        ? characterFactory(color, 1.0)
-        : makeMinecraftCharacterWithJoints(color, 1.0);
-      npc.position.set(spot.x, 0.46, spot.z);
+        ? characterFactory(color, npcScale)
+        : makeMinecraftCharacterWithJoints(color, npcScale);
+      npc.position.set(spot.x, 0.46 * npcScale, spot.z);
       npc.rotation.y = THREE.MathUtils.degToRad(spot.face);
       poseLesehan(npc);
       group.add(npc);
@@ -1184,21 +1910,19 @@ export class CityBuilder {
       group.add(glass);
     }
 
-    // -------- Lampu ambience --------
+    // ---------- LAMPU AMBIENCE ----------
     const warm = new THREE.PointLight(0xffe3b1, 0.8, 12, 2.0);
     warm.position.set(-2.6, 2.2, 1.5);
     group.add(warm);
 
-    // -------- Transform & register --------
+    // ---------- TRANSFORM & REGISTER ----------
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
     group.updateMatrixWorld(true);
 
-    // Tambahkan ke scene
     this.scene.add(group);
 
-    // ✅ Hanya GERObak yang jadi collider (player tetap bisa masuk & lesehan)
     cart.updateMatrixWorld(true);
     const cartBox = new THREE.Box3().setFromObject(cart);
     this.buildings.push({
@@ -1207,7 +1931,6 @@ export class CityBuilder {
       name: 'Angkringan - Gerobak',
     });
 
-    // Tidak mendaftarkan bbox untuk seluruh group.
     return group;
   }
 
