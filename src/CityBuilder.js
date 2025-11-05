@@ -17,7 +17,8 @@ export class CityBuilder {
     this.createLake();
     this.createBasketballCourt(0, 0);
     // this.createTambalBan(0, 0);
-    this.createPosRonda(0, 0);
+    // this.createPosRonda(0, 0);
+    this.createKapsterBox(-50, -120, { scale: 1.3, rotate: 270 });
     this.createAngkringan(-100, 50);
     this.createAngkringan(-115, 50);
     this.createConstructionSite(-90, 85, { rotate: 180 });
@@ -1234,6 +1235,365 @@ export class CityBuilder {
     const bbox = new THREE.Box3().setFromObject(hut);
     this.buildings.push({
       mesh: hut,
+      boundingBox: bbox,
+      name,
+    });
+
+    return group;
+  }
+
+  // Kapster Box - Modern (tanpa tangga, sign putih di papan hitam, tanpa parameter depth)
+  createKapsterBox(
+    x,
+    z,
+    {
+      scale = 1,
+      rotate = 0,
+      name = 'Kapster Box',
+      // Tidak ada "depth" di opsi!
+      width = 6.0, // lebar fasad
+      height = 4.2, // tinggi dinding
+      colors = {
+        wall: 0x152238, // biru tua matte
+        frame: 0x1e3a8a, // biru frame
+        concrete: 0xe6e6e6, // lantai teras (opsional tipis)
+        canopy: 0x0f172a, // kanopi gelap
+        signBg: 0x000000, // papan signage hitam
+        signText: '#ffffff', // teks signage putih
+      },
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    // Kedalaman bangunan ditetapkan di dalam fungsi (tidak dikonfigurasi dari luar)
+    const DEPTH = 5.0;
+
+    // ====== LANTAI TIPIS (bisa dihapus jika tak perlu) ======
+    const pad = new THREE.Mesh(
+      new THREE.BoxGeometry(width + 0.2, 0.08, DEPTH + 0.2),
+      new THREE.MeshStandardMaterial({
+        color: colors.concrete,
+        roughness: 0.95,
+      })
+    );
+    pad.position.set(0, 0.04, 0);
+    pad.receiveShadow = true;
+    group.add(pad);
+
+    const groundTopY = pad.position.y + pad.geometry.parameters.height / 2;
+
+    // ====== BADAN BANGUNAN ======
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(width, height, DEPTH),
+      new THREE.MeshStandardMaterial({
+        color: colors.wall,
+        roughness: 0.85,
+        metalness: 0.05,
+      })
+    );
+    body.position.set(0, groundTopY + height / 2, 0);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
+
+    // ====== PARAPET RATA ======
+    const parapetH = 0.5;
+    const parapet = new THREE.Mesh(
+      new THREE.BoxGeometry(width + 0.06, parapetH, DEPTH + 0.06),
+      new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.7 })
+    );
+    parapet.position.set(0, groundTopY + height + parapetH / 2, 0);
+    parapet.castShadow = true;
+    group.add(parapet);
+
+    // ====== KANOPI TIPIS ======
+    const canopyDepth = 0.9;
+    const canopyThk = 0.1;
+    const canopy = new THREE.Mesh(
+      new THREE.BoxGeometry(width * 0.96, canopyThk, canopyDepth),
+      new THREE.MeshStandardMaterial({
+        color: colors.canopy,
+        roughness: 0.6,
+        metalness: 0.2,
+      })
+    );
+    canopy.position.set(
+      0,
+      groundTopY + height + 0.05,
+      DEPTH / 2 + canopyDepth / 2 - 0.05
+    );
+    canopy.castShadow = true;
+    group.add(canopy);
+
+    // Bracket kanopi (nempel dinding)
+    const bracketMat = new THREE.MeshStandardMaterial({
+      color: 0x6b7280,
+      roughness: 0.6,
+      metalness: 0.3,
+    });
+    const makeBracket = (bx) => {
+      const g = new THREE.Group();
+      const arm = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.9, 12),
+        bracketMat
+      );
+      arm.rotation.x = Math.PI / 2;
+      arm.position.set(0, 0, -0.45);
+      const diag = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          0.04,
+          0.04,
+          Math.sqrt(0.9 * 0.9 + 0.5 * 0.5),
+          12
+        ),
+        bracketMat
+      );
+      diag.rotation.set(Math.atan2(0.5, 0.9), 0, 0);
+      diag.position.set(0, -0.25, -0.25);
+      g.add(arm, diag);
+      g.position.set(bx, groundTopY + height - 0.1, DEPTH / 2 + 0.05);
+      return g;
+    };
+    const bx = (width * 0.96) / 2 - 0.5;
+    group.add(makeBracket(-bx), makeBracket(bx));
+
+    // LED strip di bawah kanopi
+    const led = new THREE.Mesh(
+      new THREE.PlaneGeometry(width * 0.9, 0.06),
+      new THREE.MeshStandardMaterial({
+        emissive: new THREE.Color(0xffffff),
+        emissiveIntensity: 1.2,
+        color: 0x000000,
+      })
+    );
+    led.position.set(
+      0,
+      canopy.position.y - canopyThk / 2 - 0.02,
+      DEPTH / 2 + canopyDepth - 0.15
+    );
+    led.rotation.x = -Math.PI / 2;
+    group.add(led);
+
+    // ====== FACADE KACA (pintu kiri, jendela kanan) ======
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.06,
+      transmission: 0.92,
+      roughness: 0.15,
+      thickness: 0.06,
+      envMapIntensity: 0.7,
+    });
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: colors.frame,
+      roughness: 0.6,
+      metalness: 0.2,
+    });
+
+    // Pintu kiri (frameless look)
+    const doorW = 1.1,
+      doorH = 2.4;
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(doorW, doorH, 0.05),
+      glassMat
+    );
+    door.position.set(
+      -(width / 2) + doorW / 2 + 0.25,
+      groundTopY + doorH / 2,
+      DEPTH / 2 + 0.03
+    );
+    group.add(door);
+
+    const slimFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(doorW + 0.06, doorH + 0.06, 0.06),
+      frameMat
+    );
+    slimFrame.position.copy(door.position);
+    group.add(slimFrame);
+
+    // Handle
+    const handle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.02, 0.45, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.9,
+        roughness: 0.2,
+      })
+    );
+    handle.rotation.z = Math.PI / 2;
+    handle.position.set(
+      door.position.x + doorW / 2 - 0.12,
+      door.position.y,
+      door.position.z + 0.04
+    );
+    group.add(handle);
+
+    // Jendela kanan
+    const winW = width - doorW - 0.7;
+    const winH = 2.5;
+    const windowGlass = new THREE.Mesh(
+      new THREE.BoxGeometry(winW, winH, 0.05),
+      glassMat
+    );
+    windowGlass.position.set(
+      door.position.x + doorW / 2 + winW / 2 + 0.35,
+      groundTopY + winH / 2,
+      DEPTH / 2 + 0.03
+    );
+    group.add(windowGlass);
+
+    const windowFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(winW + 0.06, winH + 0.06, 0.06),
+      frameMat
+    );
+    windowFrame.position.copy(windowGlass.position);
+    group.add(windowFrame);
+
+    // ====== PANEL / CLADDING halus (opsional) ======
+    const panelCount = 8;
+    const panelGap = (width - 0.4) / panelCount;
+    for (let i = 0; i < panelCount; i++) {
+      const px = -width / 2 + 0.2 + panelGap * i + panelGap / 2;
+      const slat = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 1.2, 0.18),
+        new THREE.MeshStandardMaterial({ color: 0x0e1a2b, roughness: 0.8 })
+      );
+      slat.position.set(px, groundTopY + 3.0, DEPTH / 2 - 0.09);
+      slat.castShadow = true;
+      group.add(slat);
+    }
+
+    function makeSignTexture(text = 'KAPSTERBOX', w = 2048, h = 512) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+
+      // Papan hitam pekat
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, w, h);
+
+      // Teks putih
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 300px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, w / 2, h / 2);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.anisotropy = 8;
+      return tex;
+    }
+
+    const signW = width * 0.9;
+    const signH = 0.9;
+
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(signW, signH),
+      new THREE.MeshStandardMaterial({
+        map: makeSignTexture('KAPSTERBOX'),
+        transparent: false,
+        roughness: 1.0,
+        metalness: 0.0,
+        emissiveIntensity: 0, // penting: supaya tidak putih
+        color: 0xffffff, // JANGAN hitam — harus putih agar tidak menggelapkan tekstur
+        toneMapped: true,
+      })
+    );
+
+    // posisinya tetap
+    sign.position.set(0, groundTopY + height - 0.4, DEPTH / 2 + 0.06);
+
+    group.add(sign);
+
+    // ====== BARBER POLE ======
+    const poleLen = 1.2;
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.095, 0.095, poleLen, 24),
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.4,
+        metalness: 0.4,
+      })
+    );
+    pole.position.set(-(width / 2) + 0.15, groundTopY + 2.2, DEPTH / 2 + 0.08);
+    group.add(pole);
+
+    // tutup atas/bawah aksen
+    const capMat = new THREE.MeshStandardMaterial({
+      color: 0xe11d48,
+      metalness: 0.4,
+      roughness: 0.4,
+    });
+    const capTop = new THREE.Mesh(
+      new THREE.SphereGeometry(0.11, 16, 16),
+      capMat
+    );
+    capTop.position.set(
+      pole.position.x,
+      pole.position.y + poleLen / 2,
+      pole.position.z
+    );
+    const capBot = capTop.clone();
+    capBot.position.set(
+      pole.position.x,
+      pole.position.y - poleLen / 2,
+      pole.position.z
+    );
+    group.add(capTop, capBot);
+
+    // ring diagonal merah-biru
+    const ringGeo = new THREE.TorusGeometry(0.105, 0.012, 10, 24);
+    for (let i = -6; i <= 6; i++) {
+      const ring = new THREE.Mesh(
+        ringGeo,
+        new THREE.MeshStandardMaterial({
+          color: i % 2 === 0 ? 0x1d4ed8 : 0xf43f5e,
+          roughness: 0.6,
+        })
+      );
+      ring.rotation.x = Math.PI / 2.2;
+      ring.position.set(
+        pole.position.x,
+        pole.position.y + i * 0.09,
+        pole.position.z
+      );
+      group.add(ring);
+    }
+
+    // bracket pole ke dinding
+    const poleBracket = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.14, 0.16),
+      bracketMat
+    );
+    poleBracket.position.set(
+      pole.position.x,
+      pole.position.y,
+      DEPTH / 2 - 0.02
+    );
+    group.add(poleBracket);
+
+    // ====== Pencahayaan fasad ======
+    const wash = new THREE.RectAreaLight(0xffffff, 5, width * 0.9, 0.4);
+    wash.position.set(0, groundTopY + height - 0.2, DEPTH / 2 + 0.25);
+    wash.lookAt(0, groundTopY + 1.5, DEPTH / 2 - 0.5);
+    group.add(wash);
+
+    // ====== TRANSFORM ======
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    // ====== COLLIDER (body + kanopi) ======
+    const colliderGroup = new THREE.Group();
+    colliderGroup.add(body.clone(), canopy.clone());
+    colliderGroup.updateMatrixWorld(true);
+    const bbox = new THREE.Box3().setFromObject(colliderGroup);
+
+    this.buildings.push({
+      mesh: group,
       boundingBox: bbox,
       name,
     });

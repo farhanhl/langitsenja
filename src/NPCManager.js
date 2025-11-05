@@ -427,7 +427,7 @@ export class NPCManager {
     const specialCharacters = [
       {
         name: 'Ariman',
-        position: { x: 5, z: -40 },
+        position: { x: -55, z: -120 },
         dialogue: 'Yah aku ketawan.',
       }, // Di samping air mancur (park tetap di 0,-40)
       {
