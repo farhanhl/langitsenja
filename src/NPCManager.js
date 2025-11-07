@@ -476,7 +476,7 @@ export class NPCManager {
 
   createFarhanNPC() {
     const farhan = this.createMinecraftCharacter(0xffd700);
-    farhan.position.set(0, 0.9, -35);
+    farhan.position.set(0, 0.9, -5);
     const nameTag = this.createNameTag('Farhan Hadi Lutfi');
     nameTag.position.y = 2.5;
     farhan.add(nameTag);

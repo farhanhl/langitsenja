@@ -15,14 +15,21 @@ export class CityBuilder {
     this.createRoadNetwork();
     this.createPark();
     this.createLake();
-    this.createBasketballCourt(0, 0);
-    // this.createTambalBan(0, 0);
-    // this.createPosRonda(0, 0);
-    this.createKapsterBox(-50, -120, { scale: 1.3, rotate: 270 });
-    this.createAngkringan(-100, 50);
-    this.createAngkringan(-115, 50);
-    this.createConstructionSite(-90, 85, { rotate: 180 });
-    this.createLapanganBolaJalanan(-88, -40, { numPlayers: 4 });
+    this.createBasketballCourt(0, -70, {
+      numPlayers: 4,
+      rotate: 90,
+      scale: 0.9,
+    });
+    this.createTambalBan(0, -25);
+    this.createPosRonda(26, 0, { rotate: 270 });
+    // this.createKapsterBox(-37.5, -90, { scale: 1.3, rotate: 270 });
+    this.createAngkringan(-75, 35);
+    this.createAngkringan(-86.25, 35);
+    this.createLapanganBolaJalanan(-30, -72, {
+      numPlayers: 4,
+      rotate: 90,
+      scale: 0.9,
+    });
     this.createTrafficLights();
 
     return {
@@ -37,7 +44,7 @@ export class CityBuilder {
   }
 
   createGround() {
-    const groundSize = 250;
+    const groundSize = 187.5;
     const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize);
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0x6b8e23,
@@ -57,18 +64,18 @@ export class CityBuilder {
       color: 0x888888,
     });
 
-    // Main roads (grid pattern) - diperluas sampai ujung map (250)
+    // Main roads (grid pattern) - diperluas sampai ujung map (187.5)
     const roadPositions = [
-      // Horizontal roads (panjang 250 dari -125 ke 125)
-      { x: 0, z: -60, width: 250, depth: roadWidth },
-      { x: 0, z: -20, width: 250, depth: roadWidth },
-      { x: 0, z: 20, width: 250, depth: roadWidth },
-      { x: 0, z: 60, width: 250, depth: roadWidth },
-      // Vertical roads (panjang 250 dari -125 ke 125)
-      { x: -60, z: 0, width: roadWidth, depth: 250 },
-      { x: -20, z: 0, width: roadWidth, depth: 250 },
-      { x: 20, z: 0, width: roadWidth, depth: 250 },
-      { x: 60, z: 0, width: roadWidth, depth: 250 },
+      // Horizontal roads (panjang 187.5 dari -93.75 ke 93.75)
+      { x: 0, z: -45, width: 187.5, depth: roadWidth },
+      { x: 0, z: -15, width: 187.5, depth: roadWidth },
+      { x: 0, z: 15, width: 187.5, depth: roadWidth },
+      { x: 0, z: 45, width: 187.5, depth: roadWidth },
+      // Vertical roads (panjang 187.5 dari -93.75 ke 93.75)
+      { x: -45, z: 0, width: roadWidth, depth: 187.5 },
+      { x: -15, z: 0, width: roadWidth, depth: 187.5 },
+      { x: 15, z: 0, width: roadWidth, depth: 187.5 },
+      { x: 45, z: 0, width: roadWidth, depth: 187.5 },
     ];
 
     roadPositions.forEach((pos) => {
@@ -203,9 +210,9 @@ export class CityBuilder {
 
   createPark() {
     const parkX = 0;
-    const parkZ = -40;
-    const parkWidth = 28;
-    const parkDepth = 28;
+    const parkZ = 0;
+    const parkWidth = 18; // 75% of 28
+    const parkDepth = 18; // 75% of 28
 
     // Grass area
     const grassGeometry = new THREE.BoxGeometry(parkWidth, 0.3, parkDepth);
@@ -217,10 +224,10 @@ export class CityBuilder {
 
     // Benches
     const benchPositions = [
-      { x: -6, z: -5 },
-      { x: 6, z: -5 },
-      { x: -6, z: 5 },
-      { x: 6, z: 5 },
+      { x: -4.5, z: -3.75 },
+      { x: 4.5, z: -3.75 },
+      { x: -4.5, z: 3.75 },
+      { x: 4.5, z: 3.75 },
     ];
 
     benchPositions.forEach((pos) => {
@@ -302,9 +309,9 @@ export class CityBuilder {
 
   createLake() {
     const lakeX = 0;
-    const lakeZ = 40;
-    const lakeWidth = 25;
-    const lakeDepth = 20;
+    const lakeZ = 30;
+    const lakeWidth = 18.75; // 75% of 25
+    const lakeDepth = 15; // 75% of 20
 
     // Lake water (visible above ground)
     const lakeGeometry = new THREE.BoxGeometry(lakeWidth, 0.3, lakeDepth);
@@ -322,39 +329,36 @@ export class CityBuilder {
 
     // Benches around lake (diagonal positions)
     // Serong kiri depan (kiri-atas)
-    this.createBench(lakeX - 8, lakeZ - 12);
+    this.createBench(lakeX - 6, lakeZ - 9);
     // Serong kanan belakang (kanan-bawah)
-    this.createBench(lakeX + 8, lakeZ + 12);
+    this.createBench(lakeX + 6, lakeZ + 9);
 
     this.lakeArea = { x: lakeX, z: lakeZ, width: lakeWidth, depth: lakeDepth };
   }
 
   createTrafficLights() {
     const intersections = [
-      { x: -60, z: -60 },
-      { x: -60, z: -20 },
-      { x: -60, z: 20 },
-      { x: -60, z: 60 },
-      { x: -20, z: -60 },
-      { x: -20, z: -20 },
-      { x: -20, z: 20 },
-      { x: -20, z: 60 },
-      { x: 20, z: -60 },
-      { x: 20, z: -20 },
-      { x: 20, z: 20 },
-      { x: 20, z: 60 },
-      { x: 60, z: -60 },
-      { x: 60, z: -20 },
-      { x: 60, z: 20 },
-      { x: 60, z: 60 },
+      { x: -45, z: -45 },
+      { x: -45, z: -15 },
+      { x: -45, z: 15 },
+      { x: -45, z: 45 },
+      { x: -15, z: -45 },
+      { x: -15, z: -15 },
+      { x: -15, z: 15 },
+      { x: -15, z: 45 },
+      { x: 15, z: -45 },
+      { x: 15, z: -15 },
+      { x: 15, z: 15 },
+      { x: 15, z: 45 },
+      { x: 45, z: -45 },
+      { x: 45, z: -15 },
+      { x: 45, z: 15 },
+      { x: 45, z: 45 },
     ];
 
     intersections.forEach((pos) => {
-      // 2 traffic lights per intersection - on opposite corners
-      // Light 1: Northeast corner (on sidewalk)
-      this.createTrafficLight(pos.x + 5, pos.z + 5, Math.PI * 2); // Facing southwest
-      // Light 2: Southwest corner (on sidewalk)
-      this.createTrafficLight(pos.x - 5, pos.z - 5, -Math.PI * 1); // Facing northeast
+      this.createTrafficLight(pos.x + 5, pos.z + 5, Math.PI * 2);
+      this.createTrafficLight(pos.x - 5, pos.z - 5, -Math.PI * 1);
     });
   }
 
@@ -370,7 +374,7 @@ export class CityBuilder {
     group.add(pole);
 
     // Traffic light box
-    const boxGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.3);
+    const boxGeometry = new THREE.BoxGeometry(0.6, 1.5, 0.3);
     const boxMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
     const box = new THREE.Mesh(boxGeometry, boxMaterial);
     box.position.set(0, 4.6, 0);
@@ -378,7 +382,7 @@ export class CityBuilder {
     group.add(box);
 
     // Lights (red, yellow, green)
-    const lightGeometry = new THREE.CircleGeometry(0.15, 16);
+    const lightGeometry = new THREE.CircleGeometry(0.2, 16);
 
     const redLight = new THREE.Mesh(
       lightGeometry,
@@ -773,8 +777,6 @@ export class CityBuilder {
 
   createScoreboard(x, z) {
     const group = new THREE.Group();
-
-    // Main board (horizontal/landscape orientation - lebar > tinggi)
     const boardGeometry = new THREE.BoxGeometry(6, 2.5, 0.3);
     const boardMaterial = new THREE.MeshStandardMaterial({
       color: 0x1a1a1a,
@@ -784,7 +786,6 @@ export class CityBuilder {
     board.castShadow = true;
     group.add(board);
 
-    // LED display area (center) - horizontal, menghadap ke lapangan
     const displayGeometry = new THREE.BoxGeometry(5.5, 2, 0.1);
     const displayMaterial = new THREE.MeshStandardMaterial({
       color: 0x000000,
@@ -828,7 +829,6 @@ export class CityBuilder {
   ) {
     const group = new THREE.Group();
 
-    // ================= Helpers =================
     function makeMinecraftCharacterWithJoints(color, cScale = 1) {
       const g = new THREE.Group();
 
@@ -1242,7 +1242,6 @@ export class CityBuilder {
     return group;
   }
 
-  // Kapster Box - Modern (tanpa tangga, sign putih di papan hitam, tanpa parameter depth)
   createKapsterBox(
     x,
     z,
@@ -1679,16 +1678,14 @@ export class CityBuilder {
       if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(-5);
     }
 
-    // --- Lantai/Pondasi beton ---
     const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 0.06, 8),
+      new THREE.BoxGeometry(8, 0.06, 8),
       new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0.95 })
     );
     pad.position.set(0, 0.03, 0);
     pad.receiveShadow = true;
     group.add(pad);
 
-    // --- Karpet kerja karet (anti licin) ---
     const rubber = new THREE.Mesh(
       new THREE.BoxGeometry(3.4, 0.04, 2.2),
       new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.85 })
@@ -1750,10 +1747,10 @@ export class CityBuilder {
 
     // --- Meja alat ---
     const bench = new THREE.Mesh(
-      new THREE.BoxGeometry(1.2, 0.1, 0.5),
+      new THREE.BoxGeometry(1.2, 0.1, 1.5),
       new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.8 })
     );
-    bench.position.set(0.6, 1.0, -0.6);
+    bench.position.set(0.6, 1.0, 0.1);
     bench.castShadow = true;
     stall.add(bench);
 
@@ -1835,17 +1832,7 @@ export class CityBuilder {
     elbow.rotation.set(0, 0, Math.PI / 2);
     elbow.position.set(-0.7, 0.5, 0.35);
     hose.add(elbow);
-    // segmen ke ban kerja
-    const hoseStraight2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 0.9, 12),
-      hoseMat
-    );
-    hoseStraight2.rotation.x = Math.PI / 2;
-    hoseStraight2.position.set(-0.48, 0.5, 0.0);
-    hose.add(hoseStraight2);
-    stall.add(hose);
 
-    // --- Tumpukan ban bekas ---
     function addTire(px, py, pz, r = 0.35, t = 0.08) {
       const tire = new THREE.Mesh(
         new THREE.TorusGeometry(r, t, 14, 24),
@@ -1871,7 +1858,7 @@ export class CityBuilder {
       new THREE.BoxGeometry(0.35, 0.38, 0.35),
       new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 })
     );
-    stool.position.set(-0.8, 0.19, -0.1);
+    stool.position.set(-0.8, 0.19, -0.5);
     stool.castShadow = true;
     stall.add(stool);
 
@@ -2559,7 +2546,7 @@ export class CityBuilder {
     {
       scale = 1.4,
       rotate = 0,
-      size = { length: 28, width: 16 },
+      size = { length: 44.5, width: 16 },
       numPlayers = 8,
       teamAColor = 0x2563eb,
       teamBColor = 0x22c55e,
@@ -2568,8 +2555,6 @@ export class CityBuilder {
     } = {}
   ) {
     const group = new THREE.Group();
-
-    // ---------- Helper NPC fallback dengan joints ----------
     function makeMinecraftCharacterWithJoints(color, cScale = 1) {
       const g = new THREE.Group();
 
@@ -2685,14 +2670,11 @@ export class CityBuilder {
       m.receiveShadow = true;
       group.add(m);
     }
-    // Pinggir
-    line(L, 0.06, 0.12, 0, 0.03, -W / 2); // bawah
-    line(L, 0.06, 0.12, 0, 0.03, W / 2); // atas
-    line(0.12, 0.06, W, -L / 2, 0.03, 0); // kiri
-    line(0.12, 0.06, W, L / 2, 0.03, 0); // kanan
-    // Tengah
-    line(0.12, 0.06, W, 0, 0.03, 0); // garis tengah
-    // Lingkaran tengah (segmen)
+    line(L, 0.06, 0.12, 0, 0.03, -W / 2);
+    line(L, 0.06, 0.12, 0, 0.03, W / 2);
+    line(0.12, 0.06, W, -L / 2, 0.03, 0);
+    line(0.12, 0.06, W, L / 2, 0.03, 0);
+    line(0.12, 0.06, W, 0, 0.03, 0);
     const r = 2.2,
       seg = 24;
     for (let i = 0; i < seg; i++) {
@@ -2712,8 +2694,6 @@ export class CityBuilder {
       group.add(piece);
     }
 
-    // ---------- Gawang kiri & kanan ----------
-    // --- Gawang yang lebih akurat (frame 3D + net)
     function makeGoal({
       width = 3.0, // lebar mulut gawang
       height = 2.0, // tinggi mistar
@@ -2816,43 +2796,36 @@ export class CityBuilder {
       const netSideR = netSideL.clone();
       netSideR.position.x = L / 2;
 
-      // atap
       const netTop = new THREE.Mesh(
         new THREE.PlaneGeometry(L - R * 2, D, 10, 6),
         netMat
       );
       netTop.rotation.x = Math.PI / 2;
       netTop.position.set(0, H, -D / 2);
-
       g.add(netBack, netSideL, netSideR, netTop);
-
-      // origin gawang = mulut gawang (garis gawang), center di tengah mulut
       return g;
     }
 
-    // Gawang kiri — menghadap ke kanan (ke arah tengah lapangan)
     const goalLeft = makeGoal({
-      width: 3.0,
-      height: 2.0,
+      width: 5.5,
+      height: 3,
       depth: 1.0,
       tube: 0.07,
     });
     goalLeft.position.set(-L / 2 + 0.6, 0, 0);
-    goalLeft.rotation.y = 33; // 🔁 hadap kanan (ke tengah lapangan)
+    goalLeft.rotation.y = 33;
     group.add(goalLeft);
 
-    // Gawang kanan — menghadap ke kiri (ke arah tengah lapangan)
     const goalRight = makeGoal({
-      width: 3.0,
-      height: 2.0,
+      width: 5.5,
+      height: 3,
       depth: 1.0,
       tube: 0.07,
     });
     goalRight.position.set(L / 2 - 0.6, 0, 0);
-    goalRight.rotation.y = 4.65; // 🔁 hadap kiri (ke tengah lapangan)
+    goalRight.rotation.y = 4.65;
     group.add(goalRight);
 
-    // ---------- Bola ----------
     const ball = new THREE.Mesh(
       new THREE.SphereGeometry(0.22, 16, 12),
       new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
@@ -2861,7 +2834,6 @@ export class CityBuilder {
     ball.castShadow = true;
     group.add(ball);
 
-    // ---------- Pemain ----------
     const total = Math.max(2, numPlayers);
     const perTeam = Math.floor(total / 2);
     const spawnRadiusX = L / 2 - 3;
@@ -2870,8 +2842,8 @@ export class CityBuilder {
     function spawnPlayer(isTeamA, idx) {
       const color = isTeamA ? teamAColor : teamBColor;
       const p = characterFactory
-        ? characterFactory(color, 1.0)
-        : makeMinecraftCharacterWithJoints(color, 1.0);
+        ? characterFactory(color, 1.5)
+        : makeMinecraftCharacterWithJoints(color, 1.6);
 
       const side = isTeamA ? -1 : 1;
       const px = THREE.MathUtils.lerp(

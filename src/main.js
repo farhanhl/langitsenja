@@ -103,13 +103,13 @@ class LangitSenja {
 
     // Directional light (sun)
     this.sunLight = new THREE.DirectionalLight(0xffaa66, 0.8);
-    this.sunLight.position.set(100, 150, 100);
+    this.sunLight.position.set(75, 112.5, 75);
     this.sunLight.castShadow = true;
-    this.sunLight.shadow.camera.left = -125;
-    this.sunLight.shadow.camera.right = 125;
-    this.sunLight.shadow.camera.top = 125;
-    this.sunLight.shadow.camera.bottom = -125;
-    this.sunLight.shadow.camera.far = 500;
+    this.sunLight.shadow.camera.left = -93.75;
+    this.sunLight.shadow.camera.right = 93.75;
+    this.sunLight.shadow.camera.top = 93.75;
+    this.sunLight.shadow.camera.bottom = -93.75;
+    this.sunLight.shadow.camera.far = 375;
     this.sunLight.shadow.mapSize.width = 2048;
     this.sunLight.shadow.mapSize.height = 2048;
     this.scene.add(this.sunLight);
