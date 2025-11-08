@@ -18,8 +18,8 @@ export class Player {
     this.height = 1.8;
 
     // Camera properties
-    this.cameraDistance = 8;
-    this.cameraHeight = 3;
+    this.cameraDistance = 6;
+    this.cameraHeight = 4;
     this.cameraAngle = { horizontal: 0, vertical: 0.3 };
     this.mouseSensitivity = 0.002;
 

@@ -8,21 +8,30 @@ export class CityBuilder {
     this.sidewalks = [];
     this.sidewalkPaths = [];
     this.roadPaths = [];
+    this.ground = 0;
   }
 
   build() {
     this.createGround();
+    this.getGroundSize();
     this.createRoadNetwork();
     this.createPark();
     this.createLake();
-    this.createBasketballCourt(0, -70, {
+    this.createLapanganBasketJalanan(0, 72.2, {
       numPlayers: 4,
-      rotate: 90,
-      scale: 0.9,
+      rotate: 0,
+      scale: 1,
+      size: { length: 42.9, width: 18 },
     });
-    this.createTambalBan(0, -25);
+    // this.createPlayground(-30, 72.2, {
+    //   numPlayers: 4,
+    //   rotate: 0,
+    //   scale: 1,
+    //   size: { length: 42.9, width: 18 },
+    // });
+    this.createTambalBan(0, -25, { scale: 1.5 });
+    this.createAngkringan(0, -35, { scale: 1.5, rotate: 180 });
     this.createPosRonda(26, 0, { rotate: 270 });
-    // this.createKapsterBox(-37.5, -90, { scale: 1.3, rotate: 270 });
     this.createAngkringan(-75, 35);
     this.createAngkringan(-86.25, 35);
     this.createLapanganBolaJalanan(-30, -72, {
@@ -43,20 +52,74 @@ export class CityBuilder {
     };
   }
 
+  // --- simpan ground ke this.ground ---
   createGround() {
-    const groundSize = 187.5;
-    const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize);
+    const width = 102;
+    const height = 187.5;
+
+    const groundGeometry = new THREE.PlaneGeometry(width, height);
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0x6b8e23,
       roughness: 0.8,
     });
+
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
+
     this.scene.add(ground);
+    this.ground = ground; // penting: disimpan untuk dibaca road network
   }
 
+  // --- helper baca ukuran ground + perhatikan scale mesh ---
+  getGroundSize() {
+    if (!this.ground) throw new Error('Ground belum dibuat');
+
+    const params = this.ground.geometry.parameters; // { width, height }
+    const sx = this.ground.scale.x || 1;
+    const sz = this.ground.scale.y || 1; // PlaneGeometry: width di X, height di Y
+
+    return { width: params.width * sx, height: params.height * sz };
+  }
+
+  // --- sidewalks tetap JS (tidak berubah banyak) ---
+  createSidewalk(x, z, width, depth, material) {
+    if (!this.sidewalks) this.sidewalks = [];
+    if (!this.sidewalkPaths) this.sidewalkPaths = [];
+
+    const sidewalkGeometry = new THREE.BoxGeometry(width, 0.2, depth);
+    const sidewalk = new THREE.Mesh(sidewalkGeometry, material);
+    sidewalk.position.set(x, 0.1, z);
+    sidewalk.receiveShadow = true;
+
+    this.scene.add(sidewalk);
+    this.sidewalks.push(sidewalk);
+
+    // path untuk NPC jalan kaki
+    if (width > depth) {
+      this.sidewalkPaths.push({
+        start: { x: x - width / 2, z: z },
+        end: { x: x + width / 2, z: z },
+      });
+    } else {
+      this.sidewalkPaths.push({
+        start: { x: x, z: z - depth / 2 },
+        end: { x: x, z: z + depth / 2 },
+      });
+    }
+  }
+
+  // --- road network adaptif terhadap ukuran ground ---
   createRoadNetwork() {
+    if (!this.roads) this.roads = [];
+    if (!this.roadPaths) this.roadPaths = [];
+
+    const sizes = this.getGroundSize();
+    const gW = sizes.width;
+    const gH = sizes.height;
+    const halfW = gW / 2;
+    const halfH = gH / 2;
+
     const roadWidth = 8;
     const sidewalkWidth = 2;
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
@@ -64,22 +127,39 @@ export class CityBuilder {
       color: 0x888888,
     });
 
-    // Main roads (grid pattern) - diperluas sampai ujung map (187.5)
-    const roadPositions = [
-      // Horizontal roads (panjang 187.5 dari -93.75 ke 93.75)
-      { x: 0, z: -45, width: 187.5, depth: roadWidth },
-      { x: 0, z: -15, width: 187.5, depth: roadWidth },
-      { x: 0, z: 15, width: 187.5, depth: roadWidth },
-      { x: 0, z: 45, width: 187.5, depth: roadWidth },
-      // Vertical roads (panjang 187.5 dari -93.75 ke 93.75)
-      { x: -45, z: 0, width: roadWidth, depth: 187.5 },
-      { x: -15, z: 0, width: roadWidth, depth: 187.5 },
-      { x: 15, z: 0, width: roadWidth, depth: 187.5 },
-      { x: 45, z: 0, width: roadWidth, depth: 187.5 },
-    ];
+    // Rasio dari layout lamamu:
+    // Horizontal memakai halfHeight lama = 93.75 → posisi: -45, -15, 15, 45
+    const baseHalfH = 93.75;
+    const horizRatios = [-45, -15, 15, 45].map((v) => v / baseHalfH);
+    // Vertical memakai halfWidth lama = 51 → posisi: -45, -15, 15, 45
+    const baseHalfW = 51;
+    const vertRatios = [-45, -15, 15, 45].map((v) => v / baseHalfW);
 
+    const roadPositions = [];
+
+    // Horizontal roads (memanjang mengikuti lebar ground)
+    horizRatios.forEach((r) => {
+      roadPositions.push({
+        x: 0,
+        z: r * halfH,
+        width: gW,
+        depth: roadWidth,
+      });
+    });
+
+    // Vertical roads (memanjang mengikuti tinggi ground)
+    vertRatios.forEach((r) => {
+      roadPositions.push({
+        x: r * halfW,
+        z: 0,
+        width: roadWidth,
+        depth: gH,
+      });
+    });
+
+    // render roads + paths + sidewalks
     roadPositions.forEach((pos) => {
-      // Create road
+      // road
       const roadGeometry = new THREE.BoxGeometry(pos.width, 0.1, pos.depth);
       const road = new THREE.Mesh(roadGeometry, roadMaterial);
       road.position.set(pos.x, 0.05, pos.z);
@@ -87,26 +167,16 @@ export class CityBuilder {
       this.scene.add(road);
       this.roads.push(road);
 
-      // Add road paths for vehicles
+      // path kendaraan + sidewalks
       if (pos.width > pos.depth) {
-        // Horizontal road
+        // horizontal
         this.roadPaths.push({
           start: { x: pos.x - pos.width / 2, z: pos.z },
           end: { x: pos.x + pos.width / 2, z: pos.z },
           type: 'horizontal',
         });
-      } else {
-        // Vertical road
-        this.roadPaths.push({
-          start: { x: pos.x, z: pos.z - pos.depth / 2 },
-          end: { x: pos.x, z: pos.z + pos.depth / 2 },
-          type: 'vertical',
-        });
-      }
 
-      // Create sidewalks on both sides
-      if (pos.width > pos.depth) {
-        // Horizontal road - sidewalks on top and bottom
+        // sidewalks atas & bawah
         this.createSidewalk(
           pos.x,
           pos.z + pos.depth / 2 + sidewalkWidth / 2,
@@ -122,7 +192,14 @@ export class CityBuilder {
           sidewalkMaterial
         );
       } else {
-        // Vertical road - sidewalks on left and right
+        // vertical
+        this.roadPaths.push({
+          start: { x: pos.x, z: pos.z - pos.depth / 2 },
+          end: { x: pos.x, z: pos.z + pos.depth / 2 },
+          type: 'vertical',
+        });
+
+        // sidewalks kiri & kanan
         this.createSidewalk(
           pos.x + pos.width / 2 + sidewalkWidth / 2,
           pos.z,
@@ -139,28 +216,6 @@ export class CityBuilder {
         );
       }
     });
-  }
-
-  createSidewalk(x, z, width, depth, material) {
-    const sidewalkGeometry = new THREE.BoxGeometry(width, 0.2, depth);
-    const sidewalk = new THREE.Mesh(sidewalkGeometry, material);
-    sidewalk.position.set(x, 0.1, z);
-    sidewalk.receiveShadow = true;
-    this.scene.add(sidewalk);
-    this.sidewalks.push(sidewalk);
-
-    // Add sidewalk path for walking NPCs
-    if (width > depth) {
-      this.sidewalkPaths.push({
-        start: { x: x - width / 2, z: z },
-        end: { x: x + width / 2, z: z },
-      });
-    } else {
-      this.sidewalkPaths.push({
-        start: { x: x, z: z - depth / 2 },
-        end: { x: x, z: z + depth / 2 },
-      });
-    }
   }
 
   createBicycle(x, z) {
@@ -211,10 +266,9 @@ export class CityBuilder {
   createPark() {
     const parkX = 0;
     const parkZ = 0;
-    const parkWidth = 18; // 75% of 28
-    const parkDepth = 18; // 75% of 28
+    const parkWidth = 18;
+    const parkDepth = 18;
 
-    // Grass area
     const grassGeometry = new THREE.BoxGeometry(parkWidth, 0.3, parkDepth);
     const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
     const grass = new THREE.Mesh(grassGeometry, grassMaterial);
@@ -222,7 +276,6 @@ export class CityBuilder {
     grass.receiveShadow = true;
     this.scene.add(grass);
 
-    // Benches
     const benchPositions = [
       { x: -4.5, z: -3.75 },
       { x: 4.5, z: -3.75 },
@@ -230,90 +283,87 @@ export class CityBuilder {
       { x: 4.5, z: 3.75 },
     ];
 
+    const createBench = (x, z) => {
+      const group = new THREE.Group();
+      const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+
+      // Seat
+      const seatGeometry = new THREE.BoxGeometry(2, 0.2, 0.8);
+      const seat = new THREE.Mesh(seatGeometry, woodMaterial);
+      seat.position.y = 0.5;
+      seat.castShadow = true;
+      group.add(seat);
+
+      // Backrest
+      const backGeometry = new THREE.BoxGeometry(2, 1, 0.1);
+      const back = new THREE.Mesh(backGeometry, woodMaterial);
+      back.position.set(0, 1, -0.35);
+      back.castShadow = true;
+      group.add(back);
+
+      // Legs
+      const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
+      [-0.8, 0.8].forEach((xOffset) => {
+        [-0.3, 0.3].forEach((zOffset) => {
+          const leg = new THREE.Mesh(legGeometry, woodMaterial);
+          leg.position.set(xOffset, 0.25, zOffset);
+          leg.castShadow = true;
+          group.add(leg);
+        });
+      });
+
+      group.position.set(x, 0, z);
+      this.scene.add(group);
+    };
+
+    const createFountain = (x, z) => {
+      const group = new THREE.Group();
+
+      // Base
+      const baseGeometry = new THREE.CylinderGeometry(3, 3.5, 0.5, 8);
+      const baseMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+      const base = new THREE.Mesh(baseGeometry, baseMaterial);
+      base.position.y = 0.25;
+      base.castShadow = true;
+      group.add(base);
+
+      // Water pool (with animated shader)
+      const poolGeometry = new THREE.CylinderGeometry(2.5, 2.5, 0.3, 8);
+      const poolMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4a9eff,
+        transparent: true,
+        opacity: 0.7,
+        roughness: 0.1,
+      });
+      const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+      pool.position.y = 0.65;
+      group.add(pool);
+
+      // Center pillar
+      const pillarGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
+      const pillar = new THREE.Mesh(pillarGeometry, baseMaterial);
+      pillar.position.y = 1.55;
+      pillar.castShadow = true;
+      group.add(pillar);
+
+      group.position.set(x, 0, z);
+      this.scene.add(group);
+    };
+
     benchPositions.forEach((pos) => {
-      this.createBench(parkX + pos.x, parkZ + pos.z);
+      createBench(parkX + pos.x, parkZ + pos.z);
     });
 
-    // Central fountain
-    this.createFountain(parkX, parkZ);
+    createFountain(parkX, parkZ);
 
     this.parkArea = { x: parkX, z: parkZ, width: parkWidth, depth: parkDepth };
-  }
-
-  createBench(x, z) {
-    const group = new THREE.Group();
-    const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-
-    // Seat
-    const seatGeometry = new THREE.BoxGeometry(2, 0.2, 0.8);
-    const seat = new THREE.Mesh(seatGeometry, woodMaterial);
-    seat.position.y = 0.5;
-    seat.castShadow = true;
-    group.add(seat);
-
-    // Backrest
-    const backGeometry = new THREE.BoxGeometry(2, 1, 0.1);
-    const back = new THREE.Mesh(backGeometry, woodMaterial);
-    back.position.set(0, 1, -0.35);
-    back.castShadow = true;
-    group.add(back);
-
-    // Legs
-    const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
-    [-0.8, 0.8].forEach((xOffset) => {
-      [-0.3, 0.3].forEach((zOffset) => {
-        const leg = new THREE.Mesh(legGeometry, woodMaterial);
-        leg.position.set(xOffset, 0.25, zOffset);
-        leg.castShadow = true;
-        group.add(leg);
-      });
-    });
-
-    group.position.set(x, 0, z);
-    this.scene.add(group);
-  }
-
-  createFountain(x, z) {
-    const group = new THREE.Group();
-
-    // Base
-    const baseGeometry = new THREE.CylinderGeometry(3, 3.5, 0.5, 8);
-    const baseMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-    const base = new THREE.Mesh(baseGeometry, baseMaterial);
-    base.position.y = 0.25;
-    base.castShadow = true;
-    group.add(base);
-
-    // Water pool (with animated shader)
-    const poolGeometry = new THREE.CylinderGeometry(2.5, 2.5, 0.3, 8);
-    const poolMaterial = new THREE.MeshStandardMaterial({
-      color: 0x4a9eff,
-      transparent: true,
-      opacity: 0.7,
-      roughness: 0.1,
-    });
-    const pool = new THREE.Mesh(poolGeometry, poolMaterial);
-    pool.position.y = 0.65;
-    group.add(pool);
-
-    // Center pillar
-    const pillarGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
-    const pillar = new THREE.Mesh(pillarGeometry, baseMaterial);
-    pillar.position.y = 1.55;
-    pillar.castShadow = true;
-    group.add(pillar);
-
-    group.position.set(x, 0, z);
-    this.scene.add(group);
   }
 
   createLake() {
     const lakeX = 0;
     const lakeZ = 30;
-    const lakeWidth = 18.75; // 75% of 25
-    const lakeDepth = 15; // 75% of 20
-
-    // Lake water (visible above ground)
+    const lakeWidth = 18.75;
+    const lakeDepth = 15;
     const lakeGeometry = new THREE.BoxGeometry(lakeWidth, 0.3, lakeDepth);
     const lakeMaterial = new THREE.MeshStandardMaterial({
       color: 0x1e90ff,
@@ -323,15 +373,45 @@ export class CityBuilder {
       metalness: 0.3,
     });
     const lake = new THREE.Mesh(lakeGeometry, lakeMaterial);
-    lake.position.set(lakeX, 0.15, lakeZ); // Raised above ground
+    lake.position.set(lakeX, 0.15, lakeZ);
     lake.receiveShadow = true;
     this.scene.add(lake);
 
-    // Benches around lake (diagonal positions)
-    // Serong kiri depan (kiri-atas)
-    this.createBench(lakeX - 6, lakeZ - 9);
-    // Serong kanan belakang (kanan-bawah)
-    this.createBench(lakeX + 6, lakeZ + 9);
+    const createBench = (x, z) => {
+      const group = new THREE.Group();
+      const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+
+      // Seat
+      const seatGeometry = new THREE.BoxGeometry(2, 0.2, 0.8);
+      const seat = new THREE.Mesh(seatGeometry, woodMaterial);
+      seat.position.y = 0.5;
+      seat.castShadow = true;
+      group.add(seat);
+
+      // Backrest
+      const backGeometry = new THREE.BoxGeometry(2, 1, 0.1);
+      const back = new THREE.Mesh(backGeometry, woodMaterial);
+      back.position.set(0, 1, -0.35);
+      back.castShadow = true;
+      group.add(back);
+
+      // Legs
+      const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
+      [-0.8, 0.8].forEach((xOffset) => {
+        [-0.3, 0.3].forEach((zOffset) => {
+          const leg = new THREE.Mesh(legGeometry, woodMaterial);
+          leg.position.set(xOffset, 0.25, zOffset);
+          leg.castShadow = true;
+          group.add(leg);
+        });
+      });
+
+      group.position.set(x, 0, z);
+      this.scene.add(group);
+    };
+
+    createBench(lakeX - 6, lakeZ - 9);
+    createBench(lakeX + 6, lakeZ + 9);
 
     this.lakeArea = { x: lakeX, z: lakeZ, width: lakeWidth, depth: lakeDepth };
   }
@@ -421,7 +501,173 @@ export class CityBuilder {
   }
 
   createBasketballCourt(x, z) {
-    // Court base - professional orange/red court
+    // ===== Helpers (inner functions) =====
+    const createBasketballHoop = (hx, hz, rotation, pos) => {
+      const group = new THREE.Group();
+
+      // Pole
+      const poleGeometry = new THREE.CylinderGeometry(0.15, 0.2, 4, 8);
+      const poleMaterial = new THREE.MeshStandardMaterial({
+        color: 0x444444,
+        metalness: 0.6,
+        roughness: 0.4,
+      });
+      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+      pole.position.y = 2;
+      pole.castShadow = true;
+      group.add(pole);
+
+      // Support arm
+      const armGeometry = new THREE.BoxGeometry(0.15, 0.15, 1.2);
+      const arm = new THREE.Mesh(armGeometry, poleMaterial);
+      arm.position.set(0, 3.3, 0.6);
+      arm.castShadow = true;
+      group.add(arm);
+
+      // Backboard
+      const backboardGeometry = new THREE.BoxGeometry(1.8, 1.05, 0.1);
+      const backboardMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.8,
+        metalness: 0.3,
+        roughness: 0.2,
+      });
+      const backboard = new THREE.Mesh(backboardGeometry, backboardMaterial);
+      backboard.position.set(0, 3.5, 1.2);
+      backboard.castShadow = true;
+      group.add(backboard);
+
+      // Backboard red rectangle
+      const rectangleGeometry = new THREE.BoxGeometry(0.59, 0.45, 0.05);
+      const rectangleMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+      });
+      const rectangle = new THREE.Mesh(rectangleGeometry, rectangleMaterial);
+      rectangle.position.set(0, 3.5, 1.25);
+      group.add(rectangle);
+
+      // Rim
+      const rimGeometry = new THREE.TorusGeometry(0.225, 0.02, 8, 32);
+      const rimMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff6600,
+        metalness: 0.8,
+        roughness: 0.2,
+      });
+      const rim = new THREE.Mesh(rimGeometry, rimMaterial);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(0, 3.05, 1.35);
+      rim.castShadow = true;
+      group.add(rim);
+
+      // Net (simplified)
+      const netGroup = new THREE.Group();
+      const netMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.6,
+      });
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const netSegmentGeometry = new THREE.CylinderGeometry(
+          0.01,
+          0.01,
+          0.4,
+          3
+        );
+        const netSegment = new THREE.Mesh(netSegmentGeometry, netMaterial);
+        const radius = 0.225;
+        netSegment.position.set(
+          Math.cos(angle) * radius,
+          2.85,
+          1.35 + Math.sin(angle) * radius
+        );
+        netSegment.rotation.x = Math.PI / 6;
+        netGroup.add(netSegment);
+      }
+      group.add(netGroup);
+
+      group.position.set(hx, 0, hz);
+      group.rotation.y = rotation;
+      this.scene.add(group);
+    };
+
+    const createCourtBench = (bx, bz, rotation) => {
+      const group = new THREE.Group();
+
+      // Seat
+      const seatGeometry = new THREE.BoxGeometry(2.5, 0.2, 0.6);
+      const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x4169e1 });
+      const seat = new THREE.Mesh(seatGeometry, seatMaterial);
+      seat.position.y = 0.5;
+      seat.castShadow = true;
+      group.add(seat);
+
+      // Backrest
+      const backGeometry = new THREE.BoxGeometry(2.5, 0.8, 0.1);
+      const back = new THREE.Mesh(backGeometry, seatMaterial);
+      back.position.set(0, 0.9, -0.25);
+      back.castShadow = true;
+      group.add(back);
+
+      // Legs
+      const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
+      const legMaterial = new THREE.MeshStandardMaterial({
+        color: 0x888888,
+        metalness: 0.6,
+      });
+      [-1, 1].forEach((xOffset) => {
+        [-0.2, 0.2].forEach((zOffset) => {
+          const leg = new THREE.Mesh(legGeometry, legMaterial);
+          leg.position.set(xOffset, 0.25, zOffset);
+          leg.castShadow = true;
+          group.add(leg);
+        });
+      });
+
+      group.position.set(bx, 0, bz);
+      group.rotation.y = rotation;
+      this.scene.add(group);
+    };
+
+    const createScoreboard = (sx, sz) => {
+      const group = new THREE.Group();
+      const boardGeometry = new THREE.BoxGeometry(6, 2.5, 0.3);
+      const boardMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+      const board = new THREE.Mesh(boardGeometry, boardMaterial);
+      board.position.y = 3;
+      board.castShadow = true;
+      group.add(board);
+
+      const displayGeometry = new THREE.BoxGeometry(5.5, 2, 0.1);
+      const displayMaterial = new THREE.MeshStandardMaterial({
+        color: 0x000000,
+        emissive: 0x00ff00,
+        emissiveIntensity: 0.3,
+      });
+      const display = new THREE.Mesh(displayGeometry, displayMaterial);
+      display.position.set(0, 3, -0.2); // menghadap ke lapangan
+      group.add(display);
+
+      // Poles
+      const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 8);
+      const poleMaterial = new THREE.MeshStandardMaterial({
+        color: 0x555555,
+        metalness: 0.5,
+      });
+      [-2.5, 2.5].forEach((xOffset) => {
+        const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+        pole.position.set(xOffset, 1.5, 0);
+        pole.castShadow = true;
+        group.add(pole);
+      });
+
+      group.position.set(sx - 5, 0, sz);
+      group.rotation.y = Math.PI; // 180 derajat (radian)
+      this.scene.add(group);
+    };
+
+    // ===== Court base =====
     const courtWidth = 15;
     const courtLength = 28;
     const courtGeometry = new THREE.BoxGeometry(courtWidth, 0.15, courtLength);
@@ -434,16 +680,14 @@ export class CityBuilder {
     court.receiveShadow = true;
     this.scene.add(court);
 
-    // Court boundary lines (white)
+    // ===== Lines material =====
     const boundaryMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
     });
-
-    // Outer boundary rectangle
     const lineThickness = 0.1;
     const lineHeight = 0.18;
 
-    // Top boundary
+    // Outer boundaries
     const topBoundary = new THREE.Mesh(
       new THREE.BoxGeometry(courtWidth, lineHeight, lineThickness),
       boundaryMaterial
@@ -451,7 +695,6 @@ export class CityBuilder {
     topBoundary.position.set(x, 0.09, z - courtLength / 2);
     this.scene.add(topBoundary);
 
-    // Bottom boundary
     const bottomBoundary = new THREE.Mesh(
       new THREE.BoxGeometry(courtWidth, lineHeight, lineThickness),
       boundaryMaterial
@@ -459,7 +702,6 @@ export class CityBuilder {
     bottomBoundary.position.set(x, 0.09, z + courtLength / 2);
     this.scene.add(bottomBoundary);
 
-    // Left boundary
     const leftBoundary = new THREE.Mesh(
       new THREE.BoxGeometry(lineThickness, lineHeight, courtLength),
       boundaryMaterial
@@ -467,7 +709,6 @@ export class CityBuilder {
     leftBoundary.position.set(x - courtWidth / 2, 0.09, z);
     this.scene.add(leftBoundary);
 
-    // Right boundary
     const rightBoundary = new THREE.Mesh(
       new THREE.BoxGeometry(lineThickness, lineHeight, courtLength),
       boundaryMaterial
@@ -483,14 +724,13 @@ export class CityBuilder {
     centerLine.position.set(x, 0.09, z);
     this.scene.add(centerLine);
 
-    // Center circle
+    // Center circle + dot
     const centerCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
     const centerCircle = new THREE.Mesh(centerCircleGeometry, boundaryMaterial);
     centerCircle.rotation.x = -Math.PI / 2;
     centerCircle.position.set(x, 0.16, z);
     this.scene.add(centerCircle);
 
-    // Center dot
     const centerDot = new THREE.Mesh(
       new THREE.CircleGeometry(0.2, 16),
       boundaryMaterial
@@ -499,49 +739,37 @@ export class CityBuilder {
     centerDot.position.set(x, 0.16, z);
     this.scene.add(centerDot);
 
-    // Three-point lines (D-shape) - NBA style
-    // Top three-point arc (half circle)
-    const threePointRadius = 6.75; // NBA standard distance
+    // Three-point arcs
+    const threePointRadius = 6.75;
     const threePointThickness = 0.1;
     const threePointGeometry = new THREE.RingGeometry(
       threePointRadius,
       threePointRadius + threePointThickness,
-      64, // More segments for smoother curve
+      64,
       1,
       0,
       Math.PI
     );
+
     const topThreePoint = new THREE.Mesh(threePointGeometry, boundaryMaterial);
     topThreePoint.rotation.x = -Math.PI / 2;
-    topThreePoint.rotation.z = Math.PI; // Rotasi agar arc menghadap ke dalam
-    topThreePoint.position.set(x, 0.16, z - courtLength / 2 + 0);
+    topThreePoint.rotation.z = Math.PI;
+    topThreePoint.position.set(x, 0.16, z - courtLength / 2);
     this.scene.add(topThreePoint);
 
-    // Bottom three-point arc (half circle)
     const bottomThreePoint = new THREE.Mesh(
       threePointGeometry,
       boundaryMaterial
     );
     bottomThreePoint.rotation.x = -Math.PI / 2;
-    bottomThreePoint.rotation.z = 0; // Rotasi agar arc menghadap ke dalam
-    bottomThreePoint.position.set(x, 0.16, z + courtLength / 2 - 0);
+    bottomThreePoint.rotation.z = 0;
+    bottomThreePoint.position.set(x, 0.16, z + courtLength / 2);
     this.scene.add(bottomThreePoint);
 
-    // Paint area (key/lane) - Top
+    // Paint / key
     const paintWidth = 4;
-    const paintLength = 4.7; // Diperpendek dari 5.8 menjadi 4.2
+    const paintLength = 4.7;
 
-    // Top paint outline
-    const paintOutlineGeometry = new THREE.RingGeometry(
-      0,
-      paintWidth / 2,
-      4,
-      1,
-      0,
-      Math.PI * 2
-    );
-
-    // Top paint rectangle (left line)
     const topPaintLeft = new THREE.Mesh(
       new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
       boundaryMaterial
@@ -553,7 +781,6 @@ export class CityBuilder {
     );
     this.scene.add(topPaintLeft);
 
-    // Top paint rectangle (right line)
     const topPaintRight = new THREE.Mesh(
       new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
       boundaryMaterial
@@ -565,7 +792,6 @@ export class CityBuilder {
     );
     this.scene.add(topPaintRight);
 
-    // Top paint rectangle (front line)
     const topPaintFront = new THREE.Mesh(
       new THREE.BoxGeometry(paintWidth, lineHeight, lineThickness),
       boundaryMaterial
@@ -573,7 +799,6 @@ export class CityBuilder {
     topPaintFront.position.set(x, 0.09, z - courtLength / 2 + paintLength);
     this.scene.add(topPaintFront);
 
-    // Bottom paint rectangle (left line)
     const bottomPaintLeft = new THREE.Mesh(
       new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
       boundaryMaterial
@@ -585,7 +810,6 @@ export class CityBuilder {
     );
     this.scene.add(bottomPaintLeft);
 
-    // Bottom paint rectangle (right line)
     const bottomPaintRight = new THREE.Mesh(
       new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
       boundaryMaterial
@@ -597,7 +821,6 @@ export class CityBuilder {
     );
     this.scene.add(bottomPaintRight);
 
-    // Bottom paint rectangle (front line)
     const bottomPaintFront = new THREE.Mesh(
       new THREE.BoxGeometry(paintWidth, lineHeight, lineThickness),
       boundaryMaterial
@@ -606,8 +829,8 @@ export class CityBuilder {
     this.scene.add(bottomPaintFront);
 
     // Free throw circles
-    // Top free throw circle
     const freeThrowCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
+
     const topFreeThrowCircle = new THREE.Mesh(
       freeThrowCircleGeometry,
       boundaryMaterial
@@ -616,7 +839,6 @@ export class CityBuilder {
     topFreeThrowCircle.position.set(x, 0.16, z - courtLength / 2 + paintLength);
     this.scene.add(topFreeThrowCircle);
 
-    // Bottom free throw circle
     const bottomFreeThrowCircle = new THREE.Mesh(
       freeThrowCircleGeometry,
       boundaryMaterial
@@ -629,191 +851,18 @@ export class CityBuilder {
     );
     this.scene.add(bottomFreeThrowCircle);
 
-    // Create basketball hoops (both ends)
-    this.createBasketballHoop(x, z - courtLength / 2 + 1.575, 0, 'top');
-    this.createBasketballHoop(
-      x,
-      z + courtLength / 2 - 1.575,
-      Math.PI,
-      'bottom'
-    );
+    // Hoops (both ends)
+    createBasketballHoop(x, z - courtLength / 2 + 1.575, 0, 'top');
+    createBasketballHoop(x, z + courtLength / 2 - 1.575, Math.PI, 'bottom');
 
-    // Add benches on sidelines
-    this.createCourtBench(x - courtWidth / 2 - 2, z - 6, Math.PI / 2);
-    this.createCourtBench(x - courtWidth / 2 - 2, z - 3, Math.PI / 2);
-    this.createCourtBench(x + courtWidth / 2 + 2, z + 6, -Math.PI / 2);
-    this.createCourtBench(x + courtWidth / 2 + 2, z + 3, -Math.PI / 2);
+    // Benches
+    createCourtBench(x - courtWidth / 2 - 2, z - 6, Math.PI / 2);
+    createCourtBench(x - courtWidth / 2 - 2, z - 3, Math.PI / 2);
+    createCourtBench(x + courtWidth / 2 + 2, z + 6, -Math.PI / 2);
+    createCourtBench(x + courtWidth / 2 + 2, z + 3, -Math.PI / 2);
 
-    // Add scoreboard
-    this.createScoreboard(x - 5, z + courtLength / 2.8);
-  }
-
-  createBasketballHoop(x, z, rotation, position) {
-    const group = new THREE.Group();
-
-    // Pole
-    const poleGeometry = new THREE.CylinderGeometry(0.15, 0.2, 4, 8);
-    const poleMaterial = new THREE.MeshStandardMaterial({
-      color: 0x444444,
-      metalness: 0.6,
-      roughness: 0.4,
-    });
-    const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-    pole.position.y = 2;
-    pole.castShadow = true;
-    group.add(pole);
-
-    // Support arm (from pole to backboard)
-    const armGeometry = new THREE.BoxGeometry(0.15, 0.15, 1.2);
-    const arm = new THREE.Mesh(armGeometry, poleMaterial);
-    arm.position.set(0, 3.3, 0.6);
-    arm.castShadow = true;
-    group.add(arm);
-
-    // Backboard
-    const backboardGeometry = new THREE.BoxGeometry(1.8, 1.05, 0.1);
-    const backboardMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.8,
-      metalness: 0.3,
-      roughness: 0.2,
-    });
-    const backboard = new THREE.Mesh(backboardGeometry, backboardMaterial);
-    backboard.position.set(0, 3.5, 1.2);
-    backboard.castShadow = true;
-    group.add(backboard);
-
-    // Backboard red rectangle
-    const rectangleGeometry = new THREE.BoxGeometry(0.59, 0.45, 0.05);
-    const rectangleMaterial = new THREE.MeshStandardMaterial({
-      color: 0xff0000,
-    });
-    const rectangle = new THREE.Mesh(rectangleGeometry, rectangleMaterial);
-    rectangle.position.set(0, 3.5, 1.25);
-    group.add(rectangle);
-
-    // Rim
-    const rimGeometry = new THREE.TorusGeometry(0.225, 0.02, 8, 32);
-    const rimMaterial = new THREE.MeshStandardMaterial({
-      color: 0xff6600,
-      metalness: 0.8,
-      roughness: 0.2,
-    });
-    const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.set(0, 3.05, 1.35);
-    rim.castShadow = true;
-    group.add(rim);
-
-    // Net (simplified as chain/mesh)
-    const netGroup = new THREE.Group();
-    const netMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.6,
-    });
-
-    // Create net segments (cone-like)
-    for (let i = 0; i < 12; i++) {
-      const angle = (i / 12) * Math.PI * 2;
-      const netSegmentGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.4, 3);
-      const netSegment = new THREE.Mesh(netSegmentGeometry, netMaterial);
-
-      const radius = 0.225;
-      netSegment.position.set(
-        Math.cos(angle) * radius,
-        2.85,
-        1.35 + Math.sin(angle) * radius
-      );
-      netSegment.rotation.x = Math.PI / 6;
-      netGroup.add(netSegment);
-    }
-    group.add(netGroup);
-
-    group.position.set(x, 0, z);
-    group.rotation.y = rotation;
-    this.scene.add(group);
-  }
-
-  createCourtBench(x, z, rotation) {
-    const group = new THREE.Group();
-
-    // Bench seat
-    const seatGeometry = new THREE.BoxGeometry(2.5, 0.2, 0.6);
-    const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x4169e1 }); // Blue
-    const seat = new THREE.Mesh(seatGeometry, seatMaterial);
-    seat.position.y = 0.5;
-    seat.castShadow = true;
-    group.add(seat);
-
-    // Bench backrest
-    const backGeometry = new THREE.BoxGeometry(2.5, 0.8, 0.1);
-    const back = new THREE.Mesh(backGeometry, seatMaterial);
-    back.position.set(0, 0.9, -0.25);
-    back.castShadow = true;
-    group.add(back);
-
-    // Legs (metal)
-    const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
-    const legMaterial = new THREE.MeshStandardMaterial({
-      color: 0x888888,
-      metalness: 0.6,
-    });
-
-    [-1, 1].forEach((xOffset) => {
-      [-0.2, 0.2].forEach((zOffset) => {
-        const leg = new THREE.Mesh(legGeometry, legMaterial);
-        leg.position.set(xOffset, 0.25, zOffset);
-        leg.castShadow = true;
-        group.add(leg);
-      });
-    });
-
-    group.position.set(x, 0, z);
-    group.rotation.y = rotation;
-    this.scene.add(group);
-  }
-
-  createScoreboard(x, z) {
-    const group = new THREE.Group();
-    const boardGeometry = new THREE.BoxGeometry(6, 2.5, 0.3);
-    const boardMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1a1a1a,
-    });
-    const board = new THREE.Mesh(boardGeometry, boardMaterial);
-    board.position.y = 3;
-    board.castShadow = true;
-    group.add(board);
-
-    const displayGeometry = new THREE.BoxGeometry(5.5, 2, 0.1);
-    const displayMaterial = new THREE.MeshStandardMaterial({
-      color: 0x000000,
-      emissive: 0x00ff00,
-      emissiveIntensity: 0.3,
-    });
-    const display = new THREE.Mesh(displayGeometry, displayMaterial);
-    display.position.set(0, 3, -0.2); // Negatif agar menghadap ke lapangan
-    group.add(display);
-
-    // Support poles
-    const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 8);
-    const poleMaterial = new THREE.MeshStandardMaterial({
-      color: 0x555555,
-      metalness: 0.5,
-    });
-
-    [-2.5, 2.5].forEach((xOffset) => {
-      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-      pole.position.set(xOffset, 1.5, 0);
-      pole.castShadow = true;
-      group.add(pole);
-    });
-
-    group.position.set(x - 5, 0, z);
-    // Putar 180 derajat agar menghadap ke lapangan
-    group.rotation.y = 300;
-    this.scene.add(group);
+    // Scoreboard
+    createScoreboard(x - 5, z + courtLength / 2.8);
   }
 
   createPosRonda(
@@ -1679,7 +1728,7 @@ export class CityBuilder {
     }
 
     const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(8, 0.06, 8),
+      new THREE.BoxGeometry(12, 0.06, 8),
       new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0.95 })
     );
     pad.position.set(0, 0.03, 0);
@@ -1694,7 +1743,6 @@ export class CityBuilder {
     rubber.receiveShadow = true;
     group.add(rubber);
 
-    // --- Kanopi + tiang nempel tanah ---
     const stall = new THREE.Group();
 
     const canopy = new THREE.Mesh(
@@ -2003,9 +2051,8 @@ export class CityBuilder {
         char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-10);
     }
 
-    // ---------- GROUND ----------
     const ground = new THREE.Mesh(
-      new THREE.BoxGeometry(10, 0.05, 8),
+      new THREE.BoxGeometry(12, 0.05, 8),
       new THREE.MeshStandardMaterial({ color: 0x8f8f8f, roughness: 0.95 })
     );
     ground.position.set(0, 0.025, 0);
@@ -2028,7 +2075,7 @@ export class CityBuilder {
 
     const cartBody = new THREE.Mesh(
       new THREE.BoxGeometry(3, 1.2, 2),
-      new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.9 })
+      new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0.9 })
     );
     cartBody.position.set(0, 0.8, 0);
     cartBody.castShadow = true;
@@ -2294,7 +2341,6 @@ export class CityBuilder {
   ) {
     const group = new THREE.Group();
 
-    // --- Tapak proyek (tanah/beton) ---
     const pad = new THREE.Mesh(
       new THREE.BoxGeometry(24, 0.08, 18),
       new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 0.95 })
@@ -2303,7 +2349,6 @@ export class CityBuilder {
     pad.receiveShadow = true;
     group.add(pad);
 
-    // --- Pagar proyek sederhana (tiang + panel) ---
     const fenceMat = new THREE.MeshStandardMaterial({
       color: 0x3e4a56,
       roughness: 0.8,
@@ -2324,7 +2369,6 @@ export class CityBuilder {
     fence(11.5, 8.5, -11.5, 8.5);
     fence(-11.5, 8.5, -11.5, -8.5);
 
-    // --- Struktur gedung kasar: kolom & pelat lantai sebagian ---
     const colMat = new THREE.MeshStandardMaterial({
       color: 0x7c7c7c,
       roughness: 0.9,
@@ -2333,7 +2377,7 @@ export class CityBuilder {
       color: 0x9a9a9a,
       roughness: 0.95,
     });
-    const grid = { w: 14, d: 10 }; // bentang bangunan
+    const grid = { w: 14, d: 10 };
     const colPos = [
       [-grid.w / 2, -grid.d / 2],
       [grid.w / 2, -grid.d / 2],
@@ -2900,6 +2944,891 @@ export class CityBuilder {
         });
       });
     }
+
+    return group;
+  }
+
+  createLapanganBasketJalanan(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      size = { length: 28, width: 15 },
+      numPlayers = 10,
+      teamAColor = 0xff6b35,
+      teamBColor = 0x004e89,
+      characterFactory = null,
+      registerRingColliders = true,
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      body.castShadow = true;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      head.castShadow = true;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      leftArm.castShadow = rightArm.castShadow = true;
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      leftLeg.castShadow = rightLeg.castShadow = true;
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+
+    function poseRun(char, strideDeg = 25) {
+      const u = char.userData;
+      if (!u) return;
+      const s = u.scale || 1;
+      if (u.leftLeg && u.rightLeg) {
+        u.leftLeg.rotation.x = THREE.MathUtils.degToRad(strideDeg);
+        u.rightLeg.rotation.x = THREE.MathUtils.degToRad(-strideDeg);
+        u.leftLeg.position.y = -0.35 * s;
+        u.rightLeg.position.y = -0.35 * s;
+      }
+      if (u.leftArm && u.rightArm) {
+        u.leftArm.rotation.x = THREE.MathUtils.degToRad(-strideDeg);
+        u.rightArm.rotation.x = THREE.MathUtils.degToRad(strideDeg);
+      }
+      if (u.body) u.body.rotation.z = THREE.MathUtils.degToRad(3);
+    }
+
+    function poseJumpShoot(char) {
+      const u = char.userData;
+      if (!u) return;
+      const s = u.scale || 1;
+
+      if (u.leftLeg && u.rightLeg) {
+        u.leftLeg.rotation.x = THREE.MathUtils.degToRad(-15);
+        u.rightLeg.rotation.x = THREE.MathUtils.degToRad(-15);
+        u.leftLeg.position.y = -0.35 * s;
+        u.rightLeg.position.y = -0.35 * s;
+      }
+
+      if (u.rightArm) {
+        u.rightArm.rotation.x = THREE.MathUtils.degToRad(-120);
+        u.rightArm.rotation.z = THREE.MathUtils.degToRad(10);
+      }
+      if (u.leftArm) {
+        u.leftArm.rotation.x = THREE.MathUtils.degToRad(-110);
+        u.leftArm.rotation.z = THREE.MathUtils.degToRad(-15);
+      }
+
+      if (u.body) u.body.rotation.z = THREE.MathUtils.degToRad(-5);
+    }
+
+    function poseDribble(char) {
+      const u = char.userData;
+      if (!u) return;
+      const s = u.scale || 1;
+
+      if (u.leftLeg && u.rightLeg) {
+        u.leftLeg.rotation.x = THREE.MathUtils.degToRad(10);
+        u.rightLeg.rotation.x = THREE.MathUtils.degToRad(-10);
+      }
+
+      if (u.rightArm) {
+        u.rightArm.rotation.x = THREE.MathUtils.degToRad(45);
+        u.rightArm.position.y = 0.4 * s;
+      }
+      if (u.leftArm) {
+        u.leftArm.rotation.x = THREE.MathUtils.degToRad(-20);
+      }
+
+      if (u.body) u.body.rotation.z = THREE.MathUtils.degToRad(8);
+    }
+
+    const L = size.length;
+    const W = size.width;
+
+    const court = new THREE.Mesh(
+      new THREE.BoxGeometry(W, 0.15, L),
+      new THREE.MeshStandardMaterial({ color: 0xd2691e, roughness: 0.8 })
+    );
+    court.position.set(0, 0.075, 0);
+    court.receiveShadow = true;
+    group.add(court);
+
+    const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const lineThickness = 0.1;
+    const lineHeight = 0.18;
+
+    function line(w, h, d, px, py, pz) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lineMat);
+      m.position.set(px, py, pz);
+      m.receiveShadow = true;
+      group.add(m);
+    }
+
+    // Garis tepi
+    line(W, lineHeight, lineThickness, 0, 0.09, -L / 2); // top
+    line(W, lineHeight, lineThickness, 0, 0.09, L / 2); // bottom
+    line(lineThickness, lineHeight, L, -W / 2, 0.09, 0); // left
+    line(lineThickness, lineHeight, L, W / 2, 0.09, 0); // right
+
+    // Garis tengah
+    line(W, lineHeight, lineThickness, 0, 0.09, 0);
+
+    // Lingkaran tengah
+    const centerCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
+    const centerCircle = new THREE.Mesh(centerCircleGeometry, lineMat);
+    centerCircle.rotation.x = -Math.PI / 2;
+    centerCircle.position.set(0, 0.16, 0);
+    group.add(centerCircle);
+
+    const centerDot = new THREE.Mesh(
+      new THREE.CircleGeometry(0.2, 16),
+      lineMat
+    );
+    centerDot.rotation.x = -Math.PI / 2;
+    centerDot.position.set(0, 0.16, 0);
+    group.add(centerDot);
+
+    // Three-point arcs
+    const threePointRadius = 6.75;
+    const threePointThickness = 0.1;
+    const threePointGeometry = new THREE.RingGeometry(
+      threePointRadius,
+      threePointRadius + threePointThickness,
+      64,
+      1,
+      0,
+      Math.PI
+    );
+
+    const topThreePoint = new THREE.Mesh(threePointGeometry, lineMat);
+    topThreePoint.rotation.x = -Math.PI / 2;
+    topThreePoint.rotation.z = Math.PI;
+    topThreePoint.position.set(0, 0.16, -L / 2);
+    group.add(topThreePoint);
+
+    const bottomThreePoint = new THREE.Mesh(threePointGeometry, lineMat);
+    bottomThreePoint.rotation.x = -Math.PI / 2;
+    bottomThreePoint.rotation.z = 0;
+    bottomThreePoint.position.set(0, 0.16, L / 2);
+    group.add(bottomThreePoint);
+
+    // Paint / key area
+    const paintWidth = 4;
+    const paintLength = 4.7;
+
+    // Top paint
+    line(
+      lineThickness,
+      lineHeight,
+      paintLength,
+      -paintWidth / 2,
+      0.09,
+      -L / 2 + paintLength / 2
+    );
+    line(
+      lineThickness,
+      lineHeight,
+      paintLength,
+      paintWidth / 2,
+      0.09,
+      -L / 2 + paintLength / 2
+    );
+    line(paintWidth, lineHeight, lineThickness, 0, 0.09, -L / 2 + paintLength);
+
+    // Bottom paint
+    line(
+      lineThickness,
+      lineHeight,
+      paintLength,
+      -paintWidth / 2,
+      0.09,
+      L / 2 - paintLength / 2
+    );
+    line(
+      lineThickness,
+      lineHeight,
+      paintLength,
+      paintWidth / 2,
+      0.09,
+      L / 2 - paintLength / 2
+    );
+    line(paintWidth, lineHeight, lineThickness, 0, 0.09, L / 2 - paintLength);
+
+    // Free throw circles
+    const freeThrowCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
+
+    const topFreeThrowCircle = new THREE.Mesh(freeThrowCircleGeometry, lineMat);
+    topFreeThrowCircle.rotation.x = -Math.PI / 2;
+    topFreeThrowCircle.position.set(0, 0.16, -L / 2 + paintLength);
+    group.add(topFreeThrowCircle);
+
+    const bottomFreeThrowCircle = new THREE.Mesh(
+      freeThrowCircleGeometry,
+      lineMat
+    );
+    bottomFreeThrowCircle.rotation.x = -Math.PI / 2;
+    bottomFreeThrowCircle.position.set(0, 0.16, L / 2 - paintLength);
+    group.add(bottomFreeThrowCircle);
+
+    // ---------- Fungsi Ring Basket ----------
+    function makeBasketRing() {
+      const g = new THREE.Group();
+
+      // Pole
+      const poleGeometry = new THREE.CylinderGeometry(0.15, 0.2, 4, 8);
+      const poleMaterial = new THREE.MeshStandardMaterial({
+        color: 0x444444,
+        metalness: 0.6,
+        roughness: 0.4,
+      });
+      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+      pole.position.y = 2;
+      pole.castShadow = true;
+      g.add(pole);
+
+      // Support arm
+      const armGeometry = new THREE.BoxGeometry(0.15, 0.15, 1.2);
+      const arm = new THREE.Mesh(armGeometry, poleMaterial);
+      arm.position.set(0, 3.3, -0.6);
+      arm.castShadow = true;
+      g.add(arm);
+
+      // Backboard
+      const backboardGeometry = new THREE.BoxGeometry(1.8, 1.05, 0.1);
+      const backboardMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.8,
+        metalness: 0.3,
+        roughness: 0.2,
+      });
+      const backboard = new THREE.Mesh(backboardGeometry, backboardMaterial);
+      backboard.position.set(0, 3.5, -1.2);
+      backboard.castShadow = true;
+      g.add(backboard);
+
+      // Backboard red rectangle
+      const rectangleGeometry = new THREE.BoxGeometry(0.59, 0.45, 0.05);
+      const rectangleMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+      });
+      const rectangle = new THREE.Mesh(rectangleGeometry, rectangleMaterial);
+      rectangle.position.set(0, 3.5, -1.25);
+      g.add(rectangle);
+
+      // Rim
+      const rimGeometry = new THREE.TorusGeometry(0.225, 0.02, 8, 32);
+      const rimMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff6600,
+        metalness: 0.8,
+        roughness: 0.2,
+      });
+      const rim = new THREE.Mesh(rimGeometry, rimMaterial);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(0, 3.05, -1.35);
+      rim.castShadow = true;
+      g.add(rim);
+
+      // Net (simplified)
+      const netMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.6,
+      });
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const netSegmentGeometry = new THREE.CylinderGeometry(
+          0.01,
+          0.01,
+          0.4,
+          3
+        );
+        const netSegment = new THREE.Mesh(netSegmentGeometry, netMaterial);
+        const radius = 0.225;
+        netSegment.position.set(
+          Math.cos(angle) * radius,
+          2.85,
+          -1.35 + Math.sin(angle) * radius
+        );
+        netSegment.rotation.x = Math.PI / 6;
+        g.add(netSegment);
+      }
+
+      return g;
+    }
+
+    // Ring atas (menghadap ke bawah)
+    const ringTop = makeBasketRing();
+    ringTop.position.set(0, 0, -L / 2 + 1.575);
+    ringTop.rotation.y = Math.PI;
+    group.add(ringTop);
+
+    // Ring bawah (menghadap ke atas)
+    const ringBottom = makeBasketRing();
+    ringBottom.position.set(0, 0, L / 2 - 1.575);
+    ringBottom.rotation.y = 0;
+    group.add(ringBottom);
+
+    // ---------- Bola basket ----------
+    const ball = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 16, 12),
+      new THREE.MeshStandardMaterial({ color: 0xff8c42, roughness: 0.7 })
+    );
+    ball.position.set(0, 0.24, 0);
+    ball.castShadow = true;
+    group.add(ball);
+
+    // ---------- Spawn pemain ----------
+    const total = Math.max(2, numPlayers);
+    const perTeam = Math.floor(total / 2);
+    const spawnRadiusX = W / 2 - 2;
+    const spawnRadiusZ = L / 2 - 4;
+
+    function spawnPlayer(isTeamA, idx) {
+      const color = isTeamA ? teamAColor : teamBColor;
+      const p = characterFactory
+        ? characterFactory(color, 1.5)
+        : makeMinecraftCharacterWithJoints(color, 1.6);
+
+      const side = isTeamA ? -1 : 1;
+      const pz = THREE.MathUtils.lerp(
+        -spawnRadiusZ * side,
+        -2 * side,
+        Math.random()
+      );
+      const px = THREE.MathUtils.lerp(
+        -spawnRadiusX,
+        spawnRadiusX,
+        Math.random()
+      );
+      p.position.set(px, 0, pz);
+
+      const angleToCenter = Math.atan2(0 - pz, 0 - px);
+      p.rotation.y = angleToCenter;
+
+      // Variasi pose
+      if (idx === 0 && !isTeamA) {
+        p.position.set(0.6, 0, 0.8);
+        p.rotation.y = Math.atan2(0 - 0.8, 0 - 0.6);
+        poseJumpShoot(p);
+      } else if (idx === 0 && isTeamA) {
+        p.position.set(-0.4, 0, -1.2);
+        p.rotation.y = Math.atan2(0 - -1.2, 0 - -0.4);
+        poseDribble(p);
+      } else if (idx === 1) {
+        poseJumpShoot(p);
+      } else {
+        poseRun(p, 15 + Math.random() * 15);
+      }
+
+      group.add(p);
+    }
+
+    for (let i = 0; i < perTeam; i++) spawnPlayer(true, i);
+    for (let i = 0; i < perTeam; i++) spawnPlayer(false, i);
+
+    // ---------- Lighting ----------
+    const lightMid = new THREE.PointLight(0xffe8cc, 0.9, 25, 2.0);
+    lightMid.position.set(0, 5.5, 0);
+    group.add(lightMid);
+
+    // ---------- Transform group ----------
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+
+    this.scene.add(group);
+
+    // ---------- Collision detection untuk ring ----------
+    if (registerRingColliders) {
+      [ringTop, ringBottom].forEach((ring, i) => {
+        ring.updateMatrixWorld(true);
+        const bbox = new THREE.Box3().setFromObject(ring);
+        this.buildings.push({
+          mesh: ring,
+          boundingBox: bbox,
+          name: i === 0 ? 'Ring Atas' : 'Ring Bawah',
+        });
+      });
+    }
+
+    return group;
+  }
+
+  createPlayground(
+    x,
+    z,
+    {
+      scale = 1.2,
+      rotate = 0,
+      size = { length: 28, width: 22 }, // area playground keseluruhan
+      groundColor = 0x6c8c5a, // rumput/karpet karet
+      tileColor = 0x3a3a3a, // jalur karet gelap
+      lineColor = 0xffffff,
+      include = {
+        perosotan: true,
+        jungkatJungkit: true,
+        ayunan: true,
+        monkeyBars: true,
+        spinner: true,
+      },
+      registerColliders = true,
+    } = {}
+  ) {
+    const self = this; // kunci konteks
+    self.buildings = self.buildings || [];
+
+    const group = new THREE.Group();
+    const L = size.length;
+    const W = size.width;
+
+    // -------- helpers ----------
+    const addColliderFromObject = (mesh, name) => {
+      if (!registerColliders) return;
+      mesh.updateMatrixWorld(true);
+      const bbox = new THREE.Box3().setFromObject(mesh);
+      self.buildings.push({ mesh, boundingBox: bbox, name });
+    };
+
+    const lineMat = new THREE.MeshStandardMaterial({
+      color: lineColor,
+      roughness: 0.6,
+    });
+    const addLine = (w, h, d, px, py, pz, target = group) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lineMat);
+      m.position.set(px, py, pz);
+      m.receiveShadow = true;
+      target.add(m);
+      return m;
+    };
+
+    // -------- base ground ----------
+    const base = new THREE.Mesh(
+      new THREE.BoxGeometry(W, 0.12, L),
+      new THREE.MeshStandardMaterial({ color: groundColor, roughness: 0.9 })
+    );
+    base.position.set(0, 0.06, 0);
+    base.receiveShadow = true;
+    group.add(base);
+
+    // jalur karet (X pattern)
+    const pathMat = new THREE.MeshStandardMaterial({
+      color: tileColor,
+      roughness: 0.8,
+    });
+    const path1 = new THREE.Mesh(
+      new THREE.BoxGeometry(W - 1.2, 0.02, 1.0),
+      pathMat
+    );
+    path1.position.set(0, 0.13, 0);
+    group.add(path1);
+    const path2 = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 0.02, L - 1.2),
+      pathMat
+    );
+    path2.position.set(0, 0.13, 0);
+    group.add(path2);
+
+    // grid posisi 2 kolom x 3 baris
+    const pad = 1.2;
+    const colW = (W - pad * 3) / 2;
+    const rowH = (L - pad * 4) / 3;
+    const slotCenter = (c, r) => ({
+      px: -W / 2 + pad + colW / 2 + c * (colW + pad),
+      pz: -L / 2 + pad + rowH / 2 + r * (rowH + pad),
+    });
+
+    // ---------- 1) Perosotan ----------
+    function buildPerosotan(px, pz) {
+      const g = new THREE.Group();
+
+      // tangga penyangga (rangka)
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x8d6e63,
+        roughness: 0.7,
+      });
+      const rungMat = new THREE.MeshStandardMaterial({
+        color: 0x5d4037,
+        roughness: 0.7,
+      });
+      const sideA = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 1.2, 1.6),
+        frameMat
+      );
+      sideA.position.set(-0.5, 0.6, 0.2);
+      g.add(sideA);
+      const sideB = sideA.clone();
+      sideB.position.x = 0.5;
+      g.add(sideB);
+
+      for (let i = 0; i < 5; i++) {
+        const rung = new THREE.Mesh(
+          new THREE.BoxGeometry(0.9, 0.07, 0.1),
+          rungMat
+        );
+        rung.position.set(0, 0.25 + i * 0.2, 0.2);
+        g.add(rung);
+      }
+
+      // papan seluncur
+      const slideMat = new THREE.MeshStandardMaterial({
+        color: 0xd32f2f,
+        roughness: 0.5,
+        metalness: 0.1,
+      });
+      const board = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.07, 2.6),
+        slideMat
+      );
+      board.position.set(0, 1.1, -1.1);
+      board.rotation.x = -Math.PI / 8;
+      g.add(board);
+
+      // tepi samping papan (pelindung)
+      const edgeL = new THREE.Mesh(
+        new THREE.BoxGeometry(0.05, 0.2, 2.6),
+        slideMat
+      );
+      edgeL.position.set(-0.325, 1.15, -1.1);
+      edgeL.rotation.x = -Math.PI / 8;
+      g.add(edgeL);
+      const edgeR = edgeL.clone();
+      edgeR.position.x = 0.325;
+      g.add(edgeR);
+
+      // platform kecil
+      const platform = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 0.08, 0.9),
+        new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.6 })
+      );
+      platform.position.set(0, 1.2, 0.5);
+      g.add(platform);
+
+      g.position.set(px, 0, pz);
+      group.add(g);
+      addColliderFromObject(g, 'Perosotan');
+    }
+
+    // ---------- 2) Jungkat-jungkit ----------
+    function buildJungkatJungkit(px, pz) {
+      const g = new THREE.Group();
+
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.22, 0.4, 12),
+        new THREE.MeshStandardMaterial({ color: 0x424242, roughness: 0.7 })
+      );
+      base.position.y = 0.2;
+      g.add(base);
+
+      const pivot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.2, 0.6, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x616161, roughness: 0.6 })
+      );
+      pivot.position.y = 0.6;
+      g.add(pivot);
+
+      const board = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.1, 0.3),
+        new THREE.MeshStandardMaterial({ color: 0xffc107, roughness: 0.6 })
+      );
+      board.position.y = 0.95;
+      g.add(board);
+
+      // handle & kursi
+      const seatMat = new THREE.MeshStandardMaterial({
+        color: 0x1976d2,
+        roughness: 0.6,
+      });
+      const handleMat = new THREE.MeshStandardMaterial({
+        color: 0x212121,
+        roughness: 0.6,
+      });
+      const seatA = new THREE.Mesh(
+        new THREE.BoxGeometry(0.35, 0.08, 0.35),
+        seatMat
+      );
+      seatA.position.set(-1.4, 1.05, 0);
+      g.add(seatA);
+      const seatB = seatA.clone();
+      seatB.position.x = 1.4;
+      g.add(seatB);
+
+      const handleA = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.5, 10),
+        handleMat
+      );
+      handleA.rotation.z = Math.PI / 2;
+      handleA.position.set(-1.6, 1.15, 0);
+      g.add(handleA);
+      const handleB = handleA.clone();
+      handleB.position.x = 1.6;
+      g.add(handleB);
+
+      g.position.set(px, 0, pz);
+      group.add(g);
+      addColliderFromObject(g, 'Jungkat-jungkit');
+    }
+
+    // ---------- 3) Ayunan ----------
+    function buildAyunan(px, pz) {
+      const g = new THREE.Group();
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x37474f,
+        roughness: 0.7,
+      });
+
+      // rangka A kiri & kanan
+      const leg = (ox) => {
+        const L1 = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.07, 0.07, 2.2, 12),
+          frameMat
+        );
+        L1.position.set(ox - 0.6, 1.1, -0.5);
+        L1.rotation.z = 0.3;
+        g.add(L1);
+        const L2 = L1.clone();
+        L2.position.set(ox + 0.6, 1.1, -0.5);
+        L2.rotation.z = -0.3;
+        g.add(L2);
+      };
+      leg(-1.2);
+      leg(1.2);
+
+      const topBar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 3.2, 12),
+        frameMat
+      );
+      topBar.rotation.z = Math.PI / 2;
+      topBar.position.set(0, 2.1, -0.5);
+      g.add(topBar);
+
+      // dua kursi
+      const seatMat = new THREE.MeshStandardMaterial({
+        color: 0x263238,
+        roughness: 0.6,
+      });
+      const chainMat = new THREE.MeshStandardMaterial({
+        color: 0xb0bec5,
+        metalness: 0.5,
+        roughness: 0.3,
+      });
+
+      const makeSeat = (ox) => {
+        const chainL = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6),
+          chainMat
+        );
+        chainL.position.set(ox - 0.25, 1.55, -0.5);
+        g.add(chainL);
+        const chainR = chainL.clone();
+        chainR.position.x = ox + 0.25;
+        g.add(chainR);
+        const seat = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6, 0.08, 0.25),
+          seatMat
+        );
+        seat.position.set(ox, 1.0, -0.5);
+        g.add(seat);
+      };
+      makeSeat(-0.8);
+      makeSeat(0.8);
+
+      g.position.set(px, 0, pz);
+      group.add(g);
+      addColliderFromObject(g, 'Ayunan');
+    }
+
+    // ---------- 4) Monkey Bars ----------
+    function buildMonkeyBars(px, pz) {
+      const g = new THREE.Group();
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x455a64,
+        roughness: 0.7,
+      });
+
+      // tiang vertikal
+      const post = (ox, oz) => {
+        const m = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.08, 2.0, 12),
+          frameMat
+        );
+        m.position.set(ox, 1.0, oz);
+        m.castShadow = true;
+        g.add(m);
+      };
+      post(-1.4, -0.6);
+      post(-1.4, 0.6);
+      post(1.4, -0.6);
+      post(1.4, 0.6);
+
+      // palang atas
+      const barMat = new THREE.MeshStandardMaterial({
+        color: 0x90a4ae,
+        metalness: 0.5,
+        roughness: 0.4,
+      });
+      const sideL = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 1.4, 10),
+        barMat
+      );
+      sideL.rotation.z = Math.PI / 2;
+      sideL.position.set(-1.4, 2.0, 0);
+      g.add(sideL);
+      const sideR = sideL.clone();
+      sideR.position.x = 1.4;
+      g.add(sideR);
+
+      for (let i = 0; i < 6; i++) {
+        const t = -1.2 + i * 0.48;
+        const rung = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.05, 0.05, 2.8, 10),
+          barMat
+        );
+        rung.rotation.x = Math.PI / 2;
+        rung.position.set(t, 2.0, 0);
+        g.add(rung);
+      }
+
+      g.position.set(px, 0, pz);
+      group.add(g);
+      addColliderFromObject(g, 'Monkey Bars');
+    }
+
+    // ---------- 5) Merry-go-round (Spinner) ----------
+    function buildSpinner(px, pz) {
+      const g = new THREE.Group();
+
+      const disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.2, 1.2, 0.12, 24),
+        new THREE.MeshStandardMaterial({ color: 0x8e24aa, roughness: 0.6 })
+      );
+      disc.position.y = 0.06;
+      disc.rotation.x = 0;
+      g.add(disc);
+
+      const poleMat = new THREE.MeshStandardMaterial({
+        color: 0x311b92,
+        roughness: 0.5,
+      });
+      const centerPole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 0.9, 12),
+        poleMat
+      );
+      centerPole.position.y = 0.45;
+      g.add(centerPole);
+
+      const handleMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.4,
+        roughness: 0.4,
+      });
+      for (let i = 0; i < 6; i++) {
+        const ang = (i / 6) * Math.PI * 2;
+        const rail = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04, 0.04, 0.9, 10),
+          handleMat
+        );
+        rail.rotation.z = Math.PI / 2;
+        rail.position.set(Math.cos(ang) * 0.8, 0.7, Math.sin(ang) * 0.8);
+        g.add(rail);
+      }
+
+      g.position.set(px, 0, pz);
+      group.add(g);
+      addColliderFromObject(g, 'Spinner');
+    }
+
+    // ---------- tempatkan di grid ----------
+    // r0: [perosotan] [jungkat-jungkit]
+    // r1: [ayunan]    [monkey bars]
+    // r2: [spinner]   [kosong]
+    const s00 = slotCenter(0, 0);
+    const s10 = slotCenter(1, 0);
+    const s01 = slotCenter(0, 1);
+    const s11 = slotCenter(1, 1);
+    const s02 = slotCenter(0, 2);
+
+    if (include.perosotan) buildPerosotan(s00.px, s00.pz);
+    if (include.jungkatJungkit) buildJungkatJungkit(s10.px, s10.pz);
+    if (include.ayunan) buildAyunan(s01.px, s01.pz);
+    if (include.monkeyBars) buildMonkeyBars(s11.px, s11.pz);
+    if (include.spinner) buildSpinner(s02.px, s02.pz);
+
+    // ---------- pagar pendek perimeter (opsional sederhana 2 sisi panjang) ----------
+    const fenceMat = new THREE.MeshStandardMaterial({
+      color: 0x263238,
+      roughness: 0.8,
+    });
+    const fence = (x1, z1, x2, z2, name) => {
+      const len = Math.hypot(x2 - x1, z2 - z1);
+      const bar = new THREE.Mesh(
+        new THREE.BoxGeometry(len, 0.9, 0.06),
+        fenceMat
+      );
+      const midx = (x1 + x2) / 2,
+        midz = (z1 + z2) / 2;
+      bar.position.set(midx, 0.45, midz);
+      bar.rotation.y = Math.atan2(x2 - x1, z2 - z1);
+      bar.castShadow = true;
+      group.add(bar);
+      addColliderFromObject(bar, name);
+    };
+    fence(-W / 2, -L / 2, W / 2, -L / 2, 'Pagar Utara');
+    fence(-W / 2, L / 2, W / 2, L / 2, 'Pagar Selatan');
+
+    // ---------- lighting ----------
+    const light = new THREE.PointLight(0xfff1c1, 0.85, Math.max(L, W) + 8, 1.8);
+    light.position.set(0, 5.5, 0);
+    group.add(light);
+
+    // ---------- transform & add ----------
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    self.scene.add(group);
 
     return group;
   }
