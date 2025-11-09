@@ -31,6 +31,11 @@ export class CityBuilder {
       rotate: 90,
       scale: 0.9,
     });
+    this.createKebunBunga(0, -72, {
+      numPlayers: 4,
+      rotate: 90,
+      scale: 0.98,
+    });
     this.createTrafficLights();
 
     return {
@@ -2184,6 +2189,178 @@ export class CityBuilder {
       });
     }
 
+    return group;
+  }
+  createKebunBunga(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      size = { length: 44.5, width: 18.3 },
+      numBeds = 6,
+      flowersPerBed = 18,
+      withPath = true,
+    } = {}
+  ) {
+    const group = new THREE.Group();
+    const L = size.length;
+    const W = size.width;
+
+    const colors = {
+      grass: 0x3a7a4a,
+      soil: 0x7a5a3a,
+      path: 0xbfb9a1,
+      stem: 0x2f6f3a,
+      petals: [
+        0xf94144, 0xf3722c, 0xf9c74f, 0x90be6d, 0x577590, 0xf9844a, 0x9b5de5,
+      ],
+    };
+
+    const grass = new THREE.Mesh(
+      new THREE.BoxGeometry(L, 0.06, W),
+      new THREE.MeshStandardMaterial({ color: colors.grass, roughness: 0.95 })
+    );
+    grass.position.set(0, 0.03, 0);
+    grass.receiveShadow = true;
+    group.add(grass);
+
+    const matSoil = new THREE.MeshStandardMaterial({
+      color: colors.soil,
+      roughness: 0.9,
+    });
+    const matPath = new THREE.MeshStandardMaterial({
+      color: colors.path,
+      roughness: 0.95,
+    });
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(r, h, mat, seg = 6) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cone(r, h, mat, seg = 6) {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    let pathWidth = 2.2;
+    let pathGap = 1.2;
+    if (withPath) {
+      const solidPath = box(L * 0.92, 0.03, pathWidth, matPath);
+      solidPath.position.set(0, 0.05, 0);
+      group.add(solidPath);
+    } else {
+      pathWidth = 0;
+      pathGap = 0;
+    }
+
+    function makeFlower() {
+      const g = new THREE.Group();
+      const stemMat = new THREE.MeshStandardMaterial({
+        color: colors.stem,
+        roughness: 0.8,
+      });
+      const stemH = 0.35 + Math.random() * 0.25;
+      const stem = cyl(0.025, stemH, stemMat, 6);
+      stem.position.y = stemH / 2;
+      g.add(stem);
+      const petalColor =
+        colors.petals[(Math.random() * colors.petals.length) | 0];
+      const petalMat = new THREE.MeshStandardMaterial({
+        color: petalColor,
+        roughness: 0.7,
+      });
+      const headY = stemH + 0.02;
+      const petals = 5;
+      const radius = 0.06;
+      for (let i = 0; i < petals; i++) {
+        const p = cone(0.06, 0.08, petalMat, 5);
+        const ang = (i / petals) * Math.PI * 2;
+        p.position.set(Math.cos(ang) * radius, headY, Math.sin(ang) * radius);
+        p.rotation.x = Math.PI / 2;
+        p.rotation.z = ang;
+        g.add(p);
+      }
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 6, 4),
+        new THREE.MeshStandardMaterial({ color: 0xffef85, roughness: 0.6 })
+      );
+      core.position.set(0, headY + 0.005, 0);
+      core.castShadow = true;
+      g.add(core);
+      return g;
+    }
+
+    const totalBeds = numBeds + 2;
+    const rows = 2;
+    const cols = Math.ceil(totalBeds / rows);
+    const marginX = 1.2;
+    const edgeMarginZ = 0.9;
+    const reservedMid = pathWidth > 0 ? pathWidth / 2 + pathGap : 0;
+    const usableZTop = W / 2 - edgeMarginZ - reservedMid;
+    const usableZBottom = -W / 2 + edgeMarginZ + reservedMid;
+    const bandTopH = usableZTop - reservedMid;
+    const bandBottomH = reservedMid - usableZBottom;
+    const bedDTop = Math.min(bandTopH - 0.6, 5.5);
+    const bedDBottom = Math.min(bandBottomH - 0.6, 5.5);
+    const bedD = Math.min(bedDTop, bedDBottom);
+    const bedW = Math.min((L - marginX * (cols + 1)) / cols, 8.0);
+    const startX = -(cols * bedW + (cols - 1) * marginX) / 2 + bedW / 2;
+    const zTop = reservedMid + bedD / 2 + 0.3;
+    const zBottom = -reservedMid - bedD / 2 - 0.3;
+
+    let created = 0;
+    for (let r = 0; r < rows; r++) {
+      const rowZ = r === 0 ? zBottom : zTop;
+      for (let c = 0; c < cols; c++) {
+        if (created >= totalBeds) break;
+        const bed = box(bedW, 0.05, bedD, matSoil);
+        bed.position.set(startX + c * (bedW + marginX), 0.055, rowZ);
+        group.add(bed);
+        const nx = Math.max(3, Math.floor(Math.sqrt(flowersPerBed) * 1.5));
+        const nz = Math.max(2, Math.floor(Math.sqrt(flowersPerBed)));
+        for (let i = 0; i < nx; i++) {
+          for (let j = 0; j < nz; j++) {
+            if (Math.random() > 0.8) continue;
+            const fx = (i + 0.5) / nx;
+            const fz = (j + 0.5) / nz;
+            const flower = makeFlower();
+            const jx = (Math.random() - 0.5) * (bedW / nx) * 0.6;
+            const jz = (Math.random() - 0.5) * (bedD / nz) * 0.6;
+            flower.position.set(
+              bed.position.x +
+                THREE.MathUtils.lerp(-bedW / 2 + 0.25, bedW / 2 - 0.25, fx) +
+                jx,
+              0,
+              bed.position.z +
+                THREE.MathUtils.lerp(-bedD / 2 + 0.25, bedD / 2 - 0.25, fz) +
+                jz
+            );
+            group.add(flower);
+          }
+        }
+        created++;
+      }
+    }
+
+    const light = new THREE.PointLight(0xfff1c1, 0.65, 26, 2.0);
+    light.position.set(0, 3.8, 0);
+    group.add(light);
+
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
     return group;
   }
 }
