@@ -50,16 +50,17 @@ class LangitSenja {
     this.horrorManager = new HorrorNPCManager(this.scene, this.npcManager);
     this.gameManager = new GameManager(this, this.npcManager, this.skySystem);
     this.ufo = new UFO(this.scene, this.npcManager, this.gameManager);
-    this.godzilla = new Godzilla(this.scene, this.cityData, this.npcManager);
-    this.horeg = new Horeg(this.scene, this.cityData, this.npcManager);
+    this.godzilla = new Godzilla(this.scene, this.cityData, this.npcManager, this.gameManager);
+    this.horeg = new Horeg(this.scene, this.cityData, this.npcManager, this.gameManager);
     this.santa = new Santa(
       this.scene,
       this.cityData,
       this.npcManager,
       this.weatherSystem,
-      this.skySystem
+      this.skySystem,
+      this.gameManager
     );
-    this.tornado = new Tornado(this.scene, this.cityData, this.npcManager);
+    this.tornado = new Tornado(this.scene, this.cityData, this.npcManager, this.gameManager);
     this.cheatCodeManager = new CheatCodeManager(this);
     document.getElementById('loading').style.display = 'none';
     this.animate();
@@ -146,18 +147,17 @@ window.toggleMute = function () {
   }
 
   const gameManager = window.game.gameManager;
-  const isMuted = muteButton.classList.contains('muted');
+  const wasMuted = gameManager.isMuted;
+  
+  // Use the centralized mute toggle function
+  const isNowMuted = gameManager.toggleMute();
 
-  if (isMuted) {
-    if (gameManager.dayMusic) gameManager.dayMusic.volume = 0.5;
-    if (gameManager.nightMusic) gameManager.nightMusic.volume = 0.5;
-    muteButton.classList.remove('muted');
-    icon.textContent = '🔊';
-  } else {
-    if (gameManager.dayMusic) gameManager.dayMusic.volume = 0;
-    if (gameManager.nightMusic) gameManager.nightMusic.volume = 0;
+  if (isNowMuted) {
     muteButton.classList.add('muted');
     icon.textContent = '🔇';
+  } else {
+    muteButton.classList.remove('muted');
+    icon.textContent = '🔊';
   }
 };
 
@@ -198,7 +198,7 @@ window.addEventListener(
 window.addEventListener(
   'keydown',
   (e) => {
-    if (e.key.toLowerCase === 'm') {
+    if (e.key.toLowerCase() === 'm') {
       window.toggleMute();
       e.preventDefault();
     }

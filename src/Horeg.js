@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
 export class Horeg {
-  constructor(scene, cityData, npcManager) {
+  constructor(scene, cityData, npcManager, gameManager) {
     this.scene = scene;
     this.cityData = cityData;
     this.npcManager = npcManager;
+    this.gameManager = gameManager; // Added reference to game manager for centralized mute
     this.group = null;
     this.active = false;
     this.position = { x: 125, z: -20 };
@@ -17,6 +18,12 @@ export class Horeg {
     this.music = new Audio('music/horeg.mp3');
     this.music.volume = 0.75;
     this.music.loop = true;
+
+    // Register audio element with game manager for centralized mute
+    if (this.gameManager && typeof this.gameManager.addAudioElement === 'function') {
+      this.gameManager.addAudioElement(this.music);
+    }
+
     this.lights = [];
     this.people = [];
     this.speakersGroup = null;

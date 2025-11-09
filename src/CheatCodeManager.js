@@ -21,6 +21,11 @@ export class CheatCodeManager {
     this.cheatSound = new Audio('music/cheat.mp3');
     this.cheatSound.volume = 0.7;
 
+    // Register audio element with game manager for centralized mute
+    if (this.game.gameManager && typeof this.game.gameManager.addAudioElement === 'function') {
+      this.game.gameManager.addAudioElement(this.cheatSound);
+    }
+
     this.setupKeyListener();
     this.showCheatHint();
   }

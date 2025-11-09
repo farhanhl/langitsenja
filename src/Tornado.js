@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
 export class Tornado {
-  constructor(scene, cityData, npcManager) {
+  constructor(scene, cityData, npcManager, gameManager) {
     this.scene = scene;
     this.cityData = cityData;
     this.npcManager = npcManager;
+    this.gameManager = gameManager; // Added reference to game manager for centralized mute
     this.group = null;
     this.active = false;
     this.position = { x: 0, z: -125 };

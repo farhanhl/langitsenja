@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 
 export class Santa {
-  constructor(scene, cityData, npcManager, weatherSystem, skySystem) {
+  constructor(scene, cityData, npcManager, weatherSystem, skySystem, gameManager) {
     this.scene = scene;
     this.cityData = cityData;
     this.npcManager = npcManager;
     this.weatherSystem = weatherSystem;
     this.skySystem = skySystem;
+    this.gameManager = gameManager; // Added reference to game manager for centralized mute
 
     this.group = null;
     this.active = false;
@@ -28,6 +29,12 @@ export class Santa {
     this.bellSound.loop = true;
     this.hohoSound = new Audio('music/hoho.mp3');
     this.hohoSound.volume = 0.7;
+
+    // Register audio elements with game manager for centralized mute
+    if (this.gameManager && typeof this.gameManager.addAudioElement === 'function') {
+      this.gameManager.addAudioElement(this.bellSound);
+      this.gameManager.addAudioElement(this.hohoSound);
+    }
 
     // Lights
     this.headLamp = null;

@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
 export class Godzilla {
-  constructor(scene, cityData, npcManager) {
+  constructor(scene, cityData, npcManager, gameManager) {
     this.scene = scene;
     this.cityData = cityData;
     this.npcManager = npcManager;
+    this.gameManager = gameManager; // Added reference to game manager for centralized mute
     this.group = null;
     this.active = false;
     this.position = { x: 125, z: -125 };
@@ -22,6 +23,11 @@ export class Godzilla {
     this.head = null;
     this.roarSound = new Audio('music/roar.mp3');
     this.roarSound.volume = 0.7;
+
+    // Register audio element with game manager for centralized mute
+    if (this.gameManager && typeof this.gameManager.addAudioElement === 'function') {
+      this.gameManager.addAudioElement(this.roarSound);
+    }
   }
 
   spawn() {
