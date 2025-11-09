@@ -29,52 +29,29 @@ class LangitSenja {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(this.renderer.domElement);
     this.renderer.domElement.id = 'gameCanvas';
-
-    // Initialize game systems
     this.clock = new THREE.Clock();
     this.init();
   }
 
   async init() {
-    // Setup lighting
     this.setupLighting();
-
-    // Create sky system
     this.skySystem = new SkySystem(this.scene);
-
-    // Create weather system
     this.weatherSystem = new WeatherSystem(this.scene);
-
-    // Build city
     this.cityBuilder = new CityBuilder(this.scene);
     this.cityData = this.cityBuilder.build();
-
-    // Create player
     this.player = new Player(
       this.scene,
       this.camera,
       this.cityData,
       this.gameManager
     );
-
-    // Create NPCs
     this.npcManager = new NPCManager(this.scene, this.cityData);
     this.npcManager.createNPCs();
-
-    // Create horror NPC manager
     this.horrorManager = new HorrorNPCManager(this.scene, this.npcManager);
-
-    // Initialize game manager
     this.gameManager = new GameManager(this, this.npcManager, this.skySystem);
-
-    // Create UFO easter egg 🛸 (after gameManager)
     this.ufo = new UFO(this.scene, this.npcManager, this.gameManager);
-
-    // Create Godzilla easter egg 🦖
     this.godzilla = new Godzilla(this.scene, this.cityData, this.npcManager);
-
     this.horeg = new Horeg(this.scene, this.cityData, this.npcManager);
-
     this.santa = new Santa(
       this.scene,
       this.cityData,
@@ -82,26 +59,15 @@ class LangitSenja {
       this.weatherSystem,
       this.skySystem
     );
-
-    // Create Tornado easter egg 🌪️
     this.tornado = new Tornado(this.scene, this.cityData, this.npcManager);
-
-    // Initialize cheat code system
     this.cheatCodeManager = new CheatCodeManager(this);
-
-    // Hide loading screen
     document.getElementById('loading').style.display = 'none';
-
-    // Start game loop
     this.animate();
   }
 
   setupLighting() {
-    // Ambient light for general illumination
     const ambientLight = new THREE.AmbientLight(0xffd5aa, 0.6);
     this.scene.add(ambientLight);
-
-    // Directional light (sun)
     this.sunLight = new THREE.DirectionalLight(0xffaa66, 0.8);
     this.sunLight.position.set(75, 112.5, 75);
     this.sunLight.castShadow = true;
@@ -113,8 +79,6 @@ class LangitSenja {
     this.sunLight.shadow.mapSize.width = 2048;
     this.sunLight.shadow.mapSize.height = 2048;
     this.scene.add(this.sunLight);
-
-    // Hemisphere light for sky color
     const hemiLight = new THREE.HemisphereLight(0xff9966, 0x775533, 0.4);
     this.scene.add(hemiLight);
   }
@@ -123,24 +87,19 @@ class LangitSenja {
     requestAnimationFrame(() => this.animate());
 
     const delta = this.clock.getDelta();
-
-    // Update game systems
     this.player.update(delta);
     this.npcManager.update(delta);
     this.gameManager.update(delta);
     this.skySystem.update();
 
-    // Update weather system
     if (this.weatherSystem) {
       this.weatherSystem.update(delta);
     }
 
-    // Update UFO easter egg
     if (this.ufo) {
       this.ufo.update(delta);
     }
 
-    // Update Godzilla easter egg
     if (this.godzilla) {
       this.godzilla.update(delta);
     }
@@ -153,12 +112,10 @@ class LangitSenja {
       this.santa.update(delta);
     }
 
-    // Update Tornado easter egg
     if (this.tornado) {
       this.tornado.update(delta);
     }
 
-    // Update horror NPCs
     if (this.horrorManager) {
       this.horrorManager.update(delta);
     }
@@ -167,7 +124,6 @@ class LangitSenja {
   }
 }
 
-// Global functions for UI
 window.closeDialogue = function () {
   document.getElementById('dialogue').style.display = 'none';
 };
@@ -181,39 +137,30 @@ window.resetGame = function () {
   location.reload();
 };
 
-// Toggle Mute function for music
 window.toggleMute = function () {
   const muteButton = document.getElementById('muteButton');
   const icon = muteButton.querySelector('.icon');
 
   if (!window.game || !window.game.gameManager) {
-    console.log('Game not initialized yet');
     return;
   }
 
   const gameManager = window.game.gameManager;
-
-  // Check if music is currently muted
   const isMuted = muteButton.classList.contains('muted');
 
   if (isMuted) {
-    // Unmute
     if (gameManager.dayMusic) gameManager.dayMusic.volume = 0.5;
     if (gameManager.nightMusic) gameManager.nightMusic.volume = 0.5;
     muteButton.classList.remove('muted');
     icon.textContent = '🔊';
-    console.log('🔊 Music unmuted');
   } else {
-    // Mute
     if (gameManager.dayMusic) gameManager.dayMusic.volume = 0;
     if (gameManager.nightMusic) gameManager.nightMusic.volume = 0;
     muteButton.classList.add('muted');
     icon.textContent = '🔇';
-    console.log('🔇 Music muted');
   }
 };
 
-// Handle window resize
 window.addEventListener('resize', () => {
   if (window.game) {
     window.game.camera.aspect = window.innerWidth / window.innerHeight;
@@ -222,13 +169,11 @@ window.addEventListener('resize', () => {
   }
 });
 
-// Handle ESC key for pause - use capture phase to ensure it works properly
 window.addEventListener(
   'keydown',
   (e) => {
     if (e.key === 'Escape') {
       if (window.game && window.game.gameManager) {
-        // Only handle ESC if not in how-to-play or pause menu
         const howToPlayModal = document.getElementById('howToPlay');
         const pauseMenu = document.getElementById('pauseMenu');
 
@@ -236,23 +181,29 @@ window.addEventListener(
           howToPlayModal && howToPlayModal.style.display !== 'none';
         const pauseMenuVisible =
           pauseMenu && pauseMenu.style.display !== 'none';
-
-        // Only process ESC if we're in an active game (not in how-to-play)
         if (!howToPlayVisible) {
-          // If pause menu is visible, use ESC to resume
           if (pauseMenuVisible) {
             window.game.gameManager.togglePause();
           } else {
-            // Otherwise, toggle pause
             window.game.gameManager.togglePause();
           }
         }
       }
-      e.preventDefault(); // Prevent default browser behavior
+      e.preventDefault();
     }
   },
   true
-); // Use capture phase
+);
 
-// Start game
+window.addEventListener(
+  'keydown',
+  (e) => {
+    if (e.key.toLowerCase === 'm') {
+      window.toggleMute();
+      e.preventDefault();
+    }
+  },
+  true
+);
+
 window.game = new LangitSenja();

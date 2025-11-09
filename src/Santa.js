@@ -49,31 +49,22 @@ export class Santa {
     this.createSinterclass();
     this.playBell();
     this.playHoHo();
-
-    // >>>> Aktifkan salju sementara
     if (this.weatherSystem) {
       this.weatherSystem.beginTemporarySnow();
     }
-
-    // >>>> Ubah langit menjadi berwarna salju
     if (this.skySystem) {
       this.skySystem.transitionToSnowy();
     }
-
-    console.log('🎅✨ SINTERCLASS IS FLYING IN!');
   }
 
   despawn() {
     if (!this.active) return;
-    console.log('🎅✨ Sinterclass has left the skyline...');
     try {
       this.bellSound.pause();
     } catch {}
     if (this.weatherSystem) {
       this.weatherSystem.endTemporarySnow();
     }
-
-    // >>>> Kembalikan langit ke keadaan semula sebelum Santa muncul
     if (this.skySystem) {
       this.skySystem.restoreOriginalState();
     }
@@ -88,11 +79,8 @@ export class Santa {
 
   createSinterclass() {
     this.group = new THREE.Group();
-
-    // ===== Sleigh (kereta) =====
     const sleigh = new THREE.Group();
 
-    // Body
     const bodyGeo = new THREE.BoxGeometry(10, 2.5, 4);
     const bodyMat = new THREE.MeshStandardMaterial({
       color: 0x8b0000,
@@ -103,8 +91,6 @@ export class Santa {
     body.castShadow = true;
     body.position.y = 2.2;
     sleigh.add(body);
-
-    // Skis
     const skiGeo = new THREE.BoxGeometry(10, 0.3, 0.4);
     const skiMat = new THREE.MeshStandardMaterial({
       color: 0xd4af37,
@@ -118,14 +104,12 @@ export class Santa {
     leftSki.castShadow = rightSki.castShadow = true;
     sleigh.add(leftSki, rightSki);
 
-    // Backrest
     const backGeo = new THREE.BoxGeometry(3, 3, 4.2);
     const back = new THREE.Mesh(backGeo, bodyMat);
     back.position.set(-3.5, 3.3, 0);
     back.castShadow = true;
     sleigh.add(back);
 
-    // Gift bag
     const bagGeo = new THREE.SphereGeometry(1.8, 12, 12);
     const bagMat = new THREE.MeshStandardMaterial({
       color: 0x703c00,

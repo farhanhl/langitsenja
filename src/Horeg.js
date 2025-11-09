@@ -5,37 +5,23 @@ export class Horeg {
     this.scene = scene;
     this.cityData = cityData;
     this.npcManager = npcManager;
-
-    // kompatibel
     this.group = null;
     this.active = false;
     this.position = { x: 125, z: -20 };
     this.targetPosition = { x: -125, z: -20 };
     this.speed = 5;
     this.walkCycle = 0;
-
-    // (baru) transform parameter
-    this.rotationOffsetY = 0; // rad
-    this.scaleFactor = 0.8;
-
-    // tetap ada biar kode lama aman (tak dipakai)
+    this.rotationOffsetY = 0;
+    this.scaleFactor = 0.6;
     this.destroyedBuildings = new Set();
-
-    // audio
     this.music = new Audio('music/horeg.mp3');
     this.music.volume = 0.75;
     this.music.loop = true;
-
-    // lampu & orang
     this.lights = [];
     this.people = [];
     this.speakersGroup = null;
-
-    // beat
     this.beatTimer = 0;
     this.beatInterval = 0.6;
-
-    // palet warna baju & celana
     this.shirtPalette = [
       0xff5252, 0xffa000, 0xffd54f, 0x66bb6a, 0x26a69a, 0x42a5f5, 0x7e57c2,
       0xec407a, 0x8d6e63, 0x90a4ae,
@@ -46,29 +32,24 @@ export class Horeg {
     ];
   }
 
-  // ===== setters baru (opsional, bisa dipanggil kapan saja) =====
   setRotationY(rad) {
     this.rotationOffsetY = rad;
-    if (this.group) this.group.rotation.y += 0; // trigger re-apply di frame berikutnya
+    if (this.group) this.group.rotation.y += 0;
   }
   setScale(scale) {
     this.scaleFactor = scale;
     if (this.group) this.group.scale.set(scale, scale, scale);
   }
-  // =============================================================
 
   spawn() {
     if (this.active) return;
     this.active = true;
     this.createHoregFloat();
     this.playMusic();
-    console.log('🔊 SOUND HOREG MASUK KOTA!');
   }
 
   createHoregFloat() {
     this.group = new THREE.Group();
-
-    // base gerobak
     const base = new THREE.Mesh(
       new THREE.BoxGeometry(14, 1, 8),
       new THREE.MeshStandardMaterial({
@@ -81,8 +62,6 @@ export class Horeg {
     base.castShadow = true;
     base.receiveShadow = true;
     this.group.add(base);
-
-    // roda
     const wheelGeom = new THREE.CylinderGeometry(0.7, 0.7, 1, 20);
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
     [
@@ -98,7 +77,6 @@ export class Horeg {
       this.group.add(w);
     });
 
-    // stack speaker 3×4
     this.speakersGroup = new THREE.Group();
     const spMat = new THREE.MeshStandardMaterial({
       color: 0x222222,
@@ -148,7 +126,6 @@ export class Horeg {
     }
     this.group.add(this.speakersGroup);
 
-    // lampu
     [
       [-6, 4, 3],
       [6, 4, 3],
@@ -162,7 +139,6 @@ export class Horeg {
       this.lights.push(light);
     });
 
-    // orang (tiap orang baju & celana acak)
     [
       [-8, 2],
       [-8, -2],
@@ -174,34 +150,27 @@ export class Horeg {
       [-3, 5],
       [0, 5],
       [3, 5],
-    ].forEach(([x, z]) => this.people.push(this._createPerson(x, z)));
+    ].forEach(([x, z]) => this.people.push(this.createPerson(x, z)));
 
-    // posisi & orientasi
     this.group.position.set(this.position.x, 0, this.position.z);
 
-    // Orientasi awal menghadap target + offset custom
     const angle = Math.atan2(
       this.targetPosition.z - this.position.z,
       this.targetPosition.x - this.position.x
     );
     this.group.rotation.y = -angle + Math.PI / 2 + this.rotationOffsetY;
-
-    // (baru) scale global
     this.group.scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
-
     this.scene.add(this.group);
   }
 
-  _randomFrom(arr) {
+  randomFrom(arr) {
     return arr[(Math.random() * arr.length) | 0];
   }
 
-  _createPerson(xOffset, zOffset) {
+  createPerson(xOffset, zOffset) {
     const g = new THREE.Group();
-
-    // warna acak
-    const shirtColor = this._randomFrom(this.shirtPalette);
-    const pantsColor = this._randomFrom(this.pantsPalette);
+    const shirtColor = this.randomFrom(this.shirtPalette);
+    const pantsColor = this.randomFrom(this.pantsPalette);
 
     const shirtMat = new THREE.MeshStandardMaterial({
       color: shirtColor,
@@ -216,7 +185,6 @@ export class Horeg {
       roughness: 1,
     });
 
-    // Torso (baju)
     const torso = new THREE.Mesh(
       new THREE.BoxGeometry(1.0, 1.8, 0.6),
       shirtMat
@@ -225,13 +193,11 @@ export class Horeg {
     torso.castShadow = true;
     g.add(torso);
 
-    // Kepala (kulit)
     const headM = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), skinMat);
     headM.position.y = 3.6;
     headM.castShadow = true;
     g.add(headM);
 
-    // Tangan (samakan dengan baju—anggap lengan panjang)
     const leftArm = new THREE.Mesh(
       new THREE.BoxGeometry(0.3, 1.2, 0.3),
       shirtMat
@@ -247,7 +213,6 @@ export class Horeg {
     rightArm.castShadow = true;
     g.add(rightArm);
 
-    // Kaki (celana)
     const leftLeg = new THREE.Mesh(
       new THREE.BoxGeometry(0.35, 1.4, 0.35),
       pantsMat
@@ -271,8 +236,6 @@ export class Horeg {
 
   update(delta) {
     if (!this.active || !this.group) return;
-
-    // normalisasi ms → s (jaga-jaga)
     if (delta > 1) delta = delta / 1000;
 
     const dx = this.targetPosition.x - this.position.x;
@@ -285,15 +248,11 @@ export class Horeg {
       this.position.x += moveX;
       this.position.z += moveZ;
       this.group.position.set(this.position.x, 0, this.position.z);
-
-      // update orientasi agar selalu menghadap rute + offset custom
       const angle = Math.atan2(
         this.targetPosition.z - this.position.z,
         this.targetPosition.x - this.position.x
       );
       this.group.rotation.y = -angle + Math.PI / 2 + this.rotationOffsetY;
-
-      // animasi jalan + beat
       this.walkCycle += delta * 3;
       this.people.forEach((p) => {
         p.leftLeg.rotation.x = Math.sin(this.walkCycle) * 0.3;
@@ -353,7 +312,6 @@ export class Horeg {
 
   despawn() {
     if (!this.active) return;
-    console.log('🔊 Sound Horeg berlalu…');
     try {
       this.music.pause();
     } catch {}

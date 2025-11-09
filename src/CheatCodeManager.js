@@ -4,7 +4,7 @@ export class CheatCodeManager {
     this.inputBuffer = '';
     this.bufferTimeout = null;
     this.maxBufferLength = 20;
-    this.resetDelay = 2000; // 2 seconds
+    this.resetDelay = 2000;
 
     this.cheats = {
       GODZILLA: () => this.activateGodzilla(),
@@ -18,7 +18,6 @@ export class CheatCodeManager {
       CLEAR: () => this.activateClear(),
     };
 
-    // Cheat activation sound
     this.cheatSound = new Audio('music/cheat.mp3');
     this.cheatSound.volume = 0.7;
 
@@ -28,7 +27,6 @@ export class CheatCodeManager {
 
   setupKeyListener() {
     window.addEventListener('keypress', (event) => {
-      // Ignore if typing in input field
       if (
         event.target.tagName === 'INPUT' ||
         event.target.tagName === 'TEXTAREA'
@@ -38,26 +36,18 @@ export class CheatCodeManager {
 
       const key = event.key.toUpperCase();
 
-      // Only accept letters
       if (key.match(/^[A-Z]$/)) {
         this.inputBuffer += key;
 
-        // Limit buffer length
         if (this.inputBuffer.length > this.maxBufferLength) {
           this.inputBuffer = this.inputBuffer.slice(-this.maxBufferLength);
         }
-
-        // Check for cheat codes
         this.checkCheats();
 
-        // Reset buffer after delay
         clearTimeout(this.bufferTimeout);
         this.bufferTimeout = setTimeout(() => {
           this.inputBuffer = '';
         }, this.resetDelay);
-
-        // Show input in console for debugging
-        console.log('Cheat input:', this.inputBuffer);
       }
     });
   }
@@ -65,10 +55,9 @@ export class CheatCodeManager {
   checkCheats() {
     for (const [code, action] of Object.entries(this.cheats)) {
       if (this.inputBuffer.includes(code)) {
-        this.inputBuffer = ''; // Clear buffer
-        this.playCheatSound(); // Play sound effect
+        this.inputBuffer = '';
+        this.playCheatSound();
         action();
-        this.showCheatActivated(code);
         break;
       }
     }
@@ -76,13 +65,9 @@ export class CheatCodeManager {
 
   playCheatSound() {
     try {
-      this.cheatSound.currentTime = 0; // Reset to start
-      this.cheatSound.play().catch((err) => {
-        console.log('Could not play cheat sound:', err);
-      });
-    } catch (error) {
-      console.log('Error playing cheat sound:', error);
-    }
+      this.cheatSound.currentTime = 0;
+      this.cheatSound.play().catch((err) => {});
+    } catch (error) {}
   }
 
   activateGodzilla() {
@@ -92,12 +77,10 @@ export class CheatCodeManager {
     }
 
     if (this.game.godzilla.isActive()) {
-      console.log('🦖 Godzilla is already active!');
       this.showNotification('Godzilla is already rampaging!', 'warning');
       return;
     }
 
-    console.log('🦖 CHEAT ACTIVATED: GODZILLA');
     this.game.godzilla.spawn();
     this.showNotification('🦖 GODZILLA HAS ARRIVED! 🦖', 'danger');
   }
@@ -109,12 +92,10 @@ export class CheatCodeManager {
     }
 
     if (this.game.santa.isActive()) {
-      console.log('🦖 santa is already active!');
       this.showNotification('santa is already rampaging!', 'warning');
       return;
     }
 
-    console.log('🦖 CHEAT ACTIVATED: santa');
     this.game.santa.spawn();
     this.showNotification('🦖 santa HAS ARRIVED! 🦖', 'danger');
   }
@@ -126,12 +107,10 @@ export class CheatCodeManager {
     }
 
     if (this.game.horeg.isActive()) {
-      console.log('🦖 horeg is already active!');
       this.showNotification('horeg is already rampaging!', 'warning');
       return;
     }
 
-    console.log('🦖 CHEAT ACTIVATED: horeg');
     this.game.horeg.spawn();
     this.showNotification('🦖 horeg HAS ARRIVED! 🦖', 'danger');
   }
@@ -143,29 +122,24 @@ export class CheatCodeManager {
     }
 
     if (this.game.tornado.isActive()) {
-      console.log('🌪️ Tornado is already active!');
       this.showNotification('Tornado is already raging!', 'warning');
       return;
     }
 
-    console.log('🌪️ CHEAT ACTIVATED: TORNADO');
     this.game.tornado.spawn();
     this.showNotification('🌪️ TORNADO HAS SPAWNED! 🌪️', 'danger');
   }
 
   activateUFO() {
     if (!this.game.ufo) {
-      console.error('UFO not initialized');
       return;
     }
 
     if (this.game.ufo.isActive()) {
-      console.log('🛸 UFO is already active!');
       this.showNotification('UFO is already here!', 'warning');
       return;
     }
 
-    console.log('🛸 CHEAT ACTIVATED: UFO');
     this.game.ufo.spawn();
     this.showNotification('🛸 UFO HAS ARRIVED! 🛸', 'info');
   }
@@ -176,7 +150,6 @@ export class CheatCodeManager {
       return;
     }
 
-    console.log('🌙 CHEAT ACTIVATED: NIGHT MODE');
     this.game.gameManager.activateNightCheat();
     this.showNotification('🌙 NIGHT MODE ACTIVATED! 🌙', 'info');
   }
@@ -187,7 +160,6 @@ export class CheatCodeManager {
       return;
     }
 
-    console.log('🌧️ CHEAT ACTIVATED: RAIN MODE');
     this.game.gameManager.activateRainCheat();
     this.showNotification('🌧️ RAIN MODE ACTIVATED! 🌧️', 'info');
   }
@@ -198,22 +170,14 @@ export class CheatCodeManager {
       return;
     }
 
-    console.log('☀️ CHEAT ACTIVATED: CLEAR WEATHER');
     this.game.gameManager.activateClearCheat();
     this.showNotification('☀️ CLEAR WEATHER ACTIVATED! ☀️', 'info');
   }
 
-  showCheatActivated(code) {
-    console.log(`✅ CHEAT CODE ACTIVATED: ${code}`);
-  }
-
   showNotification(message, type = 'info') {
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `cheat-notification ${type}`;
     notification.textContent = message;
-
-    // Style
     notification.style.position = 'fixed';
     notification.style.top = '20px';
     notification.style.left = '50%';
@@ -226,7 +190,6 @@ export class CheatCodeManager {
     notification.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
     notification.style.animation = 'slideDown 0.3s ease-out';
 
-    // Color based on type
     switch (type) {
       case 'danger':
         notification.style.background =
@@ -250,7 +213,6 @@ export class CheatCodeManager {
 
     document.body.appendChild(notification);
 
-    // Remove after 3 seconds
     setTimeout(() => {
       notification.style.animation = 'slideUp 0.3s ease-in';
       setTimeout(() => {
@@ -260,7 +222,6 @@ export class CheatCodeManager {
   }
 
   showCheatHint() {
-    // Show hint on first load
     const hasSeenHint = localStorage.getItem('cheatHintSeen');
 
     if (!hasSeenHint) {
@@ -272,7 +233,6 @@ export class CheatCodeManager {
   }
 }
 
-// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideDown {

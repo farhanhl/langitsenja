@@ -23,17 +23,9 @@ export class CityBuilder {
       scale: 1,
       size: { length: 42.9, width: 18 },
     });
-    // this.createPlayground(-30, 72.2, {
-    //   numPlayers: 4,
-    //   rotate: 0,
-    //   scale: 1,
-    //   size: { length: 42.9, width: 18 },
-    // });
     this.createTambalBan(0, -25, { scale: 1.5 });
     this.createAngkringan(0, -35, { scale: 1.5, rotate: 180 });
     this.createPosRonda(26, 0, { rotate: 270 });
-    this.createAngkringan(-75, 35);
-    this.createAngkringan(-86.25, 35);
     this.createLapanganBolaJalanan(-30, -72, {
       numPlayers: 4,
       rotate: 90,
@@ -52,7 +44,6 @@ export class CityBuilder {
     };
   }
 
-  // --- simpan ground ke this.ground ---
   createGround() {
     const width = 102;
     const height = 187.5;
@@ -68,21 +59,19 @@ export class CityBuilder {
     ground.receiveShadow = true;
 
     this.scene.add(ground);
-    this.ground = ground; // penting: disimpan untuk dibaca road network
+    this.ground = ground;
   }
 
-  // --- helper baca ukuran ground + perhatikan scale mesh ---
   getGroundSize() {
     if (!this.ground) throw new Error('Ground belum dibuat');
 
-    const params = this.ground.geometry.parameters; // { width, height }
+    const params = this.ground.geometry.parameters;
     const sx = this.ground.scale.x || 1;
-    const sz = this.ground.scale.y || 1; // PlaneGeometry: width di X, height di Y
+    const sz = this.ground.scale.y || 1;
 
     return { width: params.width * sx, height: params.height * sz };
   }
 
-  // --- sidewalks tetap JS (tidak berubah banyak) ---
   createSidewalk(x, z, width, depth, material) {
     if (!this.sidewalks) this.sidewalks = [];
     if (!this.sidewalkPaths) this.sidewalkPaths = [];
@@ -283,39 +272,6 @@ export class CityBuilder {
       { x: 4.5, z: 3.75 },
     ];
 
-    const createBench = (x, z) => {
-      const group = new THREE.Group();
-      const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-
-      // Seat
-      const seatGeometry = new THREE.BoxGeometry(2, 0.2, 0.8);
-      const seat = new THREE.Mesh(seatGeometry, woodMaterial);
-      seat.position.y = 0.5;
-      seat.castShadow = true;
-      group.add(seat);
-
-      // Backrest
-      const backGeometry = new THREE.BoxGeometry(2, 1, 0.1);
-      const back = new THREE.Mesh(backGeometry, woodMaterial);
-      back.position.set(0, 1, -0.35);
-      back.castShadow = true;
-      group.add(back);
-
-      // Legs
-      const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
-      [-0.8, 0.8].forEach((xOffset) => {
-        [-0.3, 0.3].forEach((zOffset) => {
-          const leg = new THREE.Mesh(legGeometry, woodMaterial);
-          leg.position.set(xOffset, 0.25, zOffset);
-          leg.castShadow = true;
-          group.add(leg);
-        });
-      });
-
-      group.position.set(x, 0, z);
-      this.scene.add(group);
-    };
-
     const createFountain = (x, z) => {
       const group = new THREE.Group();
 
@@ -348,10 +304,19 @@ export class CityBuilder {
 
       group.position.set(x, 0, z);
       this.scene.add(group);
+      group.updateMatrixWorld(true);
+
+      const bbox = new THREE.Box3().setFromObject(group);
+
+      this.buildings.push({
+        mesh: group,
+        boundingBox: bbox,
+        name: 'Fontain',
+      });
     };
 
     benchPositions.forEach((pos) => {
-      createBench(parkX + pos.x, parkZ + pos.z);
+      this.createBench(parkX + pos.x, parkZ + pos.z, 0, true);
     });
 
     createFountain(parkX, parkZ);
@@ -362,7 +327,7 @@ export class CityBuilder {
   createLake() {
     const lakeX = 0;
     const lakeZ = 30;
-    const lakeWidth = 18.75;
+    const lakeWidth = 18;
     const lakeDepth = 15;
     const lakeGeometry = new THREE.BoxGeometry(lakeWidth, 0.3, lakeDepth);
     const lakeMaterial = new THREE.MeshStandardMaterial({
@@ -377,43 +342,52 @@ export class CityBuilder {
     lake.receiveShadow = true;
     this.scene.add(lake);
 
-    const createBench = (x, z) => {
-      const group = new THREE.Group();
-      const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-
-      // Seat
-      const seatGeometry = new THREE.BoxGeometry(2, 0.2, 0.8);
-      const seat = new THREE.Mesh(seatGeometry, woodMaterial);
-      seat.position.y = 0.5;
-      seat.castShadow = true;
-      group.add(seat);
-
-      // Backrest
-      const backGeometry = new THREE.BoxGeometry(2, 1, 0.1);
-      const back = new THREE.Mesh(backGeometry, woodMaterial);
-      back.position.set(0, 1, -0.35);
-      back.castShadow = true;
-      group.add(back);
-
-      // Legs
-      const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
-      [-0.8, 0.8].forEach((xOffset) => {
-        [-0.3, 0.3].forEach((zOffset) => {
-          const leg = new THREE.Mesh(legGeometry, woodMaterial);
-          leg.position.set(xOffset, 0.25, zOffset);
-          leg.castShadow = true;
-          group.add(leg);
-        });
-      });
-
-      group.position.set(x, 0, z);
-      this.scene.add(group);
-    };
-
-    createBench(lakeX - 6, lakeZ - 9);
-    createBench(lakeX + 6, lakeZ + 9);
+    this.createBench(lakeX - 6, lakeZ - 8.3, 0, false);
+    this.createBench(lakeX + 6, lakeZ + 8.3, 3.2, false);
 
     this.lakeArea = { x: lakeX, z: lakeZ, width: lakeWidth, depth: lakeDepth };
+  }
+
+  createBench(x, z, rotateY, isPark) {
+    const group = new THREE.Group();
+    const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+    const seatGeometry = new THREE.BoxGeometry(2, 0.2, 0.8);
+    const seat = new THREE.Mesh(seatGeometry, woodMaterial);
+    seat.position.y = isPark == true ? 0.8 : 0.5;
+    seat.castShadow = true;
+    group.add(seat);
+
+    const backGeometry = new THREE.BoxGeometry(2, 1, 0.1);
+    const back = new THREE.Mesh(backGeometry, woodMaterial);
+    back.position.set(0, isPark == true ? 1.2 : 1, -0.35);
+    back.castShadow = true;
+    group.add(back);
+    const legGeometry = new THREE.BoxGeometry(
+      0.1,
+      isPark == true ? 1 : 0.5,
+      0.1
+    );
+    [-0.8, 0.8].forEach((xOffset) => {
+      [-0.3, 0.3].forEach((zOffset) => {
+        const leg = new THREE.Mesh(legGeometry, woodMaterial);
+        leg.position.set(xOffset, 0.25, zOffset);
+        leg.castShadow = true;
+        group.add(leg);
+      });
+    });
+
+    group.position.set(x, 0, z);
+    group.rotation.y = rotateY;
+    this.scene.add(group);
+    group.updateMatrixWorld(true);
+
+    const bbox = new THREE.Box3().setFromObject(group);
+
+    this.buildings.push({
+      mesh: group,
+      boundingBox: bbox,
+      name: 'Bench',
+    });
   }
 
   createTrafficLights() {
@@ -445,7 +419,6 @@ export class CityBuilder {
   createTrafficLight(x, z, rotation) {
     const group = new THREE.Group();
 
-    // Pole
     const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
     const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
     const pole = new THREE.Mesh(poleGeometry, poleMaterial);
@@ -453,7 +426,6 @@ export class CityBuilder {
     pole.castShadow = true;
     group.add(pole);
 
-    // Traffic light box
     const boxGeometry = new THREE.BoxGeometry(0.6, 1.5, 0.3);
     const boxMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
     const box = new THREE.Mesh(boxGeometry, boxMaterial);
@@ -461,7 +433,6 @@ export class CityBuilder {
     box.castShadow = true;
     group.add(box);
 
-    // Lights (red, yellow, green)
     const lightGeometry = new THREE.CircleGeometry(0.2, 16);
 
     const redLight = new THREE.Mesh(
@@ -498,14 +469,22 @@ export class CityBuilder {
     group.position.set(x, 0, z);
     group.rotation.y = rotation;
     this.scene.add(group);
+    group.updateMatrixWorld(true);
+
+    const bbox = new THREE.Box3().setFromObject(group);
+
+    this.buildings.push({
+      mesh: group,
+      boundingBox: bbox,
+      name: 'Traffic Light',
+    });
+
+    return group;
   }
 
   createBasketballCourt(x, z) {
-    // ===== Helpers (inner functions) =====
     const createBasketballHoop = (hx, hz, rotation, pos) => {
       const group = new THREE.Group();
-
-      // Pole
       const poleGeometry = new THREE.CylinderGeometry(0.15, 0.2, 4, 8);
       const poleMaterial = new THREE.MeshStandardMaterial({
         color: 0x444444,
@@ -517,14 +496,12 @@ export class CityBuilder {
       pole.castShadow = true;
       group.add(pole);
 
-      // Support arm
       const armGeometry = new THREE.BoxGeometry(0.15, 0.15, 1.2);
       const arm = new THREE.Mesh(armGeometry, poleMaterial);
       arm.position.set(0, 3.3, 0.6);
       arm.castShadow = true;
       group.add(arm);
 
-      // Backboard
       const backboardGeometry = new THREE.BoxGeometry(1.8, 1.05, 0.1);
       const backboardMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -538,7 +515,6 @@ export class CityBuilder {
       backboard.castShadow = true;
       group.add(backboard);
 
-      // Backboard red rectangle
       const rectangleGeometry = new THREE.BoxGeometry(0.59, 0.45, 0.05);
       const rectangleMaterial = new THREE.MeshStandardMaterial({
         color: 0xff0000,
@@ -547,7 +523,6 @@ export class CityBuilder {
       rectangle.position.set(0, 3.5, 1.25);
       group.add(rectangle);
 
-      // Rim
       const rimGeometry = new THREE.TorusGeometry(0.225, 0.02, 8, 32);
       const rimMaterial = new THREE.MeshStandardMaterial({
         color: 0xff6600,
@@ -560,7 +535,6 @@ export class CityBuilder {
       rim.castShadow = true;
       group.add(rim);
 
-      // Net (simplified)
       const netGroup = new THREE.Group();
       const netMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -595,7 +569,6 @@ export class CityBuilder {
     const createCourtBench = (bx, bz, rotation) => {
       const group = new THREE.Group();
 
-      // Seat
       const seatGeometry = new THREE.BoxGeometry(2.5, 0.2, 0.6);
       const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x4169e1 });
       const seat = new THREE.Mesh(seatGeometry, seatMaterial);
@@ -603,14 +576,12 @@ export class CityBuilder {
       seat.castShadow = true;
       group.add(seat);
 
-      // Backrest
       const backGeometry = new THREE.BoxGeometry(2.5, 0.8, 0.1);
       const back = new THREE.Mesh(backGeometry, seatMaterial);
       back.position.set(0, 0.9, -0.25);
       back.castShadow = true;
       group.add(back);
 
-      // Legs
       const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
       const legMaterial = new THREE.MeshStandardMaterial({
         color: 0x888888,
@@ -1729,7 +1700,7 @@ export class CityBuilder {
 
     const pad = new THREE.Mesh(
       new THREE.BoxGeometry(12, 0.06, 8),
-      new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0.95 })
+      new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0 })
     );
     pad.position.set(0, 0.03, 0);
     pad.receiveShadow = true;
@@ -3393,442 +3364,6 @@ export class CityBuilder {
         });
       });
     }
-
-    return group;
-  }
-
-  createPlayground(
-    x,
-    z,
-    {
-      scale = 1.2,
-      rotate = 0,
-      size = { length: 28, width: 22 }, // area playground keseluruhan
-      groundColor = 0x6c8c5a, // rumput/karpet karet
-      tileColor = 0x3a3a3a, // jalur karet gelap
-      lineColor = 0xffffff,
-      include = {
-        perosotan: true,
-        jungkatJungkit: true,
-        ayunan: true,
-        monkeyBars: true,
-        spinner: true,
-      },
-      registerColliders = true,
-    } = {}
-  ) {
-    const self = this; // kunci konteks
-    self.buildings = self.buildings || [];
-
-    const group = new THREE.Group();
-    const L = size.length;
-    const W = size.width;
-
-    // -------- helpers ----------
-    const addColliderFromObject = (mesh, name) => {
-      if (!registerColliders) return;
-      mesh.updateMatrixWorld(true);
-      const bbox = new THREE.Box3().setFromObject(mesh);
-      self.buildings.push({ mesh, boundingBox: bbox, name });
-    };
-
-    const lineMat = new THREE.MeshStandardMaterial({
-      color: lineColor,
-      roughness: 0.6,
-    });
-    const addLine = (w, h, d, px, py, pz, target = group) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lineMat);
-      m.position.set(px, py, pz);
-      m.receiveShadow = true;
-      target.add(m);
-      return m;
-    };
-
-    // -------- base ground ----------
-    const base = new THREE.Mesh(
-      new THREE.BoxGeometry(W, 0.12, L),
-      new THREE.MeshStandardMaterial({ color: groundColor, roughness: 0.9 })
-    );
-    base.position.set(0, 0.06, 0);
-    base.receiveShadow = true;
-    group.add(base);
-
-    // jalur karet (X pattern)
-    const pathMat = new THREE.MeshStandardMaterial({
-      color: tileColor,
-      roughness: 0.8,
-    });
-    const path1 = new THREE.Mesh(
-      new THREE.BoxGeometry(W - 1.2, 0.02, 1.0),
-      pathMat
-    );
-    path1.position.set(0, 0.13, 0);
-    group.add(path1);
-    const path2 = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.02, L - 1.2),
-      pathMat
-    );
-    path2.position.set(0, 0.13, 0);
-    group.add(path2);
-
-    // grid posisi 2 kolom x 3 baris
-    const pad = 1.2;
-    const colW = (W - pad * 3) / 2;
-    const rowH = (L - pad * 4) / 3;
-    const slotCenter = (c, r) => ({
-      px: -W / 2 + pad + colW / 2 + c * (colW + pad),
-      pz: -L / 2 + pad + rowH / 2 + r * (rowH + pad),
-    });
-
-    // ---------- 1) Perosotan ----------
-    function buildPerosotan(px, pz) {
-      const g = new THREE.Group();
-
-      // tangga penyangga (rangka)
-      const frameMat = new THREE.MeshStandardMaterial({
-        color: 0x8d6e63,
-        roughness: 0.7,
-      });
-      const rungMat = new THREE.MeshStandardMaterial({
-        color: 0x5d4037,
-        roughness: 0.7,
-      });
-      const sideA = new THREE.Mesh(
-        new THREE.BoxGeometry(0.15, 1.2, 1.6),
-        frameMat
-      );
-      sideA.position.set(-0.5, 0.6, 0.2);
-      g.add(sideA);
-      const sideB = sideA.clone();
-      sideB.position.x = 0.5;
-      g.add(sideB);
-
-      for (let i = 0; i < 5; i++) {
-        const rung = new THREE.Mesh(
-          new THREE.BoxGeometry(0.9, 0.07, 0.1),
-          rungMat
-        );
-        rung.position.set(0, 0.25 + i * 0.2, 0.2);
-        g.add(rung);
-      }
-
-      // papan seluncur
-      const slideMat = new THREE.MeshStandardMaterial({
-        color: 0xd32f2f,
-        roughness: 0.5,
-        metalness: 0.1,
-      });
-      const board = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, 0.07, 2.6),
-        slideMat
-      );
-      board.position.set(0, 1.1, -1.1);
-      board.rotation.x = -Math.PI / 8;
-      g.add(board);
-
-      // tepi samping papan (pelindung)
-      const edgeL = new THREE.Mesh(
-        new THREE.BoxGeometry(0.05, 0.2, 2.6),
-        slideMat
-      );
-      edgeL.position.set(-0.325, 1.15, -1.1);
-      edgeL.rotation.x = -Math.PI / 8;
-      g.add(edgeL);
-      const edgeR = edgeL.clone();
-      edgeR.position.x = 0.325;
-      g.add(edgeR);
-
-      // platform kecil
-      const platform = new THREE.Mesh(
-        new THREE.BoxGeometry(1.1, 0.08, 0.9),
-        new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.6 })
-      );
-      platform.position.set(0, 1.2, 0.5);
-      g.add(platform);
-
-      g.position.set(px, 0, pz);
-      group.add(g);
-      addColliderFromObject(g, 'Perosotan');
-    }
-
-    // ---------- 2) Jungkat-jungkit ----------
-    function buildJungkatJungkit(px, pz) {
-      const g = new THREE.Group();
-
-      const base = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.22, 0.4, 12),
-        new THREE.MeshStandardMaterial({ color: 0x424242, roughness: 0.7 })
-      );
-      base.position.y = 0.2;
-      g.add(base);
-
-      const pivot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, 0.6, 0.2),
-        new THREE.MeshStandardMaterial({ color: 0x616161, roughness: 0.6 })
-      );
-      pivot.position.y = 0.6;
-      g.add(pivot);
-
-      const board = new THREE.Mesh(
-        new THREE.BoxGeometry(3.2, 0.1, 0.3),
-        new THREE.MeshStandardMaterial({ color: 0xffc107, roughness: 0.6 })
-      );
-      board.position.y = 0.95;
-      g.add(board);
-
-      // handle & kursi
-      const seatMat = new THREE.MeshStandardMaterial({
-        color: 0x1976d2,
-        roughness: 0.6,
-      });
-      const handleMat = new THREE.MeshStandardMaterial({
-        color: 0x212121,
-        roughness: 0.6,
-      });
-      const seatA = new THREE.Mesh(
-        new THREE.BoxGeometry(0.35, 0.08, 0.35),
-        seatMat
-      );
-      seatA.position.set(-1.4, 1.05, 0);
-      g.add(seatA);
-      const seatB = seatA.clone();
-      seatB.position.x = 1.4;
-      g.add(seatB);
-
-      const handleA = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.04, 0.04, 0.5, 10),
-        handleMat
-      );
-      handleA.rotation.z = Math.PI / 2;
-      handleA.position.set(-1.6, 1.15, 0);
-      g.add(handleA);
-      const handleB = handleA.clone();
-      handleB.position.x = 1.6;
-      g.add(handleB);
-
-      g.position.set(px, 0, pz);
-      group.add(g);
-      addColliderFromObject(g, 'Jungkat-jungkit');
-    }
-
-    // ---------- 3) Ayunan ----------
-    function buildAyunan(px, pz) {
-      const g = new THREE.Group();
-      const frameMat = new THREE.MeshStandardMaterial({
-        color: 0x37474f,
-        roughness: 0.7,
-      });
-
-      // rangka A kiri & kanan
-      const leg = (ox) => {
-        const L1 = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.07, 0.07, 2.2, 12),
-          frameMat
-        );
-        L1.position.set(ox - 0.6, 1.1, -0.5);
-        L1.rotation.z = 0.3;
-        g.add(L1);
-        const L2 = L1.clone();
-        L2.position.set(ox + 0.6, 1.1, -0.5);
-        L2.rotation.z = -0.3;
-        g.add(L2);
-      };
-      leg(-1.2);
-      leg(1.2);
-
-      const topBar = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.08, 3.2, 12),
-        frameMat
-      );
-      topBar.rotation.z = Math.PI / 2;
-      topBar.position.set(0, 2.1, -0.5);
-      g.add(topBar);
-
-      // dua kursi
-      const seatMat = new THREE.MeshStandardMaterial({
-        color: 0x263238,
-        roughness: 0.6,
-      });
-      const chainMat = new THREE.MeshStandardMaterial({
-        color: 0xb0bec5,
-        metalness: 0.5,
-        roughness: 0.3,
-      });
-
-      const makeSeat = (ox) => {
-        const chainL = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6),
-          chainMat
-        );
-        chainL.position.set(ox - 0.25, 1.55, -0.5);
-        g.add(chainL);
-        const chainR = chainL.clone();
-        chainR.position.x = ox + 0.25;
-        g.add(chainR);
-        const seat = new THREE.Mesh(
-          new THREE.BoxGeometry(0.6, 0.08, 0.25),
-          seatMat
-        );
-        seat.position.set(ox, 1.0, -0.5);
-        g.add(seat);
-      };
-      makeSeat(-0.8);
-      makeSeat(0.8);
-
-      g.position.set(px, 0, pz);
-      group.add(g);
-      addColliderFromObject(g, 'Ayunan');
-    }
-
-    // ---------- 4) Monkey Bars ----------
-    function buildMonkeyBars(px, pz) {
-      const g = new THREE.Group();
-      const frameMat = new THREE.MeshStandardMaterial({
-        color: 0x455a64,
-        roughness: 0.7,
-      });
-
-      // tiang vertikal
-      const post = (ox, oz) => {
-        const m = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.08, 0.08, 2.0, 12),
-          frameMat
-        );
-        m.position.set(ox, 1.0, oz);
-        m.castShadow = true;
-        g.add(m);
-      };
-      post(-1.4, -0.6);
-      post(-1.4, 0.6);
-      post(1.4, -0.6);
-      post(1.4, 0.6);
-
-      // palang atas
-      const barMat = new THREE.MeshStandardMaterial({
-        color: 0x90a4ae,
-        metalness: 0.5,
-        roughness: 0.4,
-      });
-      const sideL = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.06, 1.4, 10),
-        barMat
-      );
-      sideL.rotation.z = Math.PI / 2;
-      sideL.position.set(-1.4, 2.0, 0);
-      g.add(sideL);
-      const sideR = sideL.clone();
-      sideR.position.x = 1.4;
-      g.add(sideR);
-
-      for (let i = 0; i < 6; i++) {
-        const t = -1.2 + i * 0.48;
-        const rung = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.05, 0.05, 2.8, 10),
-          barMat
-        );
-        rung.rotation.x = Math.PI / 2;
-        rung.position.set(t, 2.0, 0);
-        g.add(rung);
-      }
-
-      g.position.set(px, 0, pz);
-      group.add(g);
-      addColliderFromObject(g, 'Monkey Bars');
-    }
-
-    // ---------- 5) Merry-go-round (Spinner) ----------
-    function buildSpinner(px, pz) {
-      const g = new THREE.Group();
-
-      const disc = new THREE.Mesh(
-        new THREE.CylinderGeometry(1.2, 1.2, 0.12, 24),
-        new THREE.MeshStandardMaterial({ color: 0x8e24aa, roughness: 0.6 })
-      );
-      disc.position.y = 0.06;
-      disc.rotation.x = 0;
-      g.add(disc);
-
-      const poleMat = new THREE.MeshStandardMaterial({
-        color: 0x311b92,
-        roughness: 0.5,
-      });
-      const centerPole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.08, 0.9, 12),
-        poleMat
-      );
-      centerPole.position.y = 0.45;
-      g.add(centerPole);
-
-      const handleMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.4,
-        roughness: 0.4,
-      });
-      for (let i = 0; i < 6; i++) {
-        const ang = (i / 6) * Math.PI * 2;
-        const rail = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.04, 0.04, 0.9, 10),
-          handleMat
-        );
-        rail.rotation.z = Math.PI / 2;
-        rail.position.set(Math.cos(ang) * 0.8, 0.7, Math.sin(ang) * 0.8);
-        g.add(rail);
-      }
-
-      g.position.set(px, 0, pz);
-      group.add(g);
-      addColliderFromObject(g, 'Spinner');
-    }
-
-    // ---------- tempatkan di grid ----------
-    // r0: [perosotan] [jungkat-jungkit]
-    // r1: [ayunan]    [monkey bars]
-    // r2: [spinner]   [kosong]
-    const s00 = slotCenter(0, 0);
-    const s10 = slotCenter(1, 0);
-    const s01 = slotCenter(0, 1);
-    const s11 = slotCenter(1, 1);
-    const s02 = slotCenter(0, 2);
-
-    if (include.perosotan) buildPerosotan(s00.px, s00.pz);
-    if (include.jungkatJungkit) buildJungkatJungkit(s10.px, s10.pz);
-    if (include.ayunan) buildAyunan(s01.px, s01.pz);
-    if (include.monkeyBars) buildMonkeyBars(s11.px, s11.pz);
-    if (include.spinner) buildSpinner(s02.px, s02.pz);
-
-    // ---------- pagar pendek perimeter (opsional sederhana 2 sisi panjang) ----------
-    const fenceMat = new THREE.MeshStandardMaterial({
-      color: 0x263238,
-      roughness: 0.8,
-    });
-    const fence = (x1, z1, x2, z2, name) => {
-      const len = Math.hypot(x2 - x1, z2 - z1);
-      const bar = new THREE.Mesh(
-        new THREE.BoxGeometry(len, 0.9, 0.06),
-        fenceMat
-      );
-      const midx = (x1 + x2) / 2,
-        midz = (z1 + z2) / 2;
-      bar.position.set(midx, 0.45, midz);
-      bar.rotation.y = Math.atan2(x2 - x1, z2 - z1);
-      bar.castShadow = true;
-      group.add(bar);
-      addColliderFromObject(bar, name);
-    };
-    fence(-W / 2, -L / 2, W / 2, -L / 2, 'Pagar Utara');
-    fence(-W / 2, L / 2, W / 2, L / 2, 'Pagar Selatan');
-
-    // ---------- lighting ----------
-    const light = new THREE.PointLight(0xfff1c1, 0.85, Math.max(L, W) + 8, 1.8);
-    light.position.set(0, 5.5, 0);
-    group.add(light);
-
-    // ---------- transform & add ----------
-    group.position.set(x, 0, z);
-    group.scale.set(scale, scale, scale);
-    group.rotation.y = THREE.MathUtils.degToRad(rotate);
-    group.updateMatrixWorld(true);
-    self.scene.add(group);
 
     return group;
   }

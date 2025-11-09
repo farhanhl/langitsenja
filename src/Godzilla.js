@@ -26,12 +26,9 @@ export class Godzilla {
 
   spawn() {
     if (this.active) return;
-
     this.active = true;
     this.createGodzilla();
     this.playRoarSound();
-
-    console.log('🦖 GODZILLA HAS ARRIVED! 🦖');
   }
 
   createGodzilla() {
@@ -69,14 +66,12 @@ export class Godzilla {
     rightEye.position.set(1, 24.5, 4);
     this.group.add(rightEye);
 
-    // Jaw (rahang bawah)
     const jawGeometry = new THREE.BoxGeometry(3.5, 1.5, 4);
     const jaw = new THREE.Mesh(jawGeometry, headMaterial);
     jaw.position.set(0, 22.5, 2.5);
     jaw.castShadow = true;
     this.group.add(jaw);
 
-    // Teeth (gigi)
     for (let i = 0; i < 6; i++) {
       const toothGeometry = new THREE.ConeGeometry(0.2, 0.6, 4);
       const toothMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
@@ -86,7 +81,6 @@ export class Godzilla {
       this.group.add(tooth);
     }
 
-    // Spikes on back (duri-duri di punggung)
     const spikeGeometry = new THREE.ConeGeometry(0.8, 3, 4);
     const spikeMaterial = new THREE.MeshStandardMaterial({
       color: 0x1a3d0a,
@@ -101,7 +95,6 @@ export class Godzilla {
       this.group.add(spike);
     }
 
-    // Arms (lengan)
     const armGeometry = new THREE.BoxGeometry(2, 6, 2.5);
     const armMaterial = new THREE.MeshStandardMaterial({ color: 0x3a6b1f });
 
@@ -115,7 +108,6 @@ export class Godzilla {
     this.rightArm.castShadow = true;
     this.group.add(this.rightArm);
 
-    // Claws (cakar)
     const clawGeometry = new THREE.BoxGeometry(2.5, 1.5, 1.5);
     const clawMaterial = new THREE.MeshStandardMaterial({ color: 0x1a3d0a });
 
@@ -129,7 +121,6 @@ export class Godzilla {
     rightClaw.castShadow = true;
     this.group.add(rightClaw);
 
-    // Legs (kaki besar)
     const legGeometry = new THREE.BoxGeometry(3, 12, 4);
     const legMaterial = new THREE.MeshStandardMaterial({ color: 0x2d5016 });
 
@@ -143,7 +134,6 @@ export class Godzilla {
     this.rightLeg.castShadow = true;
     this.group.add(this.rightLeg);
 
-    // Feet (kaki bawah)
     const footGeometry = new THREE.BoxGeometry(3.5, 2, 6);
     const footMaterial = new THREE.MeshStandardMaterial({ color: 0x1a3d0a });
 
@@ -157,7 +147,6 @@ export class Godzilla {
     rightFoot.castShadow = true;
     this.group.add(rightFoot);
 
-    // Tail (ekor panjang)
     const tailGeometry = new THREE.ConeGeometry(2, 12, 6);
     const tailMaterial = new THREE.MeshStandardMaterial({ color: 0x2d5016 });
     this.tail = new THREE.Mesh(tailGeometry, tailMaterial);
@@ -166,10 +155,8 @@ export class Godzilla {
     this.tail.castShadow = true;
     this.group.add(this.tail);
 
-    // Position Godzilla
     this.group.position.set(this.position.x, 0, this.position.z);
 
-    // Face direction of movement
     const angle = Math.atan2(
       this.targetPosition.z - this.position.z,
       this.targetPosition.x - this.position.x
@@ -181,22 +168,17 @@ export class Godzilla {
 
   update(delta) {
     if (!this.active || !this.group) return;
-
-    // Move towards target
     const dx = this.targetPosition.x - this.position.x;
     const dz = this.targetPosition.z - this.position.z;
     const distance = Math.sqrt(dx * dx + dz * dz);
 
     if (distance > 1) {
-      // Normalize and move
       const moveX = (dx / distance) * this.speed * delta;
       const moveZ = (dz / distance) * this.speed * delta;
 
       this.position.x += moveX;
       this.position.z += moveZ;
       this.group.position.set(this.position.x, 0, this.position.z);
-
-      // Walking animation
       this.walkCycle += delta * 3;
 
       if (this.leftLeg && this.rightLeg) {
@@ -216,14 +198,8 @@ export class Godzilla {
       if (this.head) {
         this.head.rotation.x = Math.sin(this.walkCycle * 0.5) * 0.05;
       }
-
-      // Check for building collisions and destroy them
       this.checkBuildingCollisions();
-
-      // Scare NPCs nearby
       this.scareNearbyNPCs();
-
-      // Roar periodically
       this.roarTimer += delta;
       if (this.roarTimer >= this.roarInterval) {
         this.roarTimer = 0;
@@ -231,7 +207,6 @@ export class Godzilla {
         this.roarAnimation();
       }
     } else {
-      // Reached destination, despawn
       this.despawn();
     }
   }
@@ -255,8 +230,6 @@ export class Godzilla {
 
   destroyBuilding(building, index) {
     this.destroyedBuildings.add(index);
-
-    // Animasi hancur - building jatuh
     const mesh = building.mesh;
     if (!mesh) return;
 
@@ -270,17 +243,12 @@ export class Godzilla {
       if (mesh.position.y > -20) {
         requestAnimationFrame(destroyAnimation);
       } else {
-        // Remove from scene after fallen
         this.scene.remove(mesh);
       }
     };
 
     destroyAnimation();
-
-    // Create debris particles
     this.createDebris(mesh.position);
-
-    console.log(`🦖 Godzilla destroyed: ${building.name || 'Building'}`);
   }
 
   createDebris(position) {
@@ -303,12 +271,10 @@ export class Godzilla {
 
       this.scene.add(debris);
 
-      // Animate debris
       let time = 0;
       const animateDebris = () => {
         time += 0.016;
-        velocity.y -= 9.8 * 0.016; // Gravity
-
+        velocity.y -= 9.8 * 0.016;
         debris.position.x += velocity.x * 0.016;
         debris.position.y += velocity.y * 0.016;
         debris.position.z += velocity.z * 0.016;
@@ -340,12 +306,11 @@ export class Godzilla {
       const distance = Math.sqrt(dx * dx + dz * dz);
 
       if (distance < scareRadius) {
-        // Run away from Godzilla
         const fleeX = npc.mesh.position.x + (dx / distance) * 10;
         const fleeZ = npc.mesh.position.z + (dz / distance) * 10;
 
         npc.targetPosition = { x: fleeX, z: fleeZ };
-        npc.speed = npc.walkSpeed * 3; // Run faster!
+        npc.speed = npc.walkSpeed * 3;
       }
     });
   }
@@ -353,7 +318,6 @@ export class Godzilla {
   roarAnimation() {
     if (!this.head) return;
 
-    // Head tilts back for roar
     let tiltAmount = 0;
     const roarAnim = () => {
       tiltAmount += 0.05;
@@ -371,21 +335,13 @@ export class Godzilla {
 
   playRoarSound() {
     try {
-      this.roarSound.currentTime = 0; // Reset to start
-      this.roarSound.play().catch((err) => {
-        console.log('Could not play roar sound:', err);
-      });
-    } catch (error) {
-      console.log('Error playing roar sound:', error);
-    }
-    console.log('🦖 ROARRRRR!!!');
+      this.roarSound.currentTime = 0;
+      this.roarSound.play().catch((err) => {});
+    } catch (error) {}
   }
 
   despawn() {
     if (!this.active) return;
-
-    console.log('🦖 Godzilla has left the city...');
-
     if (this.group) {
       this.scene.remove(this.group);
       this.group = null;

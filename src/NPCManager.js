@@ -151,11 +151,9 @@ export class NPCManager {
 
   createVehicleNPCs() {
     if (!this.cityData.roadPaths || this.cityData.roadPaths.length === 0) {
-      console.warn('No road paths available');
       return;
     }
 
-    // Create 5 motorcycles
     for (let i = 0; i < 5; i++) {
       const path = this.cityData.roadPaths[i % this.cityData.roadPaths.length];
       if (!path) continue;
@@ -210,85 +208,381 @@ export class NPCManager {
   createMotorcycle() {
     const group = new THREE.Group();
 
-    // Body (1.2x dari original)
-    const bodyGeometry = new THREE.BoxGeometry(0.6, 0.96, 1.8);
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.position.y = 0.72;
-    body.castShadow = true;
-    group.add(body);
+    // ======================
+    // 1. FRAME / BODY
+    // ======================
+    const frame = new THREE.Group();
+    group.add(frame);
 
-    // Wheels (1.2x dari original)
-    const wheelGeometry = new THREE.CylinderGeometry(0.36, 0.36, 0.24, 8);
-    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    // Tangki / badan tengah
+    const tank = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.35, 0.9),
+      new THREE.MeshStandardMaterial({
+        color: 0x2d2d2d,
+        metalness: 0.2,
+        roughness: 0.8,
+      })
+    );
+    tank.position.set(0, 0.6, 0);
+    tank.castShadow = true;
+    frame.add(tank);
 
-    const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    // Jok (seat)
+    const seat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.15, 0.9),
+      new THREE.MeshStandardMaterial({ color: 0x000000 })
+    );
+    seat.position.set(0, 0.85, -0.1);
+    seat.castShadow = true;
+    frame.add(seat);
+
+    // Spakbor depan
+    const fenderFront = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.1, 0.45),
+      new THREE.MeshStandardMaterial({ color: 0x333333 })
+    );
+    fenderFront.position.set(0, 0.45, 0.72);
+    fenderFront.castShadow = true;
+    frame.add(fenderFront);
+
+    // Spakbor belakang
+    const fenderBack = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.1, 0.55),
+      new THREE.MeshStandardMaterial({ color: 0x333333 })
+    );
+    fenderBack.position.set(0, 0.45, -0.72);
+    fenderBack.castShadow = true;
+    frame.add(fenderBack);
+
+    // ======================
+    // 2. WHEELS
+    // ======================
+    const wheelGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.22, 12);
+    const wheelMat = new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      metalness: 0.1,
+    });
+
+    const frontWheel = new THREE.Mesh(wheelGeo, wheelMat);
     frontWheel.rotation.z = Math.PI / 2;
     frontWheel.position.set(0, 0.36, 0.72);
-    frontWheel.castShadow = true;
-    group.add(frontWheel);
+    frame.add(frontWheel);
 
-    const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-    backWheel.rotation.z = Math.PI / 2;
-    backWheel.position.set(0, 0.36, -0.72);
-    backWheel.castShadow = true;
-    group.add(backWheel);
+    const rearWheel = new THREE.Mesh(wheelGeo, wheelMat);
+    rearWheel.rotation.z = Math.PI / 2;
+    rearWheel.position.set(0, 0.36, -0.72);
+    frame.add(rearWheel);
 
-    // Rider (scale 0.6 = 0.5 * 1.2)
+    // ======================
+    // 3. SHOCK / SUSPENSION
+    // ======================
+    const shockMat = new THREE.MeshStandardMaterial({
+      color: 0xaaaaaa,
+      metalness: 0.6,
+    });
+
+    // Shock depan kiri & kanan
+    [-0.22, 0.22].forEach((offsetX) => {
+      const shockFront = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8),
+        shockMat
+      );
+      shockFront.position.set(offsetX, 0.8, 0.72);
+      frame.add(shockFront);
+    });
+
+    // Shock belakang kiri & kanan
+    [-0.25, 0.25].forEach((offsetX) => {
+      const shockRear = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.55, 8),
+        shockMat
+      );
+      shockRear.position.set(offsetX, 0.6, -0.55);
+      shockRear.rotation.z = 0.4;
+      frame.add(shockRear);
+    });
+
+    // ======================
+    // 4. HANDLEBAR / STANG
+    // ======================
+    const handle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 0.07, 0.07),
+      new THREE.MeshStandardMaterial({ color: 0x555555 })
+    );
+    handle.position.set(0, 1.3, 0.8);
+    frame.add(handle);
+
+    [-0.35, 0.35].forEach((xOffset) => {
+      const grip = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.22, 8),
+        new THREE.MeshStandardMaterial({ color: 0x111111 })
+      );
+      grip.rotation.z = Math.PI / 2;
+      grip.position.set(xOffset, 1.3, 0.8);
+      frame.add(grip);
+    });
+
+    const headlight = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.18, 0.1, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffee,
+        emissiveIntensity: 0.7,
+      })
+    );
+    headlight.rotation.x = Math.PI / 2;
+    headlight.position.set(0, 0.9, 1.0);
+    headlight.castShadow = true;
+    frame.add(headlight);
+
+    const exhaust = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.07, 0.9, 8),
+      new THREE.MeshStandardMaterial({
+        color: 0x888888,
+        metalness: 0.7,
+        roughness: 0.4,
+      })
+    );
+    exhaust.rotation.x = Math.PI / 2;
+    exhaust.position.set(-0.45, 0.45, -0.4);
+    frame.add(exhaust);
+
     const rider = this.createMinecraftCharacter(0x00aaff);
-    rider.position.y = 1.2;
+    rider.position.set(0, 1.2, -0.1);
+    rider.scale.set(0.9, 0.9, 0.9);
     group.add(rider);
+    group.position.y = -0.48;
 
     return group;
   }
 
-  createCar(color) {
+  createCar(color, options = {}) {
+    const {
+      x = 0,
+      z = 0,
+      rotationY = 0,
+      windowTint = 0x87ceeb,
+      registerCollider = false,
+      name = 'IndoCar',
+    } = options;
+
     const group = new THREE.Group();
 
-    // Body (1.5x lebih besar)
-    const bodyGeometry = new THREE.BoxGeometry(3, 1.8, 5.25);
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: color });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.position.y = 1.5;
-    body.castShadow = true;
-    group.add(body);
-
-    // Roof (1.5x lebih besar)
-    const roofGeometry = new THREE.BoxGeometry(2.7, 1.2, 3);
-    const roof = new THREE.Mesh(roofGeometry, bodyMaterial);
-    roof.position.y = 2.4;
-    roof.castShadow = true;
-    group.add(roof);
-
-    // Windows (1.5x lebih besar)
-    const windowGeometry = new THREE.BoxGeometry(2.55, 1.05, 2.85);
-    const windowMaterial = new THREE.MeshStandardMaterial({
-      color: 0x87ceeb,
-      transparent: true,
-      opacity: 0.5,
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color,
+      metalness: 0.2,
+      roughness: 0.7,
     });
-    const windows = new THREE.Mesh(windowGeometry, windowMaterial);
-    windows.position.y = 2.4;
-    group.add(windows);
+    const blackMat = new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      metalness: 0.1,
+      roughness: 0.9,
+    });
+    const silverMat = new THREE.MeshStandardMaterial({
+      color: 0xb0b0b0,
+      metalness: 0.6,
+      roughness: 0.4,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: windowTint,
+      transparent: true,
+      opacity: 0.55,
+      roughness: 0.1,
+      metalness: 0.0,
+    });
 
-    // Wheels (1.5x lebih besar)
-    const wheelGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.45, 8);
-    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 4.3), bodyMat);
+    lower.position.set(0, 0.6, 0.0);
+    lower.castShadow = true;
+    group.add(lower);
 
-    const wheelPositions = [
-      { x: -1.35, z: 1.8 },
-      { x: 1.35, z: 1.8 },
-      { x: -1.35, z: -1.8 },
-      { x: 1.35, z: -1.8 },
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.9, 2.8), bodyMat);
+    cabin.position.set(0, 1.25, -0.2);
+    cabin.castShadow = true;
+    group.add(cabin);
+
+    const hood = new THREE.Mesh(
+      new THREE.BoxGeometry(2.05, 0.35, 1.0),
+      bodyMat
+    );
+    hood.position.set(0, 1.0, 1.2);
+    hood.rotation.x = -0.08;
+    hood.castShadow = true;
+    group.add(hood);
+
+    const bumperF = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.35, 0.45),
+      bodyMat
+    );
+    bumperF.position.set(0, 0.7, 2.15);
+    group.add(bumperF);
+
+    const bumperR = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.35, 0.45),
+      bodyMat
+    );
+    bumperR.position.set(0, 0.7, -2.15);
+    group.add(bumperR);
+
+    const grille = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.25, 0.06),
+      blackMat
+    );
+    grille.position.set(0, 0.95, 2.05);
+    group.add(grille);
+
+    const diffuser = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.2, 0.06),
+      blackMat
+    );
+    diffuser.position.set(0, 0.65, -2.05);
+    group.add(diffuser);
+
+    const windscreen = new THREE.Mesh(
+      new THREE.BoxGeometry(1.9, 0.6, 0.05),
+      glassMat
+    );
+    windscreen.position.set(0, 1.25, 0.8);
+    windscreen.rotation.x = -0.35;
+    group.add(windscreen);
+
+    const rearGlass = new THREE.Mesh(
+      new THREE.BoxGeometry(1.9, 0.65, 0.05),
+      glassMat
+    );
+    rearGlass.position.set(0, 1.25, -1.6);
+    rearGlass.rotation.x = 0.25;
+    group.add(rearGlass);
+
+    [-1, 1].forEach((side) => {
+      const sideGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(0.05, 0.65, 2.4),
+        glassMat
+      );
+      sideGlass.position.set(side * 1.0, 1.25, -0.3);
+      group.add(sideGlass);
+    });
+
+    const headMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffee,
+      emissiveIntensity: 0.9,
+      roughness: 0.2,
+    });
+    const headL = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4, 0.2, 0.08),
+      headMat
+    );
+    const headR = headL.clone();
+    headL.position.set(-0.65, 0.95, 2.12);
+    headR.position.set(0.65, 0.95, 2.12);
+    group.add(headL, headR);
+
+    const turnMat = new THREE.MeshStandardMaterial({
+      color: 0xffa000,
+      emissive: 0xffa000,
+      emissiveIntensity: 0.6,
+    });
+    const turnL = new THREE.Mesh(
+      new THREE.BoxGeometry(0.25, 0.12, 0.06),
+      turnMat
+    );
+    const turnR = turnL.clone();
+    turnL.position.set(-1.0, 0.9, 2.1);
+    turnR.position.set(1.0, 0.9, 2.1);
+    group.add(turnL, turnR);
+
+    const tailMat = new THREE.MeshStandardMaterial({
+      color: 0xff2b2b,
+      emissive: 0xff2b2b,
+      emissiveIntensity: 0.8,
+    });
+    const tailL = new THREE.Mesh(
+      new THREE.BoxGeometry(0.35, 0.25, 0.08),
+      tailMat
+    );
+    const tailR = tailL.clone();
+    tailL.position.set(-0.75, 0.95, -2.12);
+    tailR.position.set(0.75, 0.95, -2.12);
+    group.add(tailL, tailR);
+
+    [-1, 1].forEach((side) => {
+      const mirror = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 0.12, 0.2),
+        bodyMat
+      );
+      mirror.position.set(side * 1.15, 1.1, 0.6);
+      group.add(mirror);
+
+      const handle = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.06, 0.04),
+        silverMat
+      );
+      handle.position.set(side * 0.8, 1.0, 0.1);
+      group.add(handle);
+    });
+
+    const wheelGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.35, 14);
+    const wheelTireMat = new THREE.MeshStandardMaterial({
+      color: 0x151515,
+      metalness: 0.1,
+      roughness: 0.9,
+    });
+    const rimMat = new THREE.MeshStandardMaterial({
+      color: 0x9e9e9e,
+      metalness: 0.7,
+      roughness: 0.35,
+    });
+
+    const wheelPos = [
+      { x: -1.05, z: 1.45 },
+      { x: 1.05, z: 1.45 },
+      { x: -1.05, z: -1.45 },
+      { x: 1.05, z: -1.45 },
     ];
 
-    wheelPositions.forEach((pos) => {
-      const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(pos.x, 0.5, pos.z);
-      wheel.castShadow = true;
-      group.add(wheel);
+    wheelPos.forEach((p) => {
+      const tire = new THREE.Mesh(wheelGeo, wheelTireMat);
+      tire.rotation.z = Math.PI / 2;
+      tire.position.set(p.x, 0.55, p.z);
+      tire.castShadow = true;
+      group.add(tire);
+
+      const rim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.35, 0.18, 10),
+        rimMat
+      );
+      rim.rotation.z = Math.PI / 2;
+      rim.position.set(p.x, 0.55, p.z);
+      group.add(rim);
     });
+
+    const plateFront = new THREE.Mesh(
+      new THREE.BoxGeometry(0.9, 0.15, 0.02),
+      blackMat
+    );
+    plateFront.position.set(0, 0.7, 2.18);
+    group.add(plateFront);
+
+    const plateRear = plateFront.clone();
+    plateRear.position.set(0, 0.7, -2.18);
+    group.add(plateRear);
+
+    group.updateMatrixWorld(true);
+    const bbox = new THREE.Box3().setFromObject(group);
+    const minY = bbox.min.y;
+    group.position.y -= minY;
+    group.position.x = x;
+    group.position.z = z;
+    group.rotation.y = rotationY;
+
+    this.scene.add(group);
+
+    if (registerCollider && this.buildings) {
+      group.updateMatrixWorld(true);
+      const carBox = new THREE.Box3().setFromObject(group);
+      this.buildings.push({ mesh: group, boundingBox: carBox, name });
+    }
 
     return group;
   }
@@ -447,7 +741,7 @@ export class NPCManager {
       }, // Di depan Konoha Mart (bangunan di -40,5, depth 8, jadi depan di z=9+4)
       {
         name: 'Mahardhika',
-        position: { x: -8, z: 28 },
+        position: { x: -3, z: 22 },
         // position: { x: -15, z: 40 },
         dialogue: 'Haha, ketahuan juga deh aku.',
       }, // Di pinggir lake (lake tetap di 0,40)
@@ -476,7 +770,7 @@ export class NPCManager {
 
   createFarhanNPC() {
     const farhan = this.createMinecraftCharacter(0xffd700);
-    farhan.position.set(0, 0.9, -5);
+    farhan.position.set(0, 0.9, -6.5);
     const nameTag = this.createNameTag('Farhan Hadi Lutfi');
     nameTag.position.y = 2.5;
     farhan.add(nameTag);
@@ -488,7 +782,7 @@ export class NPCManager {
       name: 'Farhan Hadi Lutfi',
       dialogue:
         'Hai, Aku Farhan Hadi Lutfi. Aku gak ikutan main ya hehe, semangat ya kamu harus temukan semua yang bersembunyi!',
-      dialogueNight: 'Sudah malam, harusnya kamu pulang...',
+      dialogueNight: 'Sudah malam, atau sudah tau?',
       found: false,
       isMission: false,
       isFarhan: true,
