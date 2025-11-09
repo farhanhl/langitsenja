@@ -3,6 +3,7 @@ export class CheatCodeManager {
     this.game = game;
     this.inputBuffer = '';
     this.bufferTimeout = null;
+    this.cheatHintTimeout = null; // Store timeout reference
     this.maxBufferLength = 20;
     this.resetDelay = 2000;
 
@@ -28,35 +29,40 @@ export class CheatCodeManager {
       this.game.gameManager.addAudioElement(this.cheatSound);
     }
 
+    // Store bound function for proper removal
+    this.boundKeyPress = this.handleKeyPress.bind(this);
+
     this.setupKeyListener();
     this.showCheatHint();
   }
 
   setupKeyListener() {
-    window.addEventListener('keypress', (event) => {
-      if (
-        event.target.tagName === 'INPUT' ||
-        event.target.tagName === 'TEXTAREA'
-      ) {
-        return;
+    window.addEventListener('keypress', this.boundKeyPress);
+  }
+  
+  handleKeyPress(event) {
+    if (
+      event.target.tagName === 'INPUT' ||
+      event.target.tagName === 'TEXTAREA'
+    ) {
+      return;
+    }
+
+    const key = event.key.toUpperCase();
+
+    if (key.match(/^[A-Z]$/)) {
+      this.inputBuffer += key;
+
+      if (this.inputBuffer.length > this.maxBufferLength) {
+        this.inputBuffer = this.inputBuffer.slice(-this.maxBufferLength);
       }
+      this.checkCheats();
 
-      const key = event.key.toUpperCase();
-
-      if (key.match(/^[A-Z]$/)) {
-        this.inputBuffer += key;
-
-        if (this.inputBuffer.length > this.maxBufferLength) {
-          this.inputBuffer = this.inputBuffer.slice(-this.maxBufferLength);
-        }
-        this.checkCheats();
-
-        clearTimeout(this.bufferTimeout);
-        this.bufferTimeout = setTimeout(() => {
-          this.inputBuffer = '';
-        }, this.resetDelay);
-      }
-    });
+      clearTimeout(this.bufferTimeout);
+      this.bufferTimeout = setTimeout(() => {
+        this.inputBuffer = '';
+      }, this.resetDelay);
+    }
   }
 
   checkCheats() {
@@ -225,10 +231,23 @@ export class CheatCodeManager {
     const hasSeenHint = localStorage.getItem('cheatHintSeen');
 
     if (!hasSeenHint) {
-      setTimeout(() => {
+      this.cheatHintTimeout = setTimeout(() => {
         this.showNotification('💡 Tip: Try typing secret codes...', 'info');
         localStorage.setItem('cheatHintSeen', 'true');
       }, 5000);
+    }
+  }
+  
+  // Clean up event listeners to prevent memory leaks
+  destroy() {
+    window.removeEventListener('keypress', this.boundKeyPress);
+    
+    // Clear any pending timeouts
+    if (this.bufferTimeout) {
+      clearTimeout(this.bufferTimeout);
+    }
+    if (this.cheatHintTimeout) {
+      clearTimeout(this.cheatHintTimeout);
     }
   }
 }

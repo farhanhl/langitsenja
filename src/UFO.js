@@ -18,6 +18,9 @@ export class UFO {
     this.inputSequence = [];
     this.secretCode = ['u', 'f', 'o'];
     this.inputTimeout = null;
+    
+    // Store bound function for proper removal
+    this.boundKeyDown = this.handleKeyDown.bind(this);
 
     this.createUFO();
     this.setupInputListener();
@@ -98,23 +101,25 @@ export class UFO {
   }
 
   setupInputListener() {
-    window.addEventListener('keydown', (e) => {
-      const key = e.key.toLowerCase();
-      if (this.inputTimeout) {
-        clearTimeout(this.inputTimeout);
-      }
-      this.inputSequence.push(key);
-      if (this.inputSequence.length > 3) {
-        this.inputSequence.shift();
-      }
-      if (this.inputSequence.join('') === this.secretCode.join('')) {
-        this.activateUFO();
-        this.inputSequence = [];
-      }
-      this.inputTimeout = setTimeout(() => {
-        this.inputSequence = [];
-      }, 2000);
-    });
+    window.addEventListener('keydown', this.boundKeyDown);
+  }
+  
+  handleKeyDown(e) {
+    const key = e.key.toLowerCase();
+    if (this.inputTimeout) {
+      clearTimeout(this.inputTimeout);
+    }
+    this.inputSequence.push(key);
+    if (this.inputSequence.length > 3) {
+      this.inputSequence.shift();
+    }
+    if (this.inputSequence.join('') === this.secretCode.join('')) {
+      this.activateUFO();
+      this.inputSequence = [];
+    }
+    this.inputTimeout = setTimeout(() => {
+      this.inputSequence = [];
+    }, 2000);
   }
 
   activateUFO() {
@@ -268,6 +273,23 @@ export class UFO {
       this.state = 'idle';
       this.isActive = false;
       this.beamLight.material.opacity = 0;
+    }
+  }
+  
+  // Clean up event listeners to prevent memory leaks
+  destroy() {
+    // Remove the event listener
+    window.removeEventListener('keydown', this.boundKeyDown);
+    
+    // Clear any pending timeout
+    if (this.inputTimeout) {
+      clearTimeout(this.inputTimeout);
+      this.inputTimeout = null;
+    }
+    
+    // Remove UFO mesh from scene if it exists
+    if (this.mesh && this.mesh.parent) {
+      this.mesh.parent.remove(this.mesh);
     }
   }
 }

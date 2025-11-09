@@ -30,6 +30,12 @@ class LangitSenja {
     document.body.appendChild(this.renderer.domElement);
     this.renderer.domElement.id = 'gameCanvas';
     this.clock = new THREE.Clock();
+    
+    // Bind event handlers for proper removal
+    this.onResize = this.handleResize.bind(this);
+    this.onEscapeKey = this.handleEscapeKey.bind(this);
+    this.onMKey = this.handleMKey.bind(this);
+    
     this.init();
   }
 
@@ -123,6 +129,70 @@ class LangitSenja {
 
     this.renderer.render(this.scene, this.camera);
   }
+  
+  handleResize() {
+    if (this) {
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+  }
+
+  handleEscapeKey(e) {
+    if (e.key === 'Escape') {
+      if (this && this.gameManager) {
+        const howToPlayModal = document.getElementById('howToPlay');
+        const pauseMenu = document.getElementById('pauseMenu');
+
+        const howToPlayVisible =
+          howToPlayModal && howToPlayModal.style.display !== 'none';
+        const pauseMenuVisible =
+          pauseMenu && pauseMenu.style.display !== 'none';
+        if (!howToPlayVisible) {
+          if (pauseMenuVisible) {
+            this.gameManager.togglePause();
+          } else {
+            this.gameManager.togglePause();
+          }
+        }
+      }
+      e.preventDefault();
+    }
+  }
+
+  handleMKey(e) {
+    if (e.key.toLowerCase() === 'm') {
+      window.toggleMute();
+      e.preventDefault();
+    }
+  }
+
+  destroy() {
+    // Clean up the player
+    if (this.player && typeof this.player.destroy === 'function') {
+      this.player.destroy();
+    }
+    
+    // Clean up the UFO
+    if (this.ufo && typeof this.ufo.destroy === 'function') {
+      this.ufo.destroy();
+    }
+    
+    // Clean up the cheat code manager
+    if (this.cheatCodeManager && typeof this.cheatCodeManager.destroy === 'function') {
+      this.cheatCodeManager.destroy();
+    }
+    
+    // Clean up the renderer
+    if (this.renderer) {
+      this.renderer.dispose();
+    }
+    
+    // Remove event listeners
+    window.removeEventListener('resize', this.onResize || this.handleResize);
+    window.removeEventListener('keydown', this.onEscapeKey || this.handleEscapeKey, true);
+    window.removeEventListener('keydown', this.onMKey || this.handleMKey, true);
+  }
 }
 
 window.closeDialogue = function () {
@@ -135,6 +205,9 @@ window.closePopup = function () {
 };
 
 window.resetGame = function () {
+  if (window.game && typeof window.game.destroy === 'function') {
+    window.game.destroy();
+  }
   location.reload();
 };
 
@@ -161,49 +234,10 @@ window.toggleMute = function () {
   }
 };
 
-window.addEventListener('resize', () => {
-  if (window.game) {
-    window.game.camera.aspect = window.innerWidth / window.innerHeight;
-    window.game.camera.updateProjectionMatrix();
-    window.game.renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-});
-
-window.addEventListener(
-  'keydown',
-  (e) => {
-    if (e.key === 'Escape') {
-      if (window.game && window.game.gameManager) {
-        const howToPlayModal = document.getElementById('howToPlay');
-        const pauseMenu = document.getElementById('pauseMenu');
-
-        const howToPlayVisible =
-          howToPlayModal && howToPlayModal.style.display !== 'none';
-        const pauseMenuVisible =
-          pauseMenu && pauseMenu.style.display !== 'none';
-        if (!howToPlayVisible) {
-          if (pauseMenuVisible) {
-            window.game.gameManager.togglePause();
-          } else {
-            window.game.gameManager.togglePause();
-          }
-        }
-      }
-      e.preventDefault();
-    }
-  },
-  true
-);
-
-window.addEventListener(
-  'keydown',
-  (e) => {
-    if (e.key.toLowerCase() === 'm') {
-      window.toggleMute();
-      e.preventDefault();
-    }
-  },
-  true
-);
-
 window.game = new LangitSenja();
+
+// Add event listeners after game object is created
+window.addEventListener('resize', window.game.handleResize.bind(window.game));
+
+window.addEventListener('keydown', window.game.handleEscapeKey.bind(window.game), true);
+window.addEventListener('keydown', window.game.handleMKey.bind(window.game), true);

@@ -28,6 +28,13 @@ export class Player {
     this.mouseMovement = { x: 0, y: 0 };
     this.isPointerLocked = false;
 
+    // Store bound event handlers for proper removal
+    this.boundKeyDown = this.onKeyDown.bind(this);
+    this.boundKeyUp = this.onKeyUp.bind(this);
+    this.boundClick = this.onClick.bind(this);
+    this.boundPointerLockChange = this.onPointerLockChange.bind(this);
+    this.boundMouseMove = this.onMouseMove.bind(this);
+
     // Create player mesh (Minecraft-style)
     this.createPlayerMesh();
 
@@ -93,44 +100,52 @@ export class Player {
 
   setupControls() {
     // Keyboard events
-    window.addEventListener('keydown', (e) => {
-      this.keys[e.key.toLowerCase()] = true;
-      this.keys[e.code] = true;
-    });
-
-    window.addEventListener('keyup', (e) => {
-      this.keys[e.key.toLowerCase()] = false;
-      this.keys[e.code] = false;
-    });
+    window.addEventListener('keydown', this.boundKeyDown);
+    window.addEventListener('keyup', this.boundKeyUp);
 
     // Mouse events for camera rotation
-    document.addEventListener('click', () => {
-      if (!this.isPointerLocked) {
-        document.body.requestPointerLock();
+    document.addEventListener('click', this.boundClick);
+    document.addEventListener('pointerlockchange', this.boundPointerLockChange);
+    document.addEventListener('mousemove', this.boundMouseMove);
+  }
+
+  // Bound event handlers for proper removal
+  onKeyDown(e) {
+    this.keys[e.key.toLowerCase()] = true;
+    this.keys[e.code] = true;
+  }
+
+  onKeyUp(e) {
+    this.keys[e.key.toLowerCase()] = false;
+    this.keys[e.code] = false;
+  }
+
+  onClick() {
+    if (!this.isPointerLocked) {
+      document.body.requestPointerLock();
+    }
+  }
+
+  onPointerLockChange() {
+    this.isPointerLocked = document.pointerLockElement === document.body;
+  }
+
+  onMouseMove(e) {
+    if (this.isPointerLocked) {
+      // Check if game is paused
+      if (this.gameManager && this.gameManager.isPaused) {
+        return; // Don't update camera when game is paused
       }
-    });
 
-    document.addEventListener('pointerlockchange', () => {
-      this.isPointerLocked = document.pointerLockElement === document.body;
-    });
+      this.cameraAngle.horizontal -= e.movementX * this.mouseSensitivity;
+      this.cameraAngle.vertical -= e.movementY * this.mouseSensitivity;
 
-    document.addEventListener('mousemove', (e) => {
-      if (this.isPointerLocked) {
-        // Check if game is paused
-        if (this.gameManager && this.gameManager.isPaused) {
-          return; // Don't update camera when game is paused
-        }
-
-        this.cameraAngle.horizontal -= e.movementX * this.mouseSensitivity;
-        this.cameraAngle.vertical -= e.movementY * this.mouseSensitivity;
-
-        // Clamp vertical angle
-        this.cameraAngle.vertical = Math.max(
-          -Math.PI / 3,
-          Math.min(Math.PI / 3, this.cameraAngle.vertical)
-        );
-      }
-    });
+      // Clamp vertical angle
+      this.cameraAngle.vertical = Math.max(
+        -Math.PI / 3,
+        Math.min(Math.PI / 3, this.cameraAngle.vertical)
+      );
+    }
   }
 
   update(delta) {
@@ -301,5 +316,19 @@ export class Player {
 
   getPosition() {
     return this.position.clone();
+  }
+
+  // Clean up event listeners to prevent memory leaks
+  destroy() {
+    window.removeEventListener('keydown', this.boundKeyDown);
+    window.removeEventListener('keyup', this.boundKeyUp);
+    document.removeEventListener('click', this.boundClick);
+    document.removeEventListener('pointerlockchange', this.boundPointerLockChange);
+    document.removeEventListener('mousemove', this.boundMouseMove);
+
+    // Remove player mesh from scene if it exists
+    if (this.mesh && this.mesh.parent) {
+      this.mesh.parent.remove(this.mesh);
+    }
   }
 }

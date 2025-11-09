@@ -1046,8 +1046,7 @@ export class CityBuilder {
     railLeft.position.set(-3.0, 0.35 + groundTopY, 0);
     const railRight = railLeft.clone();
     railRight.position.x = 3.0;
-    hut.add(railBack, railLeft, railRight); // railFront excluded to create entrance
-
+    hut.add(railBack, railLeft, railRight);
     const bulb = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 16, 16),
       new THREE.MeshStandardMaterial({
@@ -1062,7 +1061,6 @@ export class CityBuilder {
     lamp.position.copy(bulb.position);
     hut.add(lamp);
 
-    // meja kecil + bangku papan
     const table = new THREE.Mesh(
       new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16),
       new THREE.MeshStandardMaterial({ color: 0x5e3b16, roughness: 0.85 })
@@ -1099,7 +1097,6 @@ export class CityBuilder {
       ];
       legOffsets.forEach(([lx, lz]) => {
         const leg = new THREE.Mesh(legGeo, legMat);
-        // rotasi lokal bangku
         const v = new THREE.Vector3(lx, -0.21, lz).applyAxisAngle(
           new THREE.Vector3(0, 1, 0),
           rotY
@@ -2202,262 +2199,6 @@ export class CityBuilder {
       name: 'Angkringan - Gerobak',
     });
 
-    return group;
-  }
-
-  createConstructionSite(
-    x,
-    z,
-    {
-      scale = 1.6,
-      rotate = 0,
-      floors = 3,
-      includeCrane = true,
-      name = 'PROYEK PEMBANGUNAN',
-    } = {}
-  ) {
-    const group = new THREE.Group();
-
-    const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(24, 0.08, 18),
-      new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 0.95 })
-    );
-    pad.position.set(0, 0.04, 0);
-    pad.receiveShadow = true;
-    group.add(pad);
-
-    const fenceMat = new THREE.MeshStandardMaterial({
-      color: 0x3e4a56,
-      roughness: 0.8,
-    });
-    function fence(x1, z1, x2, z2) {
-      const len = Math.hypot(x2 - x1, z2 - z1);
-      const ang = Math.atan2(z2 - z1, x2 - x1);
-      const rail = new THREE.Mesh(
-        new THREE.BoxGeometry(len, 1.4, 0.1),
-        fenceMat
-      );
-      rail.position.set((x1 + x2) / 2, 0.75, (z1 + z2) / 2);
-      rail.rotation.y = -ang;
-      group.add(rail);
-    }
-    fence(-11.5, -8.5, 11.5, -8.5);
-    fence(11.5, -8.5, 11.5, 8.5);
-    fence(11.5, 8.5, -11.5, 8.5);
-    fence(-11.5, 8.5, -11.5, -8.5);
-
-    const colMat = new THREE.MeshStandardMaterial({
-      color: 0x7c7c7c,
-      roughness: 0.9,
-    });
-    const slabMat = new THREE.MeshStandardMaterial({
-      color: 0x9a9a9a,
-      roughness: 0.95,
-    });
-    const grid = { w: 14, d: 10 };
-    const colPos = [
-      [-grid.w / 2, -grid.d / 2],
-      [grid.w / 2, -grid.d / 2],
-      [-grid.w / 2, grid.d / 2],
-      [grid.w / 2, grid.d / 2],
-      [0, -grid.d / 2],
-      [0, grid.d / 2],
-      [-grid.w / 2, 0],
-      [grid.w / 2, 0],
-    ];
-    for (let f = 0; f < floors; f++) {
-      const levelY = 0.08 + f * 2.8;
-      // kolom
-      colPos.forEach(([cx, cz]) => {
-        const col = new THREE.Mesh(
-          new THREE.BoxGeometry(0.35, 2.8, 0.35),
-          colMat
-        );
-        col.position.set(cx, levelY + 1.4, cz);
-        col.castShadow = true;
-        group.add(col);
-        // besi tulangan yang menonjol di atas lantai paling atas
-        if (f === floors - 1) {
-          const rebar = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8),
-            new THREE.MeshStandardMaterial({
-              color: 0x444444,
-              roughness: 0.7,
-              metalness: 0.2,
-            })
-          );
-          rebar.position.set(cx, levelY + 2.8 + 0.4, cz);
-          group.add(rebar);
-        }
-      });
-      // pelat lantai parsial (sebagian area masih bolong)
-      const slab = new THREE.Mesh(
-        new THREE.BoxGeometry(grid.w, 0.25, grid.d),
-        slabMat
-      );
-      slab.position.set(0, levelY + 2.8, 0);
-      slab.castShadow = true;
-      slab.receiveShadow = true;
-      group.add(slab);
-
-      // lubang void di tepi (simulasi area belum dicor) -> pakai plat kecil yang menutup sebagian
-      const patch = new THREE.Mesh(
-        new THREE.BoxGeometry(4.5, 0.26, 3.2),
-        slabMat
-      );
-      patch.position.set(
-        -grid.w / 2 + 2.5,
-        levelY + 2.8 + 0.02,
-        grid.d / 2 - 1.8
-      );
-      group.add(patch);
-    }
-
-    // --- Scaffolding (perancah) di sisi fasad depan ---
-    const scaffMat = new THREE.MeshStandardMaterial({
-      color: 0x6b6b6b,
-      roughness: 0.6,
-      metalness: 0.2,
-    });
-    for (let y = 0; y < Math.max(2, floors); y++) {
-      for (let i = 0; i < 4; i++) {
-        const pole = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.06, 0.06, 2.6, 10),
-          scaffMat
-        );
-        pole.position.set(
-          -grid.w / 2 - 1.2 + i * 0.8,
-          0.08 + 1.3 + y * 2.8,
-          -grid.d / 2 - 0.7
-        );
-        group.add(pole);
-      }
-      const plank = new THREE.Mesh(
-        new THREE.BoxGeometry(3.0, 0.1, 0.6),
-        new THREE.MeshStandardMaterial({ color: 0x7a5c3a, roughness: 0.9 })
-      );
-      plank.position.set(
-        -grid.w / 2 - 0.6,
-        0.08 + y * 2.8 + 2.2,
-        -grid.d / 2 - 0.7
-      );
-      group.add(plank);
-    }
-
-    // --- Material menumpuk: palet bata & semen ---
-    function makeBrickPile(px, pz) {
-      const g = new THREE.Group();
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 5; c++) {
-          const b = new THREE.Mesh(
-            new THREE.BoxGeometry(0.5, 0.2, 0.25),
-            new THREE.MeshStandardMaterial({ color: 0xb55239, roughness: 0.9 })
-          );
-          b.position.set(c * 0.52, r * 0.22, 0);
-          g.add(b);
-        }
-      }
-      g.position.set(px, 0.1, pz);
-      return g;
-    }
-    group.add(makeBrickPile(8, 5), makeBrickPile(6, 6.5));
-
-    const cement = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.5, 0.5, 12),
-      new THREE.MeshStandardMaterial({ color: 0xcfcfcf, roughness: 0.9 })
-    );
-    cement.position.set(-8, 0.25, 6.5);
-    group.add(cement);
-
-    // --- Tower crane sederhana (opsional) ---
-    if (includeCrane) {
-      const mast = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, floors * 3.1, 0.6),
-        new THREE.MeshStandardMaterial({ color: 0xf0b429, roughness: 0.6 })
-      );
-      mast.position.set(grid.w / 2 + 2.2, floors * 1.55, 0);
-      mast.castShadow = true;
-      group.add(mast);
-
-      const jib = new THREE.Mesh(
-        new THREE.BoxGeometry(8, 0.25, 0.4),
-        new THREE.MeshStandardMaterial({ color: 0xf0b429, roughness: 0.6 })
-      );
-      jib.position.set(grid.w / 2 + 2.2 + 4, floors * 3.1 - 0.2, 0);
-      group.add(jib);
-
-      const counter = new THREE.Mesh(
-        new THREE.BoxGeometry(1.6, 0.8, 0.8),
-        new THREE.MeshStandardMaterial({ color: 0xb08117, roughness: 0.7 })
-      );
-      counter.position.set(grid.w / 2 + 2.2 - 1.4, floors * 3.1 - 0.2, 0);
-      group.add(counter);
-
-      const hookLine = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, 2.2, 8),
-        new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7 })
-      );
-      hookLine.position.set(grid.w / 2 + 2.2 + 6.8, floors * 3.1 - 1.3, 0);
-      group.add(hookLine);
-
-      const hook = new THREE.Mesh(
-        new THREE.TorusGeometry(0.12, 0.04, 8, 12, Math.PI * 1.2),
-        new THREE.MeshStandardMaterial({
-          color: 0x444444,
-          metalness: 0.2,
-          roughness: 0.7,
-        })
-      );
-      hook.position.set(grid.w / 2 + 2.2 + 6.8, floors * 3.1 - 2.6, 0);
-      hook.rotation.x = Math.PI / 2;
-      group.add(hook);
-    }
-
-    // --- Papan proyek (kanvas, orientasi benar) ---
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#102a43';
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.strokeStyle = '#62b0e8';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(10, 10, 1004, 236);
-    // auto-fit teks
-    const maxText = 900;
-    let fs = 90;
-    while (fs > 40) {
-      ctx.font = `bold ${fs}px Arial`;
-      if (ctx.measureText(name).width <= maxText) break;
-      fs -= 4;
-    }
-    ctx.fillStyle = '#f0f4f8';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(name, 512, 128);
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.generateMipmaps = false;
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-
-    // --- Lighting kerja malam (sedikit warm) ---
-    const workLight = new THREE.PointLight(0xffe3b1, 0.9, 20, 2.0);
-    workLight.position.set(-9, 3.2, -7.5);
-    group.add(workLight);
-
-    // --- Transform & register ---
-    group.position.set(x, 0, z);
-    group.scale.set(scale, scale, scale);
-    group.rotation.y = THREE.MathUtils.degToRad(rotate);
-    group.updateMatrixWorld(true);
-
-    const bbox = new THREE.Box3().setFromObject(group);
-    this.scene.add(group);
-    this.buildings.push({
-      mesh: group,
-      boundingBox: bbox,
-      name: 'Construction Site',
-    });
     return group;
   }
 
