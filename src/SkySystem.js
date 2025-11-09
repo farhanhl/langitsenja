@@ -4,8 +4,8 @@ export class SkySystem {
   constructor(scene) {
     this.scene = scene;
     this.isNight = false;
-    this.isSnowy = false; // Track if sky is currently snowy
-    this.originalSkyState = null; // Store original state before Santa
+    this.isSnowy = false;
+    this.originalSkyState = null;
     this.sunsetColors = {
       top: new THREE.Color(0xff6b35),
       middle: new THREE.Color(0xff8c42),
@@ -17,14 +17,14 @@ export class SkySystem {
       bottom: new THREE.Color(0x001a33),
     };
     this.snowyColors = {
-      top: new THREE.Color(0x87ceeb), // Sky blue with snow tint
-      middle: new THREE.Color(0xb0e0e6), // Powder blue
-      bottom: new THREE.Color(0xe0f6ff), // Light blue-white
+      top: new THREE.Color(0x87ceeb),
+      middle: new THREE.Color(0xb0e0e6),
+      bottom: new THREE.Color(0xe0f6ff),
     };
     this.brightColors = {
-      top: new THREE.Color(0x87ceeb), // Clear sky blue
-      middle: new THREE.Color(0xb0e0e6), // Light sky blue
-      bottom: new THREE.Color(0xe0f6ff), // Bright horizon
+      top: new THREE.Color(0x87ceeb),
+      middle: new THREE.Color(0xb0e0e6),
+      bottom: new THREE.Color(0xe0f6ff),
     };
     this.clouds = [];
 
@@ -33,10 +33,8 @@ export class SkySystem {
   }
 
   createSky() {
-    // Create gradient sky using a large sphere
     const skyGeometry = new THREE.SphereGeometry(300, 32, 32);
 
-    // Create custom shader for gradient sky
     const skyMaterial = new THREE.ShaderMaterial({
       uniforms: {
         topColor: { value: this.sunsetColors.top },
@@ -73,7 +71,6 @@ export class SkySystem {
     this.skyMesh = new THREE.Mesh(skyGeometry, skyMaterial);
     this.scene.add(this.skyMesh);
 
-    // Add sun
     const sunGeometry = new THREE.SphereGeometry(10, 16, 16);
     const sunMaterial = new THREE.MeshBasicMaterial({
       color: 0xffaa00,
@@ -83,7 +80,6 @@ export class SkySystem {
     this.sun.position.set(100, 50, -100);
     this.scene.add(this.sun);
 
-    // Add sun glow
     const glowGeometry = new THREE.SphereGeometry(15, 16, 16);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: 0xff8800,
@@ -94,7 +90,6 @@ export class SkySystem {
     this.sunGlow.position.copy(this.sun.position);
     this.scene.add(this.sunGlow);
 
-    // Add moon (initially hidden)
     const moonGeometry = new THREE.SphereGeometry(8, 16, 16);
     const moonMaterial = new THREE.MeshBasicMaterial({
       color: 0xddddff,
@@ -106,7 +101,6 @@ export class SkySystem {
     this.moon.position.set(100, 50, -100);
     this.scene.add(this.moon);
 
-    // Add moon glow
     const moonGlowGeometry = new THREE.SphereGeometry(12, 16, 16);
     const moonGlowMaterial = new THREE.MeshBasicMaterial({
       color: 0xaaaacc,
@@ -152,7 +146,6 @@ export class SkySystem {
       roughness: 1,
     });
 
-    // Create cloud using multiple spheres
     const sphereCount = 5 + Math.floor(Math.random() * 5);
     for (let i = 0; i < sphereCount; i++) {
       const size = 2 + Math.random() * 3;
@@ -172,16 +165,11 @@ export class SkySystem {
   }
 
   transitionToNight() {
-    console.log('transitionToNight called, isNight:', this.isNight);
     if (this.isNight) {
-      console.log('Already night, skipping transition');
       return;
     }
     this.isNight = true;
-    console.log('Starting night transition...');
-
-    // Animate sky color transition
-    const duration = 2000; // 2 seconds
+    const duration = 2000;
     const startTime = Date.now();
     const startColors = {
       top: this.sunsetColors.top.clone(),
@@ -193,7 +181,6 @@ export class SkySystem {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Interpolate colors
       this.skyMesh.material.uniforms.topColor.value.lerpColors(
         startColors.top,
         this.nightColors.top,
@@ -210,7 +197,6 @@ export class SkySystem {
         progress
       );
 
-      // Fade out sun and fade in moon
       if (this.sun && this.sun.material) {
         this.sun.material.opacity = 1 - progress;
         this.sun.material.transparent = true;
@@ -219,7 +205,6 @@ export class SkySystem {
         this.sunGlow.material.opacity = 0.3 * (1 - progress);
       }
 
-      // Fade in moon
       if (this.moon && this.moon.material) {
         this.moon.material.opacity = progress;
       }
@@ -227,7 +212,6 @@ export class SkySystem {
         this.moonGlow.material.opacity = 0.2 * progress;
       }
 
-      // Add stars
       if (progress > 0.5 && !this.stars) {
         this.createStars();
       }
@@ -235,8 +219,6 @@ export class SkySystem {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
-        console.log('Night transition complete!');
-        // Ensure sun is completely hidden
         if (this.sun) this.sun.visible = false;
         if (this.sunGlow) this.sunGlow.visible = false;
       }
@@ -246,32 +228,24 @@ export class SkySystem {
   }
 
   saveOriginalState() {
-    // Save the current sky colors as the original state
     this.originalSkyState = {
       top: this.skyMesh.material.uniforms.topColor.value.clone(),
       middle: this.skyMesh.material.uniforms.middleColor.value.clone(),
       bottom: this.skyMesh.material.uniforms.bottomColor.value.clone(),
-      isNight: this.isNight
+      isNight: this.isNight,
     };
   }
 
   transitionToSnowy() {
-    console.log('transitionToSnowy called, isSnowy:', this.isSnowy);
     if (this.isSnowy) {
-      console.log('Already snowy, skipping transition');
       return;
     }
-    
-    // Save current state as original before changing
+
     this.saveOriginalState();
     this.isSnowy = true;
-    console.log('Starting snowy transition...');
-
-    // Animate sky color transition - from current colors to snowy
-    const duration = 2000; // 2 seconds
+    const duration = 2000;
     const startTime = Date.now();
-    
-    // Use the saved original state colors
+
     const startColors = {
       top: this.originalSkyState.top.clone(),
       middle: this.originalSkyState.middle.clone(),
@@ -281,8 +255,6 @@ export class SkySystem {
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-
-      // Interpolate colors to snowy
       this.skyMesh.material.uniforms.topColor.value.lerpColors(
         startColors.top,
         this.snowyColors.top,
@@ -299,7 +271,6 @@ export class SkySystem {
         progress
       );
 
-      // Fade out moon and fade in sun during snowy transition (if night)
       if (this.isNight) {
         if (this.moon && this.moon.material) {
           this.moon.material.opacity = 1 - progress;
@@ -307,8 +278,7 @@ export class SkySystem {
         if (this.moonGlow && this.moonGlow.material) {
           this.moonGlow.material.opacity = 0.2 * (1 - progress);
         }
-        
-        // Fade in sun for snowy daylight look
+
         if (this.sun && this.sun.material) {
           this.sun.material.opacity = progress;
           this.sun.material.transparent = true;
@@ -321,12 +291,8 @@ export class SkySystem {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
-        console.log('Snowy transition complete!');
-        // Ensure moon is hidden if it was night before
         if (this.moon) this.moon.visible = false;
         if (this.moonGlow) this.moonGlow.visible = false;
-        
-        // Ensure sun is visible in snowy state
         if (this.sun) this.sun.visible = true;
         if (this.sunGlow) this.sunGlow.visible = true;
       }
@@ -337,15 +303,12 @@ export class SkySystem {
 
   restoreOriginalState() {
     if (!this.isSnowy || !this.originalSkyState) {
-      console.log('Not snowy or no original state to restore');
       return;
     }
-    
-    console.log('Starting restoration to original state...');
+
     this.isSnowy = false;
 
-    // Animate sky color transition - from snowy back to original
-    const duration = 2000; // 2 seconds
+    const duration = 2000;
     const startTime = Date.now();
     const startColors = {
       top: this.snowyColors.top.clone(),
@@ -357,7 +320,6 @@ export class SkySystem {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Interpolate colors back to original
       this.skyMesh.material.uniforms.topColor.value.lerpColors(
         startColors.top,
         this.originalSkyState.top,
@@ -374,7 +336,6 @@ export class SkySystem {
         progress
       );
 
-      // Fade in moon if original state was night
       if (this.originalSkyState.isNight) {
         if (this.moon && this.moon.material) {
           this.moon.material.opacity = progress;
@@ -384,7 +345,6 @@ export class SkySystem {
         }
       }
 
-      // Fade out sun if original state was night
       if (this.originalSkyState.isNight) {
         if (this.sun && this.sun.material) {
           this.sun.material.opacity = 1 - progress;
@@ -398,10 +358,7 @@ export class SkySystem {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
-        console.log('Restoration to original state complete!');
-        // Set flags based on original state
         this.isNight = this.originalSkyState.isNight;
-        // Ensure moon is visible if original state was night
         if (this.originalSkyState.isNight) {
           if (this.moon) this.moon.visible = true;
           if (this.moonGlow) this.moonGlow.visible = true;
@@ -413,8 +370,7 @@ export class SkySystem {
           if (this.sun) this.sun.visible = true;
           if (this.sunGlow) this.sunGlow.visible = true;
         }
-        
-        // Clear the original state as it's been restored
+
         this.originalSkyState = null;
       }
     };
@@ -447,24 +403,20 @@ export class SkySystem {
   }
 
   update() {
-    // Move clouds
     this.clouds.forEach((cloud) => {
       cloud.mesh.position.x += cloud.direction.x * cloud.speed * 0.01;
       cloud.mesh.position.z += cloud.direction.z * cloud.speed * 0.01;
 
-      // Wrap around
       if (cloud.mesh.position.x > 200) cloud.mesh.position.x = -200;
       if (cloud.mesh.position.x < -200) cloud.mesh.position.x = 200;
       if (cloud.mesh.position.z > 200) cloud.mesh.position.z = -200;
       if (cloud.mesh.position.z < -200) cloud.mesh.position.z = 200;
     });
 
-    // Rotate sun glow for effect
     if (this.sunGlow) {
       this.sunGlow.rotation.y += 0.001;
     }
 
-    // Rotate moon glow for effect
     if (this.moonGlow && this.isNight) {
       this.moonGlow.rotation.y += 0.0005;
     }

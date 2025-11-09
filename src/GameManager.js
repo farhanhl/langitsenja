@@ -54,11 +54,7 @@ export class GameManager {
     this.foundSound.volume = 0.8;
 
     // Array to track all audio elements in the game for centralized mute control
-    this.allAudioElements = [
-      this.dayMusic,
-      this.nightMusic,
-      this.foundSound
-    ];
+    this.allAudioElements = [this.dayMusic, this.nightMusic, this.foundSound];
 
     // Flag to track if audio is initialized
     this.audioInitialized = false;
@@ -146,7 +142,6 @@ export class GameManager {
         this.showNotification('🌧️ Hujan berhenti...');
       }
     } else {
-      console.error('⚠️ Weather system not found!');
     }
   }
 
@@ -155,7 +150,6 @@ export class GameManager {
       this.game.weatherSystem.stopRain();
       this.showNotification('☀️ Cuaca kembali cerah!');
     } else {
-      console.error('⚠️ Weather system not found!');
     }
   }
 
@@ -484,7 +478,7 @@ export class GameManager {
   }
 
   muteAllAudio() {
-    this.allAudioElements.forEach(audio => {
+    this.allAudioElements.forEach((audio) => {
       if (audio && typeof audio.pause === 'function') {
         // Store original volume to restore later
         if (audio.volume !== 0) {
@@ -497,7 +491,7 @@ export class GameManager {
   }
 
   unmuteAllAudio() {
-    this.allAudioElements.forEach(audio => {
+    this.allAudioElements.forEach((audio) => {
       if (audio) {
         // Restore original volume or set to default
         audio.volume = audio._originalVolume || 0.5;

@@ -21,8 +21,10 @@ export class CheatCodeManager {
     this.cheatSound = new Audio('music/cheat.mp3');
     this.cheatSound.volume = 0.7;
 
-    // Register audio element with game manager for centralized mute
-    if (this.game.gameManager && typeof this.game.gameManager.addAudioElement === 'function') {
+    if (
+      this.game.gameManager &&
+      typeof this.game.gameManager.addAudioElement === 'function'
+    ) {
       this.game.gameManager.addAudioElement(this.cheatSound);
     }
 
@@ -77,7 +79,6 @@ export class CheatCodeManager {
 
   activateGodzilla() {
     if (!this.game.godzilla) {
-      console.error('Godzilla not initialized');
       return;
     }
 
@@ -92,7 +93,6 @@ export class CheatCodeManager {
 
   activateSanta() {
     if (!this.game.santa) {
-      console.error('santa not initialized');
       return;
     }
 
@@ -107,7 +107,6 @@ export class CheatCodeManager {
 
   activateHoreg() {
     if (!this.game.horeg) {
-      console.error('horeg not initialized');
       return;
     }
 
@@ -122,7 +121,6 @@ export class CheatCodeManager {
 
   activateTornado() {
     if (!this.game.tornado) {
-      console.error('Tornado not initialized');
       return;
     }
 
@@ -151,7 +149,6 @@ export class CheatCodeManager {
 
   activateNight() {
     if (!this.game.gameManager) {
-      console.error('GameManager not initialized');
       return;
     }
 
@@ -161,7 +158,6 @@ export class CheatCodeManager {
 
   activateRain() {
     if (!this.game.gameManager) {
-      console.error('GameManager not initialized');
       return;
     }
 
@@ -171,7 +167,6 @@ export class CheatCodeManager {
 
   activateClear() {
     if (!this.game.gameManager) {
-      console.error('GameManager not initialized');
       return;
     }
 

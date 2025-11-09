@@ -12,22 +12,11 @@ export class NPCManager {
   }
 
   createNPCs() {
-    // Create walking NPCs (30 variations)
     this.createWalkingNPCs();
-
-    // Create vehicle NPCs (5 motorcycles, 3 cars)
     this.createVehicleNPCs();
-
-    // Create flying birds
     this.createBirds();
-
-    // Create airplanes
     this.createAirplanes();
-
-    // Create special mission NPCs
     this.createSpecialNPCs();
-
-    // Create Farhan Hadi Lutfi (non-mission NPC)
     this.createFarhanNPC();
   }
 
@@ -44,7 +33,6 @@ export class NPCManager {
       !this.cityData.sidewalkPaths ||
       this.cityData.sidewalkPaths.length === 0
     ) {
-      console.warn('No sidewalk paths available');
       return;
     }
 
@@ -56,8 +44,6 @@ export class NPCManager {
       if (!path) continue;
 
       const npc = this.createMinecraftCharacter(color);
-
-      // Random position along path
       const t = Math.random();
       const startX = path.start.x;
       const startZ = path.start.z;
@@ -178,7 +164,6 @@ export class NPCManager {
       });
     }
 
-    // Create 3 cars
     for (let i = 0; i < 3; i++) {
       const path =
         this.cityData.roadPaths[(i + 5) % this.cityData.roadPaths.length];
@@ -207,14 +192,8 @@ export class NPCManager {
 
   createMotorcycle() {
     const group = new THREE.Group();
-
-    // ======================
-    // 1. FRAME / BODY
-    // ======================
     const frame = new THREE.Group();
     group.add(frame);
-
-    // Tangki / badan tengah
     const tank = new THREE.Mesh(
       new THREE.BoxGeometry(0.6, 0.35, 0.9),
       new THREE.MeshStandardMaterial({
@@ -226,8 +205,6 @@ export class NPCManager {
     tank.position.set(0, 0.6, 0);
     tank.castShadow = true;
     frame.add(tank);
-
-    // Jok (seat)
     const seat = new THREE.Mesh(
       new THREE.BoxGeometry(0.55, 0.15, 0.9),
       new THREE.MeshStandardMaterial({ color: 0x000000 })
@@ -235,8 +212,6 @@ export class NPCManager {
     seat.position.set(0, 0.85, -0.1);
     seat.castShadow = true;
     frame.add(seat);
-
-    // Spakbor depan
     const fenderFront = new THREE.Mesh(
       new THREE.BoxGeometry(0.5, 0.1, 0.45),
       new THREE.MeshStandardMaterial({ color: 0x333333 })
@@ -244,8 +219,6 @@ export class NPCManager {
     fenderFront.position.set(0, 0.45, 0.72);
     fenderFront.castShadow = true;
     frame.add(fenderFront);
-
-    // Spakbor belakang
     const fenderBack = new THREE.Mesh(
       new THREE.BoxGeometry(0.5, 0.1, 0.55),
       new THREE.MeshStandardMaterial({ color: 0x333333 })
@@ -253,10 +226,6 @@ export class NPCManager {
     fenderBack.position.set(0, 0.45, -0.72);
     fenderBack.castShadow = true;
     frame.add(fenderBack);
-
-    // ======================
-    // 2. WHEELS
-    // ======================
     const wheelGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.22, 12);
     const wheelMat = new THREE.MeshStandardMaterial({
       color: 0x111111,
@@ -273,15 +242,11 @@ export class NPCManager {
     rearWheel.position.set(0, 0.36, -0.72);
     frame.add(rearWheel);
 
-    // ======================
-    // 3. SHOCK / SUSPENSION
-    // ======================
     const shockMat = new THREE.MeshStandardMaterial({
       color: 0xaaaaaa,
       metalness: 0.6,
     });
 
-    // Shock depan kiri & kanan
     [-0.22, 0.22].forEach((offsetX) => {
       const shockFront = new THREE.Mesh(
         new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8),
@@ -291,7 +256,6 @@ export class NPCManager {
       frame.add(shockFront);
     });
 
-    // Shock belakang kiri & kanan
     [-0.25, 0.25].forEach((offsetX) => {
       const shockRear = new THREE.Mesh(
         new THREE.CylinderGeometry(0.04, 0.04, 0.55, 8),
@@ -302,9 +266,6 @@ export class NPCManager {
       frame.add(shockRear);
     });
 
-    // ======================
-    // 4. HANDLEBAR / STANG
-    // ======================
     const handle = new THREE.Mesh(
       new THREE.BoxGeometry(0.8, 0.07, 0.07),
       new THREE.MeshStandardMaterial({ color: 0x555555 })
@@ -612,15 +573,11 @@ export class NPCManager {
 
   createBird() {
     const group = new THREE.Group();
-
-    // Body
     const bodyGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.5);
     const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.castShadow = true;
     group.add(body);
-
-    // Wings
     const wingGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.5);
     const wingMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
     const wings = new THREE.Mesh(wingGeometry, wingMaterial);
@@ -633,11 +590,10 @@ export class NPCManager {
   }
 
   createAirplanes() {
-    // Create 3 airplanes flying at different heights and paths
     for (let i = 0; i < 3; i++) {
       const airplane = this.createAirplane();
-      const height = 40 + i * 10; // Different heights: 40, 50, 60
-      const angle = (i * Math.PI * 2) / 3; // Distribute evenly around circle
+      const height = 40 + i * 10;
+      const angle = (i * Math.PI * 2) / 3;
 
       airplane.position.set(
         Math.cos(angle) * 100,
@@ -649,9 +605,9 @@ export class NPCManager {
 
       this.airplanes.push({
         mesh: airplane,
-        speed: 15 + Math.random() * 10, // Faster than birds
+        speed: 15 + Math.random() * 10,
         angle: angle,
-        radius: 100 + i * 20, // Different circular paths
+        radius: 100 + i * 20,
         centerX: 0,
         centerZ: 0,
         height: height,
@@ -662,17 +618,15 @@ export class NPCManager {
   createAirplane() {
     const group = new THREE.Group();
 
-    // Fuselage (body)
     const fuselageGeometry = new THREE.CylinderGeometry(0.5, 0.5, 4, 8);
     const fuselageMaterial = new THREE.MeshStandardMaterial({
       color: 0xcccccc,
     });
     const fuselage = new THREE.Mesh(fuselageGeometry, fuselageMaterial);
-    fuselage.rotation.z = Math.PI / 2; // Rotate to horizontal
+    fuselage.rotation.z = Math.PI / 2;
     fuselage.castShadow = true;
     group.add(fuselage);
 
-    // Nose cone
     const noseGeometry = new THREE.ConeGeometry(0.5, 1.5, 8);
     const nose = new THREE.Mesh(noseGeometry, fuselageMaterial);
     nose.rotation.z = -Math.PI / 2;
@@ -680,7 +634,6 @@ export class NPCManager {
     nose.castShadow = true;
     group.add(nose);
 
-    // Wings
     const wingGeometry = new THREE.BoxGeometry(0.3, 6, 1.5);
     const wingMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
     const wings = new THREE.Mesh(wingGeometry, wingMaterial);
@@ -688,21 +641,18 @@ export class NPCManager {
     wings.castShadow = true;
     group.add(wings);
 
-    // Tail wing (horizontal stabilizer)
     const tailWingGeometry = new THREE.BoxGeometry(0.2, 3, 1);
     const tailWing = new THREE.Mesh(tailWingGeometry, wingMaterial);
     tailWing.position.set(-2, -0.1, 0);
     tailWing.castShadow = true;
     group.add(tailWing);
 
-    // Vertical stabilizer (tail fin)
     const tailFinGeometry = new THREE.BoxGeometry(0.2, 1, 1.5);
     const tailFin = new THREE.Mesh(tailFinGeometry, wingMaterial);
     tailFin.position.set(-2, 0.5, 0);
     tailFin.castShadow = true;
     group.add(tailFin);
 
-    // Cockpit window
     const windowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
     const windowMaterial = new THREE.MeshStandardMaterial({
       color: 0x87ceeb,
@@ -723,41 +673,36 @@ export class NPCManager {
         name: 'Ariman',
         position: { x: -55, z: -120 },
         dialogue: 'Yah aku ketawan.',
-      }, // Di samping air mancur (park tetap di 0,-40)
+      },
       {
         name: 'Putra',
         position: { x: 40, z: 57 },
         dialogue: 'Waduh, kamu nemuin aku juga.',
-      }, // Di depan SMK TELESANDI (bangunan di 40,45, depth 10, jadi depan di z=50+7)
+      },
       {
         name: 'Ananda',
         position: { x: -40, z: 57 },
         dialogue: 'Hehe, kamu jago banget nyarinya.',
-      }, // Di depan SMPN 11 BEKASI (bangunan di -40,45, depth 10, jadi depan di z=50+7)
+      },
       {
         name: 'Zait',
         position: { x: -73, z: -67 },
         dialogue: 'Astaga, aku gak nyangka kamu nemu aku.',
-      }, // Di depan Konoha Mart (bangunan di -40,5, depth 8, jadi depan di z=9+4)
+      },
       {
         name: 'Mahardhika',
         position: { x: -3, z: 22 },
-        // position: { x: -15, z: 40 },
         dialogue: 'Haha, ketahuan juga deh aku.',
-      }, // Di pinggir lake (lake tetap di 0,40)
+      },
     ];
 
     specialCharacters.forEach((char) => {
       const npc = this.createMinecraftCharacter(0xff00ff);
       npc.position.set(char.position.x, 0.9, char.position.z);
-
-      // Create name tag
       const nameTag = this.createNameTag(char.name);
       nameTag.position.y = 2.5;
       npc.add(nameTag);
-
       this.scene.add(npc);
-
       this.specialNPCs.push({
         mesh: npc,
         name: char.name,
@@ -814,10 +759,8 @@ export class NPCManager {
   }
 
   update(delta) {
-    // Update walking NPCs
     this.npcs.forEach((npc) => {
       if (npc.type === 'walking') {
-        // Skip update if NPC is being abducted by UFO
         if (npc.isBeingAbducted) {
           return;
         }
@@ -832,10 +775,8 @@ export class NPCManager {
 
         const newPos = this.getPositionOnPath(npc.path, npc.progress);
         npc.mesh.position.x = newPos.x;
-        npc.mesh.position.y = 0.9; // Keep NPCs at ground level
+        npc.mesh.position.y = 0.9;
         npc.mesh.position.z = newPos.z;
-
-        // Face movement direction
         const dx = npc.path.end.x - npc.path.start.x;
         const dz = npc.path.end.z - npc.path.start.z;
         const angle = Math.atan2(dx, dz);
@@ -843,7 +784,6 @@ export class NPCManager {
       }
     });
 
-    // Update vehicle NPCs
     this.vehicleNPCs.forEach((vehicle) => {
       vehicle.progress +=
         (vehicle.speed * vehicle.direction * delta) /
@@ -851,7 +791,6 @@ export class NPCManager {
 
       if (vehicle.progress > 1) {
         vehicle.progress = 0;
-        // Change to random path
         if (Math.random() > 0.7 && this.cityData.roadPaths.length > 1) {
           vehicle.path =
             this.cityData.roadPaths[
@@ -864,18 +803,11 @@ export class NPCManager {
 
       const newPos = this.getPositionOnPath(vehicle.path, vehicle.progress);
       vehicle.mesh.position.x = newPos.x;
-      vehicle.mesh.position.y = 0.5; // Lowered to ensure wheels touch ground
+      vehicle.mesh.position.y = 0.5;
       vehicle.mesh.position.z = newPos.z;
-
-      // Calculate rotation angle based on path direction
       const dx = vehicle.path.end.x - vehicle.path.start.x;
       const dz = vehicle.path.end.z - vehicle.path.start.z;
-
-      // atan2(dx, dz) gives angle where Z-axis is forward (which matches our vehicle model)
       const angle = Math.atan2(dx, dz);
-
-      // Only rotate around Y axis to keep vehicle level (no tilting)
-      // Add PI if going in reverse direction
       vehicle.mesh.rotation.set(
         0,
         angle + (vehicle.direction < 0 ? Math.PI : 0),
@@ -883,21 +815,17 @@ export class NPCManager {
       );
     });
 
-    // Update birds
     this.birds.forEach((bird, index) => {
       bird.angle += (bird.speed * delta) / bird.radius;
       bird.mesh.position.x = bird.centerX + Math.cos(bird.angle) * bird.radius;
       bird.mesh.position.z = bird.centerZ + Math.sin(bird.angle) * bird.radius;
       bird.mesh.rotation.y = bird.angle + Math.PI / 2;
-
-      // Animate wing flapping
       if (bird.mesh.userData.wings) {
         bird.mesh.userData.wings.rotation.z =
           Math.sin(index + Date.now() * 0.01 * bird.flapSpeed) * 0.3;
       }
     });
 
-    // Update airplanes
     this.airplanes.forEach((airplane) => {
       airplane.angle += (airplane.speed * delta) / airplane.radius;
       airplane.mesh.position.x =
@@ -906,10 +834,8 @@ export class NPCManager {
       airplane.mesh.position.z =
         airplane.centerZ + Math.sin(airplane.angle) * airplane.radius;
 
-      // Rotate airplane to face direction of movement
       airplane.mesh.rotation.y = airplane.angle + Math.PI / 2;
 
-      // Add slight banking (tilting) for realism
       airplane.mesh.rotation.z = Math.sin(airplane.angle) * 0.1;
     });
   }
@@ -929,7 +855,6 @@ export class NPCManager {
 
   checkNPCProximity(playerPosition, radius = 3) {
     for (const npc of this.specialNPCs) {
-      // Skip found NPCs, but NOT Farhan (he's always available)
       if (npc.found && !npc.isFarhan) {
         continue;
       }
@@ -944,12 +869,11 @@ export class NPCManager {
   }
 
   resetNPCs() {
-    // Reset found state for all special NPCs except Farhan
     this.specialNPCs.forEach((npc) => {
       if (!npc.isFarhan) {
         npc.found = false;
         if (npc.nameTag) {
-          npc.nameTag.visible = true; // Show name tag again
+          npc.nameTag.visible = true;
         }
       }
     });

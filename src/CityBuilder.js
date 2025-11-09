@@ -949,36 +949,20 @@ export class CityBuilder {
       return g;
     }
 
-    // ================= Lantai / panggung pos =================
-    const deck = new THREE.Mesh(
-      new THREE.BoxGeometry(6.2, 0.15, 6.2),
-      new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.85 })
-    );
-    deck.position.set(0, 0.075, 0);
-    deck.receiveShadow = true;
-    group.add(deck);
-
-    // paving/beton tipis di bawah panggung
-    const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(8, 0.06, 8),
-      new THREE.MeshStandardMaterial({ color: 0xa7a7a7, roughness: 0.95 })
-    );
-    pad.position.set(0, 0.03, 0);
-    pad.receiveShadow = true;
-    group.add(pad);
+    // The original floor elements (deck and pad) have been removed as requested
 
     // ================= Struktur pos: tiang + atap seng =================
     const hut = new THREE.Group();
 
-    // hitung ketinggian tiang dari permukaan deck → underside atap
-    const groundTopY = deck.position.y + deck.geometry.parameters.height / 2; // 0.075
+    // hitung ketinggian tiang dari permukaan ground → underside atap
+    const groundTopY = 0; // Ground level is at y=0 since deck was removed
     const roofY = 2.6; // center atap
     const roofHalfH = 0.08; // half thickness atap
     const canopyUnderY = roofY - roofHalfH; // underside
     const eps = 0.01;
     const poleH = Math.max(0.8, canopyUnderY - groundTopY - eps);
 
-    // tiang (nempel deck)
+    // tiang (nempel ground)
     const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, poleH, 12);
     const poleMat = new THREE.MeshStandardMaterial({
       color: 0x6b7280,
@@ -1042,20 +1026,19 @@ export class CityBuilder {
     drip.position.set(0, roofY - 0.06, -3.25);
     hut.add(drip);
 
-    // pagar rendah (setengah)
+    // pagar rendah (setengah) - entrance created at front (removed railFront)
     const railMat = new THREE.MeshStandardMaterial({
       color: 0x7b5737,
       roughness: 0.85,
     });
     const railH = 0.7;
     const railTh = 0.08;
-    const railFront = new THREE.Mesh(
+    // railFront is intentionally omitted to create entrance at front
+    const railBack = new THREE.Mesh(
       new THREE.BoxGeometry(6.2, railH, railTh),
       railMat
     );
-    railFront.position.set(0, 0.35 + groundTopY, 3.0);
-    const railBack = railFront.clone();
-    railBack.position.z = -3.0;
+    railBack.position.set(0, 0.35 + groundTopY, -3.0);
     const railLeft = new THREE.Mesh(
       new THREE.BoxGeometry(railTh, railH, 6.2),
       railMat
@@ -1063,65 +1046,8 @@ export class CityBuilder {
     railLeft.position.set(-3.0, 0.35 + groundTopY, 0);
     const railRight = railLeft.clone();
     railRight.position.x = 3.0;
-    hut.add(railFront, railBack, railLeft, railRight);
+    hut.add(railBack, railLeft, railRight); // railFront excluded to create entrance
 
-    // papan nama "Pos Ronda"
-    function createTextPlane(
-      text,
-      {
-        font = 'bold 56px Inter, Arial, sans-serif',
-        fg = '#FFFFFF',
-        bg = 'rgba(0,0,0,0)',
-        w = 1024,
-        h = 256,
-        maxWidthPx = 920,
-      } = {}
-    ) {
-      const c = document.createElement('canvas');
-      c.width = w;
-      c.height = h;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
-      let fs = 56;
-      const fam = 'Inter, Arial, sans-serif';
-      while (fs >= 24) {
-        ctx.font = `bold ${fs}px ${fam}`;
-        if (ctx.measureText(text).width <= maxWidthPx) break;
-        fs -= 2;
-      }
-      ctx.font = `bold ${fs}px ${fam}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = fg;
-      ctx.shadowColor = 'rgba(0,0,0,0.35)';
-      ctx.shadowBlur = 8;
-      ctx.fillText(text, w / 2, h / 2);
-
-      const tex = new THREE.CanvasTexture(c);
-      tex.anisotropy = 8;
-      tex.needsUpdate = true;
-
-      const planeH = 0.45;
-      const planeW = planeH * (w / h);
-      const geo = new THREE.PlaneGeometry(planeW, planeH);
-      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
-      return new THREE.Mesh(geo, mat);
-    }
-
-    const signBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(3.2, 0.55, 0.08),
-      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 })
-    );
-    signBoard.position.set(0, roofY - 0.35, -3.05);
-    signBoard.castShadow = true;
-    hut.add(signBoard);
-
-    const signText = createTextPlane('Pos Ronda', { fg: '#FFFFFF' });
-    signText.position.set(0, roofY - 0.35, -3.01);
-    hut.add(signText);
-
-    // lampu gantung tengah
     const bulb = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 16, 16),
       new THREE.MeshStandardMaterial({
@@ -1150,7 +1076,6 @@ export class CityBuilder {
     tableStem.position.set(0, groundTopY + 0.225, 0);
     hut.add(tableStem);
 
-    // bangku memanjang dua sisi
     function addBench(px, pz, rotY = 0) {
       const seat = new THREE.Mesh(
         new THREE.BoxGeometry(1.8, 0.08, 0.45),
@@ -1187,17 +1112,13 @@ export class CityBuilder {
     addBench(-1.2, -0.9, THREE.MathUtils.degToRad(15));
     addBench(1.2, 0.9, THREE.MathUtils.degToRad(195));
 
-    // tempatkan seluruh pos
     hut.position.set(0, 0, 0);
     group.add(hut);
-
-    // ================= NPC: 2 orang ngopi =================
-    const standY = 0.45 * npcScale; // referensi ketinggian karakter
 
     const npc1 = characterFactory
       ? characterFactory(0x2563eb, npcScale)
       : makeMinecraftCharacterWithJoints(0x2563eb, npcScale);
-    npc1.position.set(-1.25, groundTopY + 0.42 + 0.01, -0.9); // di atas bangku
+    npc1.position.set(-1.25, groundTopY + 0.73, -0.9);
     npc1.rotation.y = THREE.MathUtils.degToRad(25);
     poseSit(npc1);
     hut.add(npc1);
@@ -1205,12 +1126,11 @@ export class CityBuilder {
     const npc2 = characterFactory
       ? characterFactory(0x22c55e, npcScale)
       : makeMinecraftCharacterWithJoints(0x22c55e, npcScale);
-    npc2.position.set(1.25, groundTopY + 0.42 + 0.01, 0.9); // bangku seberang
+    npc2.position.set(1.25, groundTopY + 0.73, 0.9);
     npc2.rotation.y = THREE.MathUtils.degToRad(205);
     poseSit(npc2);
     hut.add(npc2);
 
-    // gelas kopi di tangan kanan masing-masing
     const cup1 = makeGlass();
     const cup2 = makeGlass();
     if (npc1.userData?.rightArm) {
@@ -1224,7 +1144,6 @@ export class CityBuilder {
       npc2.userData.rightArm.add(cup2);
     }
 
-    // animasi ngobrol ringan (angguk kepala & tangan)
     const t0 = Math.random() * 1000;
     group.onBeforeRender = (_, __, camera, renderer) => {
       const t = performance.now() * 0.001;
@@ -1242,7 +1161,6 @@ export class CityBuilder {
           THREE.MathUtils.degToRad(-10) + Math.sin(t * 1.1 + 0.7) * 0.05;
     };
 
-    // ================= Transform & collider =================
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
@@ -1250,7 +1168,6 @@ export class CityBuilder {
 
     this.scene.add(group);
 
-    // collider hanya untuk struktur pos (bukan NPC)
     hut.updateMatrixWorld(true);
     const bbox = new THREE.Box3().setFromObject(hut);
     this.buildings.push({
@@ -1698,19 +1615,14 @@ export class CityBuilder {
       if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(-5);
     }
 
-    const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(12, 0.06, 8),
-      new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0 })
-    );
-    pad.position.set(0, 0.03, 0);
-    pad.receiveShadow = true;
-    group.add(pad);
+    // The original floor element (pad) has been removed as requested
 
     const rubber = new THREE.Mesh(
       new THREE.BoxGeometry(3.4, 0.04, 2.2),
       new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.85 })
     );
-    rubber.position.set(-1.8, 0.02, 0.4);
+    // Adjust position since there's no pad anymore
+    rubber.position.set(-1.8, 0.02, 0.4); // rubber stays at ground level
     rubber.receiveShadow = true;
     group.add(rubber);
 
@@ -1728,9 +1640,8 @@ export class CityBuilder {
     canopy.castShadow = true;
     stall.add(canopy);
 
-    // hitung tinggi tiang (groundTopY → canopyUnderY)
-    const groundHalfH = pad.geometry.parameters.height / 2; // 0.03
-    const groundTopY = pad.position.y + groundHalfH; // 0.06
+    // hitung tinggi tiang (ground level → canopyUnderY)
+    const groundTopY = 0; // Ground level is at y=0 since pad was removed
     const canopyHalfH = canopy.geometry.parameters.height / 2; // 0.06
     const canopyUnderY = canopy.position.y - canopyHalfH; // 2.34
     const eps = 0.01;
@@ -1886,7 +1797,7 @@ export class CityBuilder {
     workLight.position.set(0, 2.2, 0);
     stall.add(workLight);
 
-    // Posisi stall relatif pad
+    // Posisi stall relatif ground
     stall.position.set(0, 0, 0.0);
     group.add(stall);
 
@@ -2022,23 +1933,19 @@ export class CityBuilder {
         char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-10);
     }
 
-    const ground = new THREE.Mesh(
-      new THREE.BoxGeometry(12, 0.05, 8),
-      new THREE.MeshStandardMaterial({ color: 0x8f8f8f, roughness: 0.95 })
-    );
-    ground.position.set(0, 0.025, 0);
-    ground.receiveShadow = true;
-    group.add(ground);
+    // The original ground element has been removed as requested
 
     function makeMat(px, pz, color = 0x8b5a2b) {
       const mat = new THREE.Mesh(
         new THREE.BoxGeometry(3.4, 0.04, 2.4),
         new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
       );
+      // Adjust mat position since there's no ground anymore (at ground level)
       mat.position.set(px, 0.02, pz);
       mat.receiveShadow = true;
       return mat;
     }
+    // Adjust positions of mats since there's no ground anymore
     group.add(makeMat(-2.6, 1.5, 0x8b5a2b), makeMat(2.6, 1.2, 0x996633));
 
     // ---------- GERObak ----------
@@ -2075,9 +1982,8 @@ export class CityBuilder {
     canopy.castShadow = true;
     cart.add(canopy);
 
-    // ✅ TIANG NEMPEL TANAH (auto height dari ground → underside canopy)
-    const groundHalfH = ground.geometry.parameters.height / 2; // 0.025
-    const groundTopY = ground.position.y + groundHalfH; // 0.05
+    // ✅ TIANG NEMPEL TANAH (since ground was removed, use y=0 as ground level)
+    const groundTopY = 0; // Ground level is at y=0 since ground was removed
     const canopyHalfH = canopy.geometry.parameters.height / 2; // 0.05
     const canopyUnderY = canopy.position.y - canopyHalfH; // 2.45
     const eps = 0.01;

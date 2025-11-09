@@ -277,20 +277,25 @@ export class Player {
   }
 
   enforceMapBoundaries() {
-    // Map boundaries (based on ground size of 187.5 units centered at 0,0)
-    // So boundaries are from -93.75 to 93.75 in both X and Z dimensions
-    const mapBoundary = 93; // A little less than 93.75 to account for player size
+    // Map boundaries based on ground size: width = 102, height = 187.5
+    // So boundaries are:
+    // X: from -51 to 51 (since width is 102, centered at 0)
+    // Z: from -93.75 to 93.75 (since height is 187.5, centered at 0)
+    // Account for player's size (0.4 units for half of player width/depth)
+    const playerRadius = 0.4;
+    const xBoundary = 51 - playerRadius;  // Account for player size
+    const zBoundary = 93.75 - playerRadius;  // Account for player size
 
     // Clamp X position to stay within map boundaries
     this.position.x = Math.max(
-      -mapBoundary,
-      Math.min(mapBoundary, this.position.x)
+      -xBoundary,
+      Math.min(xBoundary, this.position.x)
     );
 
     // Clamp Z position to stay within map boundaries
     this.position.z = Math.max(
-      -mapBoundary,
-      Math.min(mapBoundary, this.position.z)
+      -zBoundary,
+      Math.min(zBoundary, this.position.z)
     );
   }
 

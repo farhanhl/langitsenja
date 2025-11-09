@@ -5,22 +5,25 @@ export class Horeg {
     this.scene = scene;
     this.cityData = cityData;
     this.npcManager = npcManager;
-    this.gameManager = gameManager; // Added reference to game manager for centralized mute
+    this.gameManager = gameManager;
     this.group = null;
     this.active = false;
-    this.position = { x: 125, z: -20 };
-    this.targetPosition = { x: -125, z: -20 };
+    this.position = { x: 50, z: -15 };
+    this.targetPosition = { x: -50, z: -15 };
     this.speed = 5;
     this.walkCycle = 0;
     this.rotationOffsetY = 0;
-    this.scaleFactor = 0.6;
+    this.scaleFactor = 0.58;
     this.destroyedBuildings = new Set();
     this.music = new Audio('music/horeg.mp3');
     this.music.volume = 0.75;
     this.music.loop = true;
 
     // Register audio element with game manager for centralized mute
-    if (this.gameManager && typeof this.gameManager.addAudioElement === 'function') {
+    if (
+      this.gameManager &&
+      typeof this.gameManager.addAudioElement === 'function'
+    ) {
       this.gameManager.addAudioElement(this.music);
     }
 
@@ -271,14 +274,38 @@ export class Horeg {
       this.beatTimer += delta;
       if (this.beatTimer >= this.beatInterval) {
         this.beatTimer = 0;
+        // Optimized light flashing without setTimeout
         this.lights.forEach((l, i) => {
-          l.intensity = 1.5;
-          setTimeout(() => (l.intensity = 0.6), 120 + i * 30);
+          l._flashEndTime = performance.now() + 120 + i * 30; // Flash duration
+          l._originalIntensity = 0.6; // Store original intensity
         });
         if (this.speakersGroup) {
-          const o = this.speakersGroup.rotation.y;
-          this.speakersGroup.rotation.y = o + 0.05;
-          setTimeout(() => (this.speakersGroup.rotation.y = o), 120);
+          this.speakersGroup._rotateStartTime = performance.now();
+          this.speakersGroup._rotateEndTime = performance.now() + 120;
+          this.speakersGroup._originalRotationY = this.speakersGroup.rotation.y;
+          this.speakersGroup._targetRotationY =
+            this.speakersGroup.rotation.y + 0.05;
+        }
+      }
+
+      // Handle light flashing during the update loop
+      const now = performance.now();
+      this.lights.forEach((l) => {
+        if (l._flashEndTime && now < l._flashEndTime) {
+          l.intensity = 1.5; // Flashing state
+        } else if (l._originalIntensity !== undefined) {
+          l.intensity = l._originalIntensity; // Back to original
+        }
+      });
+
+      // Handle speaker rotation during the update loop
+      if (this.speakersGroup && this.speakersGroup._rotateEndTime) {
+        if (now < this.speakersGroup._rotateEndTime) {
+          // During rotation effect - maintain the rotation
+          this.speakersGroup.rotation.y = this.speakersGroup._targetRotationY;
+        } else {
+          // Effect duration passed - return to original rotation
+          this.speakersGroup.rotation.y = this.speakersGroup._originalRotationY;
         }
       }
 
@@ -291,23 +318,28 @@ export class Horeg {
   attractNearbyNPCs() {
     if (!this.npcManager || !this.npcManager.npcs) return;
     const attractRadius = 35,
-      ringRadius = 10;
+      ringRadius = 10,
+      maxAffectedNPCs = 20; // Limit number of NPCs affected to prevent performance issues
 
-    this.npcManager.npcs.forEach((npc, i) => {
-      if (!npc.mesh) return;
+    let affectedCount = 0;
+    for (const npc of this.npcManager.npcs) {
+      if (affectedCount >= maxAffectedNPCs) break; // Limit processing
+
+      if (!npc.mesh) continue;
       const dx = npc.mesh.position.x - this.position.x;
       const dz = npc.mesh.position.z - this.position.z;
       const distance = Math.hypot(dx, dz);
       if (distance < attractRadius) {
-        const angle = (i % 12) * ((2 * Math.PI) / 12);
+        const angle = (affectedCount % 12) * ((2 * Math.PI) / 12); // Use affectedCount instead of i
         npc.targetPosition = {
           x: this.position.x + Math.cos(angle) * ringRadius,
           z: this.position.z + Math.sin(angle) * ringRadius,
         };
         npc.speed = (npc.walkSpeed || 2) * 1.2;
         npc.mesh.rotation.y += 0.02;
+        affectedCount++;
       }
-    });
+    }
   }
 
   playMusic() {
@@ -326,11 +358,24 @@ export class Horeg {
       this.scene.remove(this.group);
       this.group = null;
     }
+
+    this.lights.forEach((l) => {
+      delete l._flashEndTime;
+      delete l._originalIntensity;
+    });
+
+    if (this.speakersGroup) {
+      delete this.speakersGroup._rotateStartTime;
+      delete this.speakersGroup._rotateEndTime;
+      delete this.speakersGroup._originalRotationY;
+      delete this.speakersGroup._targetRotationY;
+    }
+
     this.people = [];
     this.lights = [];
     this.speakersGroup = null;
     this.active = false;
-    this.position = { x: -125, z: -125 };
+    this.position = { x: 50, z: -15 };
   }
 
   isActive() {
