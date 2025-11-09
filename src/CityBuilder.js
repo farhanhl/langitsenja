@@ -76,18 +76,14 @@ export class CityBuilder {
     if (!this.sidewalks) this.sidewalks = [];
     if (!this.sidewalkPaths) this.sidewalkPaths = [];
 
-    const sidewalkGeometry = new THREE.BoxGeometry(width, 0.1, depth); // Same height as road
+    const sidewalkGeometry = new THREE.BoxGeometry(width, 0.1, depth);
     const sidewalk = new THREE.Mesh(sidewalkGeometry, material);
-    // Roads are positioned at Y=0.05 with height 0.1, so top surface is at Y=0.1
-    // For sidewalks with height 0.1, position slightly below road surface to avoid z-fighting
-    // Position at Y=0.045 so top surface is at Y=0.095 (slightly below road surface at Y=0.1)
-    sidewalk.position.set(x, 0.045, z); // Slightly below road surface to prevent z-fighting
+    sidewalk.position.set(x, 0.045, z);
     sidewalk.receiveShadow = true;
 
     this.scene.add(sidewalk);
     this.sidewalks.push(sidewalk);
 
-    // path untuk NPC jalan kaki
     if (width > depth) {
       this.sidewalkPaths.push({
         start: { x: x - width / 2, z: z },
@@ -101,7 +97,6 @@ export class CityBuilder {
     }
   }
 
-  // --- road network adaptif terhadap ukuran ground ---
   createRoadNetwork() {
     if (!this.roads) this.roads = [];
     if (!this.roadPaths) this.roadPaths = [];
@@ -119,17 +114,12 @@ export class CityBuilder {
       color: 0x888888,
     });
 
-    // Rasio dari layout lamamu:
-    // Horizontal memakai halfHeight lama = 93.75 → posisi: -45, -15, 15, 45
     const baseHalfH = 93.75;
     const horizRatios = [-45, -15, 15, 45].map((v) => v / baseHalfH);
-    // Vertical memakai halfWidth lama = 51 → posisi: -45, -15, 15, 45
     const baseHalfW = 51;
     const vertRatios = [-45, -15, 15, 45].map((v) => v / baseHalfW);
-
     const roadPositions = [];
 
-    // Horizontal roads (memanjang mengikuti lebar ground)
     horizRatios.forEach((r) => {
       roadPositions.push({
         x: 0,
@@ -139,7 +129,6 @@ export class CityBuilder {
       });
     });
 
-    // Vertical roads (memanjang mengikuti tinggi ground)
     vertRatios.forEach((r) => {
       roadPositions.push({
         x: r * halfW,
@@ -149,9 +138,7 @@ export class CityBuilder {
       });
     });
 
-    // render roads + paths + sidewalks
     roadPositions.forEach((pos) => {
-      // road
       const roadGeometry = new THREE.BoxGeometry(pos.width, 0.1, pos.depth);
       const road = new THREE.Mesh(roadGeometry, roadMaterial);
       road.position.set(pos.x, 0.05, pos.z);
@@ -159,16 +146,13 @@ export class CityBuilder {
       this.scene.add(road);
       this.roads.push(road);
 
-      // path kendaraan + sidewalks
       if (pos.width > pos.depth) {
-        // horizontal
         this.roadPaths.push({
           start: { x: pos.x - pos.width / 2, z: pos.z },
           end: { x: pos.x + pos.width / 2, z: pos.z },
           type: 'horizontal',
         });
 
-        // sidewalks atas & bawah
         this.createSidewalk(
           pos.x,
           pos.z + pos.depth / 2 + sidewalkWidth / 2,
@@ -184,14 +168,12 @@ export class CityBuilder {
           sidewalkMaterial
         );
       } else {
-        // vertical
         this.roadPaths.push({
           start: { x: pos.x, z: pos.z - pos.depth / 2 },
           end: { x: pos.x, z: pos.z + pos.depth / 2 },
           type: 'vertical',
         });
 
-        // sidewalks kiri & kanan
         this.createSidewalk(
           pos.x + pos.width / 2 + sidewalkWidth / 2,
           pos.z,
@@ -212,16 +194,12 @@ export class CityBuilder {
 
   createBicycle(x, z) {
     const group = new THREE.Group();
-
-    // Bicycle frame (diperbesar 2x)
     const frameGeometry = new THREE.BoxGeometry(0.1, 1.2, 2.4);
-    const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff }); // Blue
+    const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
     const frame = new THREE.Mesh(frameGeometry, frameMaterial);
     frame.position.y = 1;
     frame.castShadow = true;
     group.add(frame);
-
-    // Front wheel (diperbesar 2x)
     const wheelGeometry = new THREE.TorusGeometry(0.6, 0.1, 8, 16);
     const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
     const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
@@ -229,29 +207,23 @@ export class CityBuilder {
     frontWheel.position.set(0, 0.8, 1);
     frontWheel.castShadow = true;
     group.add(frontWheel);
-
-    // Back wheel (diperbesar 2x)
     const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
     backWheel.rotation.y = Math.PI / 2;
     backWheel.position.set(0, 0.8, -1);
     backWheel.castShadow = true;
     group.add(backWheel);
-
-    // Handlebars (diperbesar 2x)
     const handlebarGeometry = new THREE.BoxGeometry(1, 0.1, 0.1);
     const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
     handlebar.position.set(0, 1.6, 1.2);
     group.add(handlebar);
-
-    // Seat (diperbesar 2x)
     const seatGeometry = new THREE.BoxGeometry(0.6, 0.2, 0.4);
-    const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 }); // Brown
+    const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
     const seat = new THREE.Mesh(seatGeometry, seatMaterial);
     seat.position.set(0, 1.6, -0.4);
     group.add(seat);
 
     group.position.set(x, 0, z);
-    group.rotation.y = Math.random() * 0.3 - 0.15; // Slight random angle
+    group.rotation.y = Math.random() * 0.3 - 0.15;
     this.scene.add(group);
   }
 
@@ -278,7 +250,6 @@ export class CityBuilder {
     const createFountain = (x, z) => {
       const group = new THREE.Group();
 
-      // Base
       const baseGeometry = new THREE.CylinderGeometry(3, 3.5, 0.5, 8);
       const baseMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
       const base = new THREE.Mesh(baseGeometry, baseMaterial);
@@ -286,7 +257,6 @@ export class CityBuilder {
       base.castShadow = true;
       group.add(base);
 
-      // Water pool (with animated shader)
       const poolGeometry = new THREE.CylinderGeometry(2.5, 2.5, 0.3, 8);
       const poolMaterial = new THREE.MeshStandardMaterial({
         color: 0x4a9eff,
@@ -298,7 +268,6 @@ export class CityBuilder {
       pool.position.y = 0.65;
       group.add(pool);
 
-      // Center pillar
       const pillarGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
       const pillar = new THREE.Mesh(pillarGeometry, baseMaterial);
       pillar.position.y = 1.55;
@@ -485,360 +454,6 @@ export class CityBuilder {
     return group;
   }
 
-  createBasketballCourt(x, z) {
-    const createBasketballHoop = (hx, hz, rotation, pos) => {
-      const group = new THREE.Group();
-      const poleGeometry = new THREE.CylinderGeometry(0.15, 0.2, 4, 8);
-      const poleMaterial = new THREE.MeshStandardMaterial({
-        color: 0x444444,
-        metalness: 0.6,
-        roughness: 0.4,
-      });
-      const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-      pole.position.y = 2;
-      pole.castShadow = true;
-      group.add(pole);
-
-      const armGeometry = new THREE.BoxGeometry(0.15, 0.15, 1.2);
-      const arm = new THREE.Mesh(armGeometry, poleMaterial);
-      arm.position.set(0, 3.3, 0.6);
-      arm.castShadow = true;
-      group.add(arm);
-
-      const backboardGeometry = new THREE.BoxGeometry(1.8, 1.05, 0.1);
-      const backboardMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.8,
-        metalness: 0.3,
-        roughness: 0.2,
-      });
-      const backboard = new THREE.Mesh(backboardGeometry, backboardMaterial);
-      backboard.position.set(0, 3.5, 1.2);
-      backboard.castShadow = true;
-      group.add(backboard);
-
-      const rectangleGeometry = new THREE.BoxGeometry(0.59, 0.45, 0.05);
-      const rectangleMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff0000,
-      });
-      const rectangle = new THREE.Mesh(rectangleGeometry, rectangleMaterial);
-      rectangle.position.set(0, 3.5, 1.25);
-      group.add(rectangle);
-
-      const rimGeometry = new THREE.TorusGeometry(0.225, 0.02, 8, 32);
-      const rimMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff6600,
-        metalness: 0.8,
-        roughness: 0.2,
-      });
-      const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-      rim.rotation.x = Math.PI / 2;
-      rim.position.set(0, 3.05, 1.35);
-      rim.castShadow = true;
-      group.add(rim);
-
-      const netGroup = new THREE.Group();
-      const netMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.6,
-      });
-      for (let i = 0; i < 12; i++) {
-        const angle = (i / 12) * Math.PI * 2;
-        const netSegmentGeometry = new THREE.CylinderGeometry(
-          0.01,
-          0.01,
-          0.4,
-          3
-        );
-        const netSegment = new THREE.Mesh(netSegmentGeometry, netMaterial);
-        const radius = 0.225;
-        netSegment.position.set(
-          Math.cos(angle) * radius,
-          2.85,
-          1.35 + Math.sin(angle) * radius
-        );
-        netSegment.rotation.x = Math.PI / 6;
-        netGroup.add(netSegment);
-      }
-      group.add(netGroup);
-
-      group.position.set(hx, 0, hz);
-      group.rotation.y = rotation;
-      this.scene.add(group);
-    };
-
-    const createCourtBench = (bx, bz, rotation) => {
-      const group = new THREE.Group();
-
-      const seatGeometry = new THREE.BoxGeometry(2.5, 0.2, 0.6);
-      const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x4169e1 });
-      const seat = new THREE.Mesh(seatGeometry, seatMaterial);
-      seat.position.y = 0.5;
-      seat.castShadow = true;
-      group.add(seat);
-
-      const backGeometry = new THREE.BoxGeometry(2.5, 0.8, 0.1);
-      const back = new THREE.Mesh(backGeometry, seatMaterial);
-      back.position.set(0, 0.9, -0.25);
-      back.castShadow = true;
-      group.add(back);
-
-      const legGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
-      const legMaterial = new THREE.MeshStandardMaterial({
-        color: 0x888888,
-        metalness: 0.6,
-      });
-      [-1, 1].forEach((xOffset) => {
-        [-0.2, 0.2].forEach((zOffset) => {
-          const leg = new THREE.Mesh(legGeometry, legMaterial);
-          leg.position.set(xOffset, 0.25, zOffset);
-          leg.castShadow = true;
-          group.add(leg);
-        });
-      });
-
-      group.position.set(bx, 0, bz);
-      group.rotation.y = rotation;
-      this.scene.add(group);
-    };
-
-    const createScoreboard = (sx, sz) => {
-      const group = new THREE.Group();
-      const boardGeometry = new THREE.BoxGeometry(6, 2.5, 0.3);
-      const boardMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
-      const board = new THREE.Mesh(boardGeometry, boardMaterial);
-      board.position.y = 3;
-      board.castShadow = true;
-      group.add(board);
-
-      const displayGeometry = new THREE.BoxGeometry(5.5, 2, 0.1);
-      const displayMaterial = new THREE.MeshStandardMaterial({
-        color: 0x000000,
-        emissive: 0x00ff00,
-        emissiveIntensity: 0.3,
-      });
-      const display = new THREE.Mesh(displayGeometry, displayMaterial);
-      display.position.set(0, 3, -0.2); // menghadap ke lapangan
-      group.add(display);
-
-      // Poles
-      const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 8);
-      const poleMaterial = new THREE.MeshStandardMaterial({
-        color: 0x555555,
-        metalness: 0.5,
-      });
-      [-2.5, 2.5].forEach((xOffset) => {
-        const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-        pole.position.set(xOffset, 1.5, 0);
-        pole.castShadow = true;
-        group.add(pole);
-      });
-
-      group.position.set(sx - 5, 0, sz);
-      group.rotation.y = Math.PI; // 180 derajat (radian)
-      this.scene.add(group);
-    };
-
-    // ===== Court base =====
-    const courtWidth = 15;
-    const courtLength = 28;
-    const courtGeometry = new THREE.BoxGeometry(courtWidth, 0.15, courtLength);
-    const courtMaterial = new THREE.MeshStandardMaterial({
-      color: 0xd2691e,
-      roughness: 0.8,
-    });
-    const court = new THREE.Mesh(courtGeometry, courtMaterial);
-    court.position.set(x, 0.075, z);
-    court.receiveShadow = true;
-    this.scene.add(court);
-
-    // ===== Lines material =====
-    const boundaryMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-    });
-    const lineThickness = 0.1;
-    const lineHeight = 0.18;
-
-    // Outer boundaries
-    const topBoundary = new THREE.Mesh(
-      new THREE.BoxGeometry(courtWidth, lineHeight, lineThickness),
-      boundaryMaterial
-    );
-    topBoundary.position.set(x, 0.09, z - courtLength / 2);
-    this.scene.add(topBoundary);
-
-    const bottomBoundary = new THREE.Mesh(
-      new THREE.BoxGeometry(courtWidth, lineHeight, lineThickness),
-      boundaryMaterial
-    );
-    bottomBoundary.position.set(x, 0.09, z + courtLength / 2);
-    this.scene.add(bottomBoundary);
-
-    const leftBoundary = new THREE.Mesh(
-      new THREE.BoxGeometry(lineThickness, lineHeight, courtLength),
-      boundaryMaterial
-    );
-    leftBoundary.position.set(x - courtWidth / 2, 0.09, z);
-    this.scene.add(leftBoundary);
-
-    const rightBoundary = new THREE.Mesh(
-      new THREE.BoxGeometry(lineThickness, lineHeight, courtLength),
-      boundaryMaterial
-    );
-    rightBoundary.position.set(x + courtWidth / 2, 0.09, z);
-    this.scene.add(rightBoundary);
-
-    // Center line
-    const centerLine = new THREE.Mesh(
-      new THREE.BoxGeometry(courtWidth, lineHeight, lineThickness),
-      boundaryMaterial
-    );
-    centerLine.position.set(x, 0.09, z);
-    this.scene.add(centerLine);
-
-    // Center circle + dot
-    const centerCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
-    const centerCircle = new THREE.Mesh(centerCircleGeometry, boundaryMaterial);
-    centerCircle.rotation.x = -Math.PI / 2;
-    centerCircle.position.set(x, 0.16, z);
-    this.scene.add(centerCircle);
-
-    const centerDot = new THREE.Mesh(
-      new THREE.CircleGeometry(0.2, 16),
-      boundaryMaterial
-    );
-    centerDot.rotation.x = -Math.PI / 2;
-    centerDot.position.set(x, 0.16, z);
-    this.scene.add(centerDot);
-
-    // Three-point arcs
-    const threePointRadius = 6.75;
-    const threePointThickness = 0.1;
-    const threePointGeometry = new THREE.RingGeometry(
-      threePointRadius,
-      threePointRadius + threePointThickness,
-      64,
-      1,
-      0,
-      Math.PI
-    );
-
-    const topThreePoint = new THREE.Mesh(threePointGeometry, boundaryMaterial);
-    topThreePoint.rotation.x = -Math.PI / 2;
-    topThreePoint.rotation.z = Math.PI;
-    topThreePoint.position.set(x, 0.16, z - courtLength / 2);
-    this.scene.add(topThreePoint);
-
-    const bottomThreePoint = new THREE.Mesh(
-      threePointGeometry,
-      boundaryMaterial
-    );
-    bottomThreePoint.rotation.x = -Math.PI / 2;
-    bottomThreePoint.rotation.z = 0;
-    bottomThreePoint.position.set(x, 0.16, z + courtLength / 2);
-    this.scene.add(bottomThreePoint);
-
-    // Paint / key
-    const paintWidth = 4;
-    const paintLength = 4.7;
-
-    const topPaintLeft = new THREE.Mesh(
-      new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
-      boundaryMaterial
-    );
-    topPaintLeft.position.set(
-      x - paintWidth / 2,
-      0.09,
-      z - courtLength / 2 + paintLength / 2
-    );
-    this.scene.add(topPaintLeft);
-
-    const topPaintRight = new THREE.Mesh(
-      new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
-      boundaryMaterial
-    );
-    topPaintRight.position.set(
-      x + paintWidth / 2,
-      0.09,
-      z - courtLength / 2 + paintLength / 2
-    );
-    this.scene.add(topPaintRight);
-
-    const topPaintFront = new THREE.Mesh(
-      new THREE.BoxGeometry(paintWidth, lineHeight, lineThickness),
-      boundaryMaterial
-    );
-    topPaintFront.position.set(x, 0.09, z - courtLength / 2 + paintLength);
-    this.scene.add(topPaintFront);
-
-    const bottomPaintLeft = new THREE.Mesh(
-      new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
-      boundaryMaterial
-    );
-    bottomPaintLeft.position.set(
-      x - paintWidth / 2,
-      0.09,
-      z + courtLength / 2 - paintLength / 2
-    );
-    this.scene.add(bottomPaintLeft);
-
-    const bottomPaintRight = new THREE.Mesh(
-      new THREE.BoxGeometry(lineThickness, lineHeight, paintLength),
-      boundaryMaterial
-    );
-    bottomPaintRight.position.set(
-      x + paintWidth / 2,
-      0.09,
-      z + courtLength / 2 - paintLength / 2
-    );
-    this.scene.add(bottomPaintRight);
-
-    const bottomPaintFront = new THREE.Mesh(
-      new THREE.BoxGeometry(paintWidth, lineHeight, lineThickness),
-      boundaryMaterial
-    );
-    bottomPaintFront.position.set(x, 0.09, z + courtLength / 2 - paintLength);
-    this.scene.add(bottomPaintFront);
-
-    // Free throw circles
-    const freeThrowCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
-
-    const topFreeThrowCircle = new THREE.Mesh(
-      freeThrowCircleGeometry,
-      boundaryMaterial
-    );
-    topFreeThrowCircle.rotation.x = -Math.PI / 2;
-    topFreeThrowCircle.position.set(x, 0.16, z - courtLength / 2 + paintLength);
-    this.scene.add(topFreeThrowCircle);
-
-    const bottomFreeThrowCircle = new THREE.Mesh(
-      freeThrowCircleGeometry,
-      boundaryMaterial
-    );
-    bottomFreeThrowCircle.rotation.x = -Math.PI / 2;
-    bottomFreeThrowCircle.position.set(
-      x,
-      0.16,
-      z + courtLength / 2 - paintLength
-    );
-    this.scene.add(bottomFreeThrowCircle);
-
-    // Hoops (both ends)
-    createBasketballHoop(x, z - courtLength / 2 + 1.575, 0, 'top');
-    createBasketballHoop(x, z + courtLength / 2 - 1.575, Math.PI, 'bottom');
-
-    // Benches
-    createCourtBench(x - courtWidth / 2 - 2, z - 6, Math.PI / 2);
-    createCourtBench(x - courtWidth / 2 - 2, z - 3, Math.PI / 2);
-    createCourtBench(x + courtWidth / 2 + 2, z + 6, -Math.PI / 2);
-    createCourtBench(x + courtWidth / 2 + 2, z + 3, -Math.PI / 2);
-
-    // Scoreboard
-    createScoreboard(x - 5, z + courtLength / 2.8);
-  }
-
   createPosRonda(
     x,
     z,
@@ -914,7 +529,6 @@ export class CityBuilder {
       const s = char.userData.scale || 1;
       const { leftLeg, rightLeg, leftArm, rightArm, body } = char.userData;
 
-      // duduk santai
       if (leftLeg && rightLeg) {
         leftLeg.rotation.x = THREE.MathUtils.degToRad(85);
         rightLeg.rotation.x = THREE.MathUtils.degToRad(85);
@@ -930,7 +544,6 @@ export class CityBuilder {
     }
 
     function makeGlass(colorHex = 0x6f4e37) {
-      // kopi coklat
       const g = new THREE.Group();
       const cup = new THREE.Mesh(
         new THREE.CylinderGeometry(0.05, 0.055, 0.1, 14),
@@ -952,20 +565,14 @@ export class CityBuilder {
       return g;
     }
 
-    // The original floor elements (deck and pad) have been removed as requested
-
-    // ================= Struktur pos: tiang + atap seng =================
     const hut = new THREE.Group();
-
-    // hitung ketinggian tiang dari permukaan ground → underside atap
-    const groundTopY = 0; // Ground level is at y=0 since deck was removed
-    const roofY = 2.6; // center atap
-    const roofHalfH = 0.08; // half thickness atap
-    const canopyUnderY = roofY - roofHalfH; // underside
+    const groundTopY = 0;
+    const roofY = 2.6;
+    const roofHalfH = 0.08;
+    const canopyUnderY = roofY - roofHalfH;
     const eps = 0.01;
     const poleH = Math.max(0.8, canopyUnderY - groundTopY - eps);
 
-    // tiang (nempel ground)
     const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, poleH, 12);
     const poleMat = new THREE.MeshStandardMaterial({
       color: 0x6b7280,
@@ -985,7 +592,6 @@ export class CityBuilder {
       hut.add(p);
     });
 
-    // balok pengikat atas
     const beamMat = new THREE.MeshStandardMaterial({
       color: 0x5a4632,
       roughness: 0.8,
@@ -1006,7 +612,6 @@ export class CityBuilder {
     beamZ2.position.x = 2.8;
     hut.add(beamX, beamX2, beamZ, beamZ2);
 
-    // atap seng datar sedikit miring
     const roof = new THREE.Mesh(
       new THREE.BoxGeometry(6.6, 0.16, 6.6),
       new THREE.MeshStandardMaterial({
@@ -1021,7 +626,6 @@ export class CityBuilder {
     roof.receiveShadow = true;
     hut.add(roof);
 
-    // list tepi atap
     const drip = new THREE.Mesh(
       new THREE.BoxGeometry(6.7, 0.06, 0.12),
       new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 })
@@ -1029,14 +633,12 @@ export class CityBuilder {
     drip.position.set(0, roofY - 0.06, -3.25);
     hut.add(drip);
 
-    // pagar rendah (setengah) - entrance created at front (removed railFront)
     const railMat = new THREE.MeshStandardMaterial({
       color: 0x7b5737,
       roughness: 0.85,
     });
     const railH = 0.7;
     const railTh = 0.08;
-    // railFront is intentionally omitted to create entrance at front
     const railBack = new THREE.Mesh(
       new THREE.BoxGeometry(6.2, railH, railTh),
       railMat
@@ -1179,364 +781,6 @@ export class CityBuilder {
     return group;
   }
 
-  createKapsterBox(
-    x,
-    z,
-    {
-      scale = 1,
-      rotate = 0,
-      name = 'Kapster Box',
-      // Tidak ada "depth" di opsi!
-      width = 6.0, // lebar fasad
-      height = 4.2, // tinggi dinding
-      colors = {
-        wall: 0x152238, // biru tua matte
-        frame: 0x1e3a8a, // biru frame
-        concrete: 0xe6e6e6, // lantai teras (opsional tipis)
-        canopy: 0x0f172a, // kanopi gelap
-        signBg: 0x000000, // papan signage hitam
-        signText: '#ffffff', // teks signage putih
-      },
-    } = {}
-  ) {
-    const group = new THREE.Group();
-
-    // Kedalaman bangunan ditetapkan di dalam fungsi (tidak dikonfigurasi dari luar)
-    const DEPTH = 5.0;
-
-    // ====== LANTAI TIPIS (bisa dihapus jika tak perlu) ======
-    const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(width + 0.2, 0.08, DEPTH + 0.2),
-      new THREE.MeshStandardMaterial({
-        color: colors.concrete,
-        roughness: 0.95,
-      })
-    );
-    pad.position.set(0, 0.04, 0);
-    pad.receiveShadow = true;
-    group.add(pad);
-
-    const groundTopY = pad.position.y + pad.geometry.parameters.height / 2;
-
-    // ====== BADAN BANGUNAN ======
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(width, height, DEPTH),
-      new THREE.MeshStandardMaterial({
-        color: colors.wall,
-        roughness: 0.85,
-        metalness: 0.05,
-      })
-    );
-    body.position.set(0, groundTopY + height / 2, 0);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    group.add(body);
-
-    // ====== PARAPET RATA ======
-    const parapetH = 0.5;
-    const parapet = new THREE.Mesh(
-      new THREE.BoxGeometry(width + 0.06, parapetH, DEPTH + 0.06),
-      new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.7 })
-    );
-    parapet.position.set(0, groundTopY + height + parapetH / 2, 0);
-    parapet.castShadow = true;
-    group.add(parapet);
-
-    // ====== KANOPI TIPIS ======
-    const canopyDepth = 0.9;
-    const canopyThk = 0.1;
-    const canopy = new THREE.Mesh(
-      new THREE.BoxGeometry(width * 0.96, canopyThk, canopyDepth),
-      new THREE.MeshStandardMaterial({
-        color: colors.canopy,
-        roughness: 0.6,
-        metalness: 0.2,
-      })
-    );
-    canopy.position.set(
-      0,
-      groundTopY + height + 0.05,
-      DEPTH / 2 + canopyDepth / 2 - 0.05
-    );
-    canopy.castShadow = true;
-    group.add(canopy);
-
-    // Bracket kanopi (nempel dinding)
-    const bracketMat = new THREE.MeshStandardMaterial({
-      color: 0x6b7280,
-      roughness: 0.6,
-      metalness: 0.3,
-    });
-    const makeBracket = (bx) => {
-      const g = new THREE.Group();
-      const arm = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.05, 0.05, 0.9, 12),
-        bracketMat
-      );
-      arm.rotation.x = Math.PI / 2;
-      arm.position.set(0, 0, -0.45);
-      const diag = new THREE.Mesh(
-        new THREE.CylinderGeometry(
-          0.04,
-          0.04,
-          Math.sqrt(0.9 * 0.9 + 0.5 * 0.5),
-          12
-        ),
-        bracketMat
-      );
-      diag.rotation.set(Math.atan2(0.5, 0.9), 0, 0);
-      diag.position.set(0, -0.25, -0.25);
-      g.add(arm, diag);
-      g.position.set(bx, groundTopY + height - 0.1, DEPTH / 2 + 0.05);
-      return g;
-    };
-    const bx = (width * 0.96) / 2 - 0.5;
-    group.add(makeBracket(-bx), makeBracket(bx));
-
-    // LED strip di bawah kanopi
-    const led = new THREE.Mesh(
-      new THREE.PlaneGeometry(width * 0.9, 0.06),
-      new THREE.MeshStandardMaterial({
-        emissive: new THREE.Color(0xffffff),
-        emissiveIntensity: 1.2,
-        color: 0x000000,
-      })
-    );
-    led.position.set(
-      0,
-      canopy.position.y - canopyThk / 2 - 0.02,
-      DEPTH / 2 + canopyDepth - 0.15
-    );
-    led.rotation.x = -Math.PI / 2;
-    group.add(led);
-
-    // ====== FACADE KACA (pintu kiri, jendela kanan) ======
-    const glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.06,
-      transmission: 0.92,
-      roughness: 0.15,
-      thickness: 0.06,
-      envMapIntensity: 0.7,
-    });
-    const frameMat = new THREE.MeshStandardMaterial({
-      color: colors.frame,
-      roughness: 0.6,
-      metalness: 0.2,
-    });
-
-    // Pintu kiri (frameless look)
-    const doorW = 1.1,
-      doorH = 2.4;
-    const door = new THREE.Mesh(
-      new THREE.BoxGeometry(doorW, doorH, 0.05),
-      glassMat
-    );
-    door.position.set(
-      -(width / 2) + doorW / 2 + 0.25,
-      groundTopY + doorH / 2,
-      DEPTH / 2 + 0.03
-    );
-    group.add(door);
-
-    const slimFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(doorW + 0.06, doorH + 0.06, 0.06),
-      frameMat
-    );
-    slimFrame.position.copy(door.position);
-    group.add(slimFrame);
-
-    // Handle
-    const handle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.02, 0.45, 16),
-      new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.9,
-        roughness: 0.2,
-      })
-    );
-    handle.rotation.z = Math.PI / 2;
-    handle.position.set(
-      door.position.x + doorW / 2 - 0.12,
-      door.position.y,
-      door.position.z + 0.04
-    );
-    group.add(handle);
-
-    // Jendela kanan
-    const winW = width - doorW - 0.7;
-    const winH = 2.5;
-    const windowGlass = new THREE.Mesh(
-      new THREE.BoxGeometry(winW, winH, 0.05),
-      glassMat
-    );
-    windowGlass.position.set(
-      door.position.x + doorW / 2 + winW / 2 + 0.35,
-      groundTopY + winH / 2,
-      DEPTH / 2 + 0.03
-    );
-    group.add(windowGlass);
-
-    const windowFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(winW + 0.06, winH + 0.06, 0.06),
-      frameMat
-    );
-    windowFrame.position.copy(windowGlass.position);
-    group.add(windowFrame);
-
-    // ====== PANEL / CLADDING halus (opsional) ======
-    const panelCount = 8;
-    const panelGap = (width - 0.4) / panelCount;
-    for (let i = 0; i < panelCount; i++) {
-      const px = -width / 2 + 0.2 + panelGap * i + panelGap / 2;
-      const slat = new THREE.Mesh(
-        new THREE.BoxGeometry(0.06, 1.2, 0.18),
-        new THREE.MeshStandardMaterial({ color: 0x0e1a2b, roughness: 0.8 })
-      );
-      slat.position.set(px, groundTopY + 3.0, DEPTH / 2 - 0.09);
-      slat.castShadow = true;
-      group.add(slat);
-    }
-
-    function makeSignTexture(text = 'KAPSTERBOX', w = 2048, h = 512) {
-      const c = document.createElement('canvas');
-      c.width = w;
-      c.height = h;
-      const ctx = c.getContext('2d');
-
-      // Papan hitam pekat
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, w, h);
-
-      // Teks putih
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 300px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, w / 2, h / 2);
-
-      const tex = new THREE.CanvasTexture(c);
-      tex.anisotropy = 8;
-      return tex;
-    }
-
-    const signW = width * 0.9;
-    const signH = 0.9;
-
-    const sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(signW, signH),
-      new THREE.MeshStandardMaterial({
-        map: makeSignTexture('KAPSTERBOX'),
-        transparent: false,
-        roughness: 1.0,
-        metalness: 0.0,
-        emissiveIntensity: 0, // penting: supaya tidak putih
-        color: 0xffffff, // JANGAN hitam — harus putih agar tidak menggelapkan tekstur
-        toneMapped: true,
-      })
-    );
-
-    // posisinya tetap
-    sign.position.set(0, groundTopY + height - 0.4, DEPTH / 2 + 0.06);
-
-    group.add(sign);
-
-    // ====== BARBER POLE ======
-    const poleLen = 1.2;
-    const pole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.095, 0.095, poleLen, 24),
-      new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 0.4,
-        metalness: 0.4,
-      })
-    );
-    pole.position.set(-(width / 2) + 0.15, groundTopY + 2.2, DEPTH / 2 + 0.08);
-    group.add(pole);
-
-    // tutup atas/bawah aksen
-    const capMat = new THREE.MeshStandardMaterial({
-      color: 0xe11d48,
-      metalness: 0.4,
-      roughness: 0.4,
-    });
-    const capTop = new THREE.Mesh(
-      new THREE.SphereGeometry(0.11, 16, 16),
-      capMat
-    );
-    capTop.position.set(
-      pole.position.x,
-      pole.position.y + poleLen / 2,
-      pole.position.z
-    );
-    const capBot = capTop.clone();
-    capBot.position.set(
-      pole.position.x,
-      pole.position.y - poleLen / 2,
-      pole.position.z
-    );
-    group.add(capTop, capBot);
-
-    // ring diagonal merah-biru
-    const ringGeo = new THREE.TorusGeometry(0.105, 0.012, 10, 24);
-    for (let i = -6; i <= 6; i++) {
-      const ring = new THREE.Mesh(
-        ringGeo,
-        new THREE.MeshStandardMaterial({
-          color: i % 2 === 0 ? 0x1d4ed8 : 0xf43f5e,
-          roughness: 0.6,
-        })
-      );
-      ring.rotation.x = Math.PI / 2.2;
-      ring.position.set(
-        pole.position.x,
-        pole.position.y + i * 0.09,
-        pole.position.z
-      );
-      group.add(ring);
-    }
-
-    // bracket pole ke dinding
-    const poleBracket = new THREE.Mesh(
-      new THREE.BoxGeometry(0.14, 0.14, 0.16),
-      bracketMat
-    );
-    poleBracket.position.set(
-      pole.position.x,
-      pole.position.y,
-      DEPTH / 2 - 0.02
-    );
-    group.add(poleBracket);
-
-    // ====== Pencahayaan fasad ======
-    const wash = new THREE.RectAreaLight(0xffffff, 5, width * 0.9, 0.4);
-    wash.position.set(0, groundTopY + height - 0.2, DEPTH / 2 + 0.25);
-    wash.lookAt(0, groundTopY + 1.5, DEPTH / 2 - 0.5);
-    group.add(wash);
-
-    // ====== TRANSFORM ======
-    group.position.set(x, 0, z);
-    group.scale.set(scale, scale, scale);
-    group.rotation.y = THREE.MathUtils.degToRad(rotate);
-    group.updateMatrixWorld(true);
-    this.scene.add(group);
-
-    // ====== COLLIDER (body + kanopi) ======
-    const colliderGroup = new THREE.Group();
-    colliderGroup.add(body.clone(), canopy.clone());
-    colliderGroup.updateMatrixWorld(true);
-    const bbox = new THREE.Box3().setFromObject(colliderGroup);
-
-    this.buildings.push({
-      mesh: group,
-      boundingBox: bbox,
-      name,
-    });
-
-    return group;
-  }
-
   createTambalBan(
     x,
     z,
@@ -1615,14 +859,11 @@ export class CityBuilder {
       if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(-5);
     }
 
-    // The original floor element (pad) has been removed as requested
-
     const rubber = new THREE.Mesh(
       new THREE.BoxGeometry(3.4, 0.04, 2.2),
       new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.85 })
     );
-    // Adjust position since there's no pad anymore
-    rubber.position.set(-1.8, 0.02, 0.4); // rubber stays at ground level
+    rubber.position.set(-1.8, 0.02, 0.4);
     rubber.receiveShadow = true;
     group.add(rubber);
 
@@ -1640,10 +881,9 @@ export class CityBuilder {
     canopy.castShadow = true;
     stall.add(canopy);
 
-    // hitung tinggi tiang (ground level → canopyUnderY)
-    const groundTopY = 0; // Ground level is at y=0 since pad was removed
-    const canopyHalfH = canopy.geometry.parameters.height / 2; // 0.06
-    const canopyUnderY = canopy.position.y - canopyHalfH; // 2.34
+    const groundTopY = 0;
+    const canopyHalfH = canopy.geometry.parameters.height / 2;
+    const canopyUnderY = canopy.position.y - canopyHalfH;
     const eps = 0.01;
     const poleHeight = Math.max(0.1, canopyUnderY - groundTopY - eps);
 
@@ -1666,7 +906,6 @@ export class CityBuilder {
       stall.add(pole);
     });
 
-    // talang sederhana (list) di tepi canopy
     const lip = new THREE.Mesh(
       new THREE.BoxGeometry(4.3, 0.06, 0.12),
       new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.6 })
@@ -1675,7 +914,6 @@ export class CityBuilder {
     lip.castShadow = true;
     stall.add(lip);
 
-    // --- Meja alat ---
     const bench = new THREE.Mesh(
       new THREE.BoxGeometry(1.2, 0.1, 1.5),
       new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.8 })
@@ -1700,7 +938,6 @@ export class CityBuilder {
       stall.add(leg);
     });
 
-    // --- Kompresor angin ---
     const tank = new THREE.Mesh(
       new THREE.CylinderGeometry(0.3, 0.3, 0.9, 24),
       new THREE.MeshStandardMaterial({
@@ -1709,7 +946,7 @@ export class CityBuilder {
         roughness: 0.4,
       })
     );
-    tank.rotation.z = Math.PI / 2; // rebah
+    tank.rotation.z = Math.PI / 2;
     tank.position.set(-1.4, 0.35, 0.2);
     tank.castShadow = true;
     stall.add(tank);
@@ -1726,7 +963,6 @@ export class CityBuilder {
     motor.castShadow = true;
     stall.add(motor);
 
-    // roda kecil untuk kompresor
     const wheelGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.06, 16);
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
     [
@@ -1740,13 +976,11 @@ export class CityBuilder {
       stall.add(w);
     });
 
-    // --- Selang angin (pakai torus sebagai lengkungan + silinder) ---
     const hose = new THREE.Group();
     const hoseMat = new THREE.MeshStandardMaterial({
       color: 0x222222,
       roughness: 0.9,
     });
-    // segmen lurus
     const hoseStraight = new THREE.Mesh(
       new THREE.CylinderGeometry(0.03, 0.03, 1.1, 12),
       hoseMat
@@ -1754,7 +988,6 @@ export class CityBuilder {
     hoseStraight.rotation.z = Math.PI / 2;
     hoseStraight.position.set(-1.25, 0.5, 0.35);
     hose.add(hoseStraight);
-    // elbow torus
     const elbow = new THREE.Mesh(
       new THREE.TorusGeometry(0.22, 0.03, 8, 20, Math.PI / 2),
       hoseMat
@@ -1783,7 +1016,6 @@ export class CityBuilder {
     addTire(1.7, 0.18, 0.1);
     addTire(1.45, 0.54, 0.35, 0.33, 0.07);
 
-    // --- Kursi kecil (bangku plastik) ---
     const stool = new THREE.Mesh(
       new THREE.BoxGeometry(0.35, 0.38, 0.35),
       new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 })
@@ -1792,33 +1024,27 @@ export class CityBuilder {
     stool.castShadow = true;
     stall.add(stool);
 
-    // --- Lampu kerja ---
     const workLight = new THREE.PointLight(0xffe3b1, 0.9, 10, 2.0);
     workLight.position.set(0, 2.2, 0);
     stall.add(workLight);
 
-    // Posisi stall relatif ground
     stall.position.set(0, 0, 0.0);
     group.add(stall);
 
-    // --- Mekanik berdiri (bukan lesehan) ---
     const mechanic = characterFactory
       ? characterFactory(0x374151, npcScale)
       : makeMinecraftCharacterWithJoints(0x374151, npcScale);
 
-    // hitung offset berdiri natural: origin di tengah badan → kaki nempel tanah
     const standY = 0.45 * npcScale;
     mechanic.position.set(0.2, standY, -0.6 - mechanicBack);
     mechanic.rotation.y = THREE.MathUtils.degToRad(-15);
     poseMechanic(mechanic);
     group.add(mechanic);
 
-    // --- Ambient tambahan ---
     const ambient = new THREE.PointLight(0xffddaa, 0.5, 12, 2.0);
     ambient.position.set(-1.2, 2.0, 0.8);
     group.add(ambient);
 
-    // --- Transform global & register collider ---
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
@@ -1826,7 +1052,6 @@ export class CityBuilder {
 
     this.scene.add(group);
 
-    // collider hanya untuk area stall (kanopi + meja + kompresor), bukan seluruh group
     stall.updateMatrixWorld(true);
     const bbox = new THREE.Box3().setFromObject(stall);
     this.buildings.push({
@@ -1933,22 +1158,17 @@ export class CityBuilder {
         char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-10);
     }
 
-    // The original ground element has been removed as requested
-
     function makeMat(px, pz, color = 0x8b5a2b) {
       const mat = new THREE.Mesh(
         new THREE.BoxGeometry(3.4, 0.04, 2.4),
         new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
       );
-      // Adjust mat position since there's no ground anymore (at ground level)
       mat.position.set(px, 0.02, pz);
       mat.receiveShadow = true;
       return mat;
     }
-    // Adjust positions of mats since there's no ground anymore
     group.add(makeMat(-2.6, 1.5, 0x8b5a2b), makeMat(2.6, 1.2, 0x996633));
 
-    // ---------- GERObak ----------
     const cart = new THREE.Group();
 
     const cartBody = new THREE.Mesh(
@@ -1982,10 +1202,9 @@ export class CityBuilder {
     canopy.castShadow = true;
     cart.add(canopy);
 
-    // ✅ TIANG NEMPEL TANAH (since ground was removed, use y=0 as ground level)
-    const groundTopY = 0; // Ground level is at y=0 since ground was removed
-    const canopyHalfH = canopy.geometry.parameters.height / 2; // 0.05
-    const canopyUnderY = canopy.position.y - canopyHalfH; // 2.45
+    const groundTopY = 0;
+    const canopyHalfH = canopy.geometry.parameters.height / 2;
+    const canopyUnderY = canopy.position.y - canopyHalfH;
     const eps = 0.01;
     const poleHeight = Math.max(0.1, canopyUnderY - groundTopY - eps);
 
@@ -2004,7 +1223,6 @@ export class CityBuilder {
       cart.add(p);
     });
 
-    // Kabel & lampu
     const cable = new THREE.Mesh(
       new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8),
       new THREE.MeshStandardMaterial({ color: 0x000000 })
@@ -2027,7 +1245,6 @@ export class CityBuilder {
     point.position.set(0, 2.2, 0);
     cart.add(point);
 
-    // ✅ BARANG DAGANGAN (termos, kompor, api, panci, sate, nampan, makanan)
     for (let i = 0; i < 2; i++) {
       const thermos = new THREE.Mesh(
         new THREE.CylinderGeometry(0.2, 0.2, 0.7, 16),
@@ -2181,12 +1398,10 @@ export class CityBuilder {
       group.add(glass);
     }
 
-    // ---------- LAMPU AMBIENCE ----------
     const warm = new THREE.PointLight(0xffe3b1, 0.8, 12, 2.0);
     warm.position.set(-2.6, 2.2, 1.5);
     group.add(warm);
 
-    // ---------- TRANSFORM & REGISTER ----------
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
@@ -2276,7 +1491,6 @@ export class CityBuilder {
       };
       return g;
     }
-    // Pose lari
     function poseRun(char, strideDeg = 25) {
       const u = char.userData;
       if (!u) return;
@@ -2293,7 +1507,6 @@ export class CityBuilder {
       }
       if (u.body) u.body.rotation.z = THREE.MathUtils.degToRad(3);
     }
-    // Pose nendang
     function poseKick(char) {
       const u = char.userData;
       if (!u) return;
@@ -2311,11 +1524,9 @@ export class CityBuilder {
       if (u.leftArm) u.leftArm.rotation.x = THREE.MathUtils.degToRad(20);
     }
 
-    // ---------- Ukuran ----------
     const L = size.length;
     const W = size.width;
 
-    // ---------- Aspal lapangan ----------
     const asphalt = new THREE.Mesh(
       new THREE.BoxGeometry(L + 4, 0.05, W + 4),
       new THREE.MeshStandardMaterial({ color: 0x2f2f2f, roughness: 0.95 })
@@ -2324,7 +1535,6 @@ export class CityBuilder {
     asphalt.receiveShadow = true;
     group.add(asphalt);
 
-    // ---------- Garis lapangan (kapur) ----------
     const lineMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.7,
@@ -2360,10 +1570,10 @@ export class CityBuilder {
     }
 
     function makeGoal({
-      width = 3.0, // lebar mulut gawang
-      height = 2.0, // tinggi mistar
-      depth = 1.0, // kedalaman gawang
-      tube = 0.07, // diameter pipa
+      width = 3.0,
+      height = 2.0,
+      depth = 1.0,
+      tube = 0.07,
     } = {}) {
       const g = new THREE.Group();
 
@@ -2373,35 +1583,29 @@ export class CityBuilder {
         metalness: 0.05,
       });
 
-      // helper silinder
       const cyl = (r, h, mat) =>
         new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), mat);
 
-      // FRONT FRAME (mulut gawang)
       const L = width,
         H = height,
         D = depth,
         R = tube;
 
-      // tiang kiri & kanan (vertikal)
       const leftPost = cyl(R, H, postMat);
       leftPost.position.set(-L / 2, H / 2, 0);
       const rightPost = cyl(R, H, postMat);
       rightPost.position.set(L / 2, H / 2, 0);
 
-      // mistar (horizontal atas)
       const crossbar = cyl(R, L, postMat);
       crossbar.rotation.z = Math.PI / 2;
       crossbar.position.set(0, H, 0);
 
-      // palang bawah depan (opsional: pengikat bawah)
       const frontBottom = cyl(R, L, postMat);
       frontBottom.rotation.z = Math.PI / 2;
       frontBottom.position.set(0, R / 2, 0);
 
       g.add(leftPost, rightPost, crossbar, frontBottom);
 
-      // DEPTH BARS (kiri-kanan: maju ke belakang)
       const sideTopL = cyl(R, D, postMat);
       sideTopL.rotation.x = Math.PI / 2;
       sideTopL.rotation.z = 0;
@@ -2419,7 +1623,6 @@ export class CityBuilder {
 
       g.add(sideTopL, sideTopR, sideBotL, sideBotR);
 
-      // BACK FRAME (belakang)
       const backLeft = cyl(R, H, postMat);
       backLeft.position.set(-L / 2, H / 2, -D);
       const backRight = cyl(R, H, postMat);
@@ -2435,7 +1638,6 @@ export class CityBuilder {
 
       g.add(backLeft, backRight, backTop, backBottom);
 
-      // NET (sederhana: plane wireframe transparan)
       const netMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
@@ -2444,13 +1646,11 @@ export class CityBuilder {
         wireframe: true,
       });
 
-      // belakang
       const netBack = new THREE.Mesh(
         new THREE.PlaneGeometry(L - R * 2, H - R, 8, 6),
         netMat
       );
       netBack.position.set(0, H / 2, -D);
-      // sisi kiri & kanan
       const netSideL = new THREE.Mesh(
         new THREE.PlaneGeometry(D, H - R, 6, 6),
         netMat
@@ -2726,16 +1926,13 @@ export class CityBuilder {
       group.add(m);
     }
 
-    // Garis tepi
-    line(W, lineHeight, lineThickness, 0, 0.09, -L / 2); // top
-    line(W, lineHeight, lineThickness, 0, 0.09, L / 2); // bottom
-    line(lineThickness, lineHeight, L, -W / 2, 0.09, 0); // left
-    line(lineThickness, lineHeight, L, W / 2, 0.09, 0); // right
+    line(W, lineHeight, lineThickness, 0, 0.09, -L / 2);
+    line(W, lineHeight, lineThickness, 0, 0.09, L / 2);
+    line(lineThickness, lineHeight, L, -W / 2, 0.09, 0);
+    line(lineThickness, lineHeight, L, W / 2, 0.09, 0);
 
-    // Garis tengah
     line(W, lineHeight, lineThickness, 0, 0.09, 0);
 
-    // Lingkaran tengah
     const centerCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
     const centerCircle = new THREE.Mesh(centerCircleGeometry, lineMat);
     centerCircle.rotation.x = -Math.PI / 2;
@@ -2750,7 +1947,6 @@ export class CityBuilder {
     centerDot.position.set(0, 0.16, 0);
     group.add(centerDot);
 
-    // Three-point arcs
     const threePointRadius = 6.75;
     const threePointThickness = 0.1;
     const threePointGeometry = new THREE.RingGeometry(
@@ -2774,11 +1970,9 @@ export class CityBuilder {
     bottomThreePoint.position.set(0, 0.16, L / 2);
     group.add(bottomThreePoint);
 
-    // Paint / key area
     const paintWidth = 4;
     const paintLength = 4.7;
 
-    // Top paint
     line(
       lineThickness,
       lineHeight,
@@ -2797,7 +1991,6 @@ export class CityBuilder {
     );
     line(paintWidth, lineHeight, lineThickness, 0, 0.09, -L / 2 + paintLength);
 
-    // Bottom paint
     line(
       lineThickness,
       lineHeight,
@@ -2816,7 +2009,6 @@ export class CityBuilder {
     );
     line(paintWidth, lineHeight, lineThickness, 0, 0.09, L / 2 - paintLength);
 
-    // Free throw circles
     const freeThrowCircleGeometry = new THREE.RingGeometry(1.8, 2, 32);
 
     const topFreeThrowCircle = new THREE.Mesh(freeThrowCircleGeometry, lineMat);
@@ -2832,11 +2024,8 @@ export class CityBuilder {
     bottomFreeThrowCircle.position.set(0, 0.16, L / 2 - paintLength);
     group.add(bottomFreeThrowCircle);
 
-    // ---------- Fungsi Ring Basket ----------
     function makeBasketRing() {
       const g = new THREE.Group();
-
-      // Pole
       const poleGeometry = new THREE.CylinderGeometry(0.15, 0.2, 4, 8);
       const poleMaterial = new THREE.MeshStandardMaterial({
         color: 0x444444,
@@ -2847,15 +2036,11 @@ export class CityBuilder {
       pole.position.y = 2;
       pole.castShadow = true;
       g.add(pole);
-
-      // Support arm
       const armGeometry = new THREE.BoxGeometry(0.15, 0.15, 1.2);
       const arm = new THREE.Mesh(armGeometry, poleMaterial);
       arm.position.set(0, 3.3, -0.6);
       arm.castShadow = true;
       g.add(arm);
-
-      // Backboard
       const backboardGeometry = new THREE.BoxGeometry(1.8, 1.05, 0.1);
       const backboardMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -2869,7 +2054,6 @@ export class CityBuilder {
       backboard.castShadow = true;
       g.add(backboard);
 
-      // Backboard red rectangle
       const rectangleGeometry = new THREE.BoxGeometry(0.59, 0.45, 0.05);
       const rectangleMaterial = new THREE.MeshStandardMaterial({
         color: 0xff0000,
@@ -2878,7 +2062,6 @@ export class CityBuilder {
       rectangle.position.set(0, 3.5, -1.25);
       g.add(rectangle);
 
-      // Rim
       const rimGeometry = new THREE.TorusGeometry(0.225, 0.02, 8, 32);
       const rimMaterial = new THREE.MeshStandardMaterial({
         color: 0xff6600,
@@ -2890,8 +2073,6 @@ export class CityBuilder {
       rim.position.set(0, 3.05, -1.35);
       rim.castShadow = true;
       g.add(rim);
-
-      // Net (simplified)
       const netMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         transparent: true,
@@ -2918,20 +2099,15 @@ export class CityBuilder {
 
       return g;
     }
-
-    // Ring atas (menghadap ke bawah)
     const ringTop = makeBasketRing();
     ringTop.position.set(0, 0, -L / 2 + 1.575);
     ringTop.rotation.y = Math.PI;
     group.add(ringTop);
-
-    // Ring bawah (menghadap ke atas)
     const ringBottom = makeBasketRing();
     ringBottom.position.set(0, 0, L / 2 - 1.575);
     ringBottom.rotation.y = 0;
     group.add(ringBottom);
 
-    // ---------- Bola basket ----------
     const ball = new THREE.Mesh(
       new THREE.SphereGeometry(0.24, 16, 12),
       new THREE.MeshStandardMaterial({ color: 0xff8c42, roughness: 0.7 })
@@ -2939,8 +2115,6 @@ export class CityBuilder {
     ball.position.set(0, 0.24, 0);
     ball.castShadow = true;
     group.add(ball);
-
-    // ---------- Spawn pemain ----------
     const total = Math.max(2, numPlayers);
     const perTeam = Math.floor(total / 2);
     const spawnRadiusX = W / 2 - 2;
@@ -2968,7 +2142,6 @@ export class CityBuilder {
       const angleToCenter = Math.atan2(0 - pz, 0 - px);
       p.rotation.y = angleToCenter;
 
-      // Variasi pose
       if (idx === 0 && !isTeamA) {
         p.position.set(0.6, 0, 0.8);
         p.rotation.y = Math.atan2(0 - 0.8, 0 - 0.6);
@@ -2989,12 +2162,9 @@ export class CityBuilder {
     for (let i = 0; i < perTeam; i++) spawnPlayer(true, i);
     for (let i = 0; i < perTeam; i++) spawnPlayer(false, i);
 
-    // ---------- Lighting ----------
     const lightMid = new THREE.PointLight(0xffe8cc, 0.9, 25, 2.0);
     lightMid.position.set(0, 5.5, 0);
     group.add(lightMid);
-
-    // ---------- Transform group ----------
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
@@ -3002,7 +2172,6 @@ export class CityBuilder {
 
     this.scene.add(group);
 
-    // ---------- Collision detection untuk ring ----------
     if (registerRingColliders) {
       [ringTop, ringBottom].forEach((ring, i) => {
         ring.updateMatrixWorld(true);

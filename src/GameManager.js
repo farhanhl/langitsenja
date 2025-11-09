@@ -452,10 +452,19 @@ export class GameManager {
   }
 
   updateUI() {
-    // Update timer
-    const minutes = Math.floor(this.timeRemaining / 60);
-    const seconds = Math.floor(this.timeRemaining % 60);
-    this.timerElement.textContent = `${minutes}:${seconds
+    // Update timer - ensure values are never negative
+    let displayMinutes, displaySeconds;
+    
+    // If remaining time is positive, compute normally; if zero or negative, show 00:00
+    if (this.timeRemaining > 0) {
+      displayMinutes = Math.floor(this.timeRemaining / 60);
+      displaySeconds = Math.floor(this.timeRemaining % 60);
+    } else {
+      displayMinutes = 0;
+      displaySeconds = 0;
+    }
+    
+    this.timerElement.textContent = `${displayMinutes}:${displaySeconds
       .toString()
       .padStart(2, '0')}`;
 

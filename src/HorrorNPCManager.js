@@ -6,12 +6,15 @@ export class HorrorNPCManager {
     this.npcManager = npcManager;
     this.isHorrorMode = false;
     this.originalNPCData = [];
+    this.originalVehicleData = []; // Track original vehicle NPCs
   }
 
   transformToHorror() {
     if (this.isHorrorMode) return;
     this.isHorrorMode = true;
     this.originalNPCData = [];
+    
+    // Transform walking NPCs
     this.npcManager.npcs.forEach((npc, index) => {
       if (npc.type === 'walking') {
         this.originalNPCData.push({
@@ -87,6 +90,40 @@ export class HorrorNPCManager {
         }
       }
     });
+    
+    // Transform vehicle NPCs (cars and motorcycles)
+    this.originalVehicleData = [];
+    if (this.npcManager.vehicleNPCs) {
+      this.npcManager.vehicleNPCs.forEach((vehicle, index) => {
+        this.originalVehicleData.push({
+          vehicle: vehicle,
+          originalMesh: vehicle.mesh,
+        });
+
+        this.scene.remove(vehicle.mesh);
+
+        let newVehicleMesh;
+
+        // Alternate between horror motorcycle and horror car
+        if (vehicle.type === 'motorcycle') {
+          newVehicleMesh = this.createHorrorMotorcycle();
+        } else if (vehicle.type === 'car') {
+          newVehicleMesh = this.createHorrorCar();
+        } else {
+          // For other vehicle types, default to car horror
+          newVehicleMesh = this.createHorrorCar();
+        }
+
+        newVehicleMesh.position.copy(vehicle.mesh.position);
+        newVehicleMesh.rotation.copy(vehicle.mesh.rotation);
+
+        this.scene.add(newVehicleMesh);
+
+        vehicle.mesh = newVehicleMesh;
+        vehicle.isHorror = true;
+        vehicle.horrorType = vehicle.type; // Store original vehicle type
+      });
+    }
   }
 
   createGhost() {
@@ -451,6 +488,363 @@ export class HorrorNPCManager {
     return g;
   }
 
+  // Create horror version of motorcycle
+  createHorrorMotorcycle() {
+    const group = new THREE.Group();
+    const frame = new THREE.Group();
+    group.add(frame);
+
+    // Distorted and scary body
+    const tank = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.4, 1.0),
+      new THREE.MeshStandardMaterial({
+        color: 0x440000,
+        metalness: 0.4,
+        roughness: 0.7,
+      })
+    );
+    tank.position.set(0, 0.6, 0);
+    tank.castShadow = true;
+    frame.add(tank);
+
+    // Spiky seat
+    const seat = new THREE.Mesh(
+      new THREE.ConeGeometry(0.6, 0.2, 4),
+      new THREE.MeshStandardMaterial({ color: 0x000000 })
+    );
+    seat.position.set(0, 0.9, -0.1);
+    seat.castShadow = true;
+    frame.add(seat);
+
+    // Jagged fenders
+    const fenderFront = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.5, 0.1, 6),
+      new THREE.MeshStandardMaterial({ color: 0x555555 })
+    );
+    fenderFront.position.set(0, 0.45, 0.72);
+    fenderFront.castShadow = true;
+    frame.add(fenderFront);
+
+    const fenderBack = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.5, 0.1, 6),
+      new THREE.MeshStandardMaterial({ color: 0x555555 })
+    );
+    fenderBack.position.set(0, 0.45, -0.72);
+    fenderBack.castShadow = true;
+    frame.add(fenderBack);
+
+    // Glowing red wheels
+    const wheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.25, 12);
+    const wheelTireMat = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      metalness: 0.2,
+    });
+    const wheelGlowMat = new THREE.MeshStandardMaterial({
+      color: 0xff0000,
+      emissive: 0xff0000,
+      emissiveIntensity: 0.5,
+    });
+
+    const frontWheel = new THREE.Mesh(wheelGeo, wheelTireMat);
+    const frontWheelGlow = new THREE.Mesh(wheelGeo, wheelGlowMat);
+    frontWheelGlow.material.transparent = true;
+    frontWheelGlow.material.opacity = 0.6;
+    frontWheel.rotation.z = Math.PI / 2;
+    frontWheelGlow.rotation.z = Math.PI / 2;
+    frontWheel.position.set(0, 0.38, 0.72);
+    frontWheelGlow.position.set(0, 0.38, 0.72);
+    frame.add(frontWheel, frontWheelGlow);
+
+    const rearWheel = new THREE.Mesh(wheelGeo, wheelTireMat);
+    const rearWheelGlow = new THREE.Mesh(wheelGeo, wheelGlowMat);
+    rearWheelGlow.material.transparent = true;
+    rearWheelGlow.material.opacity = 0.6;
+    rearWheel.rotation.z = Math.PI / 2;
+    rearWheelGlow.rotation.z = Math.PI / 2;
+    rearWheel.position.set(0, 0.38, -0.72);
+    rearWheelGlow.position.set(0, 0.38, -0.72);
+    frame.add(rearWheel, rearWheelGlow);
+
+    // Scary handles
+    const handle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.9, 0.1, 0.1),
+      new THREE.MeshStandardMaterial({ color: 0x777777 })
+    );
+    handle.position.set(0, 1.4, 0.8);
+    frame.add(handle);
+
+    // Bone-like grips
+    [-0.4, 0.4].forEach((xOffset) => {
+      const grip = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.07, 0.07, 0.25, 8),
+        new THREE.MeshStandardMaterial({ color: 0xf0f0f0 })
+      );
+      grip.rotation.z = Math.PI / 2;
+      grip.position.set(xOffset, 1.4, 0.8);
+      frame.add(grip);
+    });
+
+    // Demon eyes headlights
+    const headlight = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.2, 0.15, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+        emissive: 0xff0000,
+        emissiveIntensity: 1.0,
+      })
+    );
+    headlight.rotation.x = Math.PI / 2;
+    headlight.position.set(0, 1.0, 1.05);
+    headlight.castShadow = true;
+    frame.add(headlight);
+
+    // Scary exhaust
+    const exhaust = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 1.0, 8),
+      new THREE.MeshStandardMaterial({
+        color: 0x999999,
+        metalness: 0.8,
+        roughness: 0.3,
+      })
+    );
+    exhaust.rotation.x = Math.PI / 2;
+    exhaust.position.set(-0.5, 0.45, -0.4);
+    frame.add(exhaust);
+
+    group.position.y = -0.48;
+
+    return group;
+  }
+
+  // Create horror version of car
+  createHorrorCar() {
+    const group = new THREE.Group();
+
+    // Blood-red body
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x8B0000,
+      metalness: 0.4,
+      roughness: 0.6,
+      emissive: 0x220000,
+      emissiveIntensity: 0.1,
+    });
+    const blackMat = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      metalness: 0.1,
+      roughness: 0.9,
+    });
+    const silverMat = new THREE.MeshStandardMaterial({
+      color: 0x444444,
+      metalness: 0.6,
+      roughness: 0.4,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x440000,
+      transparent: true,
+      opacity: 0.3,
+      roughness: 0.1,
+      metalness: 0.0,
+    });
+
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.6, 4.4), bodyMat);
+    lower.position.set(0, 0.6, 0.0);
+    lower.castShadow = true;
+    group.add(lower);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.0, 2.9), bodyMat);
+    cabin.position.set(0, 1.3, -0.2);
+    cabin.castShadow = true;
+    group.add(cabin);
+
+    // Jagged hood
+    const hood = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.1, 1.1, 0.4, 6),
+      bodyMat
+    );
+    hood.position.set(0, 1.05, 1.2);
+    hood.rotation.x = -0.08;
+    hood.castShadow = true;
+    group.add(hood);
+
+    const bumperF = new THREE.Mesh(
+      new THREE.BoxGeometry(2.3, 0.4, 0.5),
+      bodyMat
+    );
+    bumperF.position.set(0, 0.75, 2.15);
+    group.add(bumperF);
+
+    const bumperR = new THREE.Mesh(
+      new THREE.BoxGeometry(2.3, 0.4, 0.5),
+      bodyMat
+    );
+    bumperR.position.set(0, 0.75, -2.15);
+    group.add(bumperR);
+
+    // Tooth-like grille
+    const teethGeo = new THREE.ConeGeometry(0.1, 0.15, 3);
+    for (let i = -3; i <= 3; i++) {
+      if (i === 0) continue; // Skip center
+      const tooth = new THREE.Mesh(teethGeo, blackMat);
+      tooth.position.set(i * 0.2, 0.95, 2.05);
+      tooth.rotation.x = Math.PI / 2;
+      group.add(tooth);
+    }
+
+    const diffuser = new THREE.Mesh(
+      new THREE.BoxGeometry(1.3, 0.25, 0.08),
+      blackMat
+    );
+    diffuser.position.set(0, 0.65, -2.05);
+    group.add(diffuser);
+
+    // Red-tinted glass
+    const windscreen = new THREE.Mesh(
+      new THREE.BoxGeometry(1.95, 0.7, 0.06),
+      glassMat
+    );
+    windscreen.position.set(0, 1.3, 0.8);
+    windscreen.rotation.x = -0.35;
+    group.add(windscreen);
+
+    const rearGlass = new THREE.Mesh(
+      new THREE.BoxGeometry(1.95, 0.75, 0.06),
+      glassMat
+    );
+    rearGlass.position.set(0, 1.3, -1.6);
+    rearGlass.rotation.x = 0.25;
+    group.add(rearGlass);
+
+    [-1, 1].forEach((side) => {
+      const sideGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.75, 2.5),
+        glassMat
+      );
+      sideGlass.position.set(side * 1.05, 1.35, -0.3);
+      group.add(sideGlass);
+    });
+
+    // Demon eyes headlights
+    const headMat = new THREE.MeshStandardMaterial({
+      color: 0xff0000,
+      emissive: 0xff0000,
+      emissiveIntensity: 1.0,
+      roughness: 0.2,
+    });
+    const headL = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 12, 12),
+      headMat
+    );
+    const headR = headL.clone();
+    headL.position.set(-0.7, 1.0, 2.15);
+    headR.position.set(0.7, 1.0, 2.15);
+    group.add(headL, headR);
+
+    const turnMat = new THREE.MeshStandardMaterial({
+      color: 0xffff00,
+      emissive: 0xffff00,
+      emissiveIntensity: 0.8,
+    });
+    const turnL = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 8, 8),
+      turnMat
+    );
+    const turnR = turnL.clone();
+    turnL.position.set(-1.05, 0.95, 2.13);
+    turnR.position.set(1.05, 0.95, 2.13);
+    group.add(turnL, turnR);
+
+    const tailMat = new THREE.MeshStandardMaterial({
+      color: 0xff3300,
+      emissive: 0xff3300,
+      emissiveIntensity: 0.9,
+    });
+    const tailL = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 12, 12),
+      tailMat
+    );
+    const tailR = tailL.clone();
+    tailL.position.set(-0.8, 1.0, -2.15);
+    tailR.position.set(0.8, 1.0, -2.15);
+    group.add(tailL, tailR);
+
+    [-1, 1].forEach((side) => {
+      // Spiky mirrors
+      const mirror = new THREE.Mesh(
+        new THREE.ConeGeometry(0.12, 0.2, 4),
+        bodyMat
+      );
+      mirror.position.set(side * 1.2, 1.15, 0.6);
+      mirror.rotation.y = side * Math.PI / 2;
+      group.add(mirror);
+    });
+
+    const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 14);
+    const wheelTireMat = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      metalness: 0.1,
+      roughness: 0.9,
+    });
+    const rimMat = new THREE.MeshStandardMaterial({
+      color: 0x222222,
+      metalness: 0.7,
+      roughness: 0.35,
+    });
+
+    // Glow effect for wheels
+    const wheelGlowMat = new THREE.MeshStandardMaterial({
+      color: 0xff0000,
+      emissive: 0xff0000,
+      emissiveIntensity: 0.3,
+      transparent: true,
+      opacity: 0.4,
+    });
+
+    const wheelPos = [
+      { x: -1.1, z: 1.5 },
+      { x: 1.1, z: 1.5 },
+      { x: -1.1, z: -1.5 },
+      { x: 1.1, z: -1.5 },
+    ];
+
+    wheelPos.forEach((p) => {
+      const tire = new THREE.Mesh(wheelGeo, wheelTireMat);
+      const tireGlow = new THREE.Mesh(wheelGeo, wheelGlowMat);
+      tire.rotation.z = Math.PI / 2;
+      tireGlow.rotation.z = Math.PI / 2;
+      tire.position.set(p.x, 0.6, p.z);
+      tireGlow.position.set(p.x, 0.6, p.z);
+      tire.castShadow = true;
+      group.add(tire, tireGlow);
+
+      // Spiked rims
+      const rim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.2, 8),
+        rimMat
+      );
+      rim.rotation.z = Math.PI / 2;
+      rim.position.set(p.x, 0.6, p.z);
+      group.add(rim);
+    });
+
+    const plateFront = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 0.2, 0.03),
+      blackMat
+    );
+    plateFront.position.set(0, 0.75, 2.2);
+    group.add(plateFront);
+
+    const plateRear = plateFront.clone();
+    plateRear.position.set(0, 0.75, -2.2);
+    group.add(plateRear);
+
+    group.updateMatrixWorld(true);
+    const bbox = new THREE.Box3().setFromObject(group);
+    const minY = bbox.min.y;
+    group.position.y -= minY;
+
+    return group;
+  }
+
   update(delta) {
     if (!this.isHorrorMode) return;
     const t = performance.now() * 0.001;
@@ -629,10 +1023,37 @@ export class HorrorNPCManager {
         }
       }
     });
+    
+    // Handle animation for horror vehicles
+    if (this.npcManager.vehicleNPCs) {
+      this.npcManager.vehicleNPCs.forEach((vehicle) => {
+        if (vehicle.isHorror) {
+          // Add simple animation for horror vehicles if needed
+          // For example, make the glowing parts pulse
+          if (vehicle.horrorType === 'motorcycle') {
+            // Animate motorcycle wheels' glow
+            vehicle.mesh.children.forEach(child => {
+              if (child.name === 'wheelGlow') {
+                child.material.opacity = 0.4 + Math.sin(t * 2) * 0.1; // Pulsing effect
+              }
+            });
+          } else if (vehicle.horrorType === 'car') {
+            // Animate car headlights
+            vehicle.mesh.children.forEach(child => {
+              if (child.name === 'headlightGlow') {
+                child.material.emissiveIntensity = 0.8 + Math.sin(t * 1.5) * 0.2; // Pulsing glow
+              }
+            });
+          }
+        }
+      });
+    }
   }
 
   restoreNormal() {
     if (!this.isHorrorMode) return;
+    
+    // Restore walking NPCs
     this.originalNPCData.forEach((data) => {
       this.scene.remove(data.npc.mesh);
       this.scene.add(data.originalMesh);
@@ -642,7 +1063,17 @@ export class HorrorNPCManager {
       delete data.npc.floatOffset;
     });
 
+    // Restore vehicle NPCs
+    this.originalVehicleData.forEach((data) => {
+      this.scene.remove(data.vehicle.mesh);
+      this.scene.add(data.originalMesh);
+      data.vehicle.mesh = data.originalMesh;
+      data.vehicle.isHorror = false;
+      delete data.vehicle.horrorType;
+    });
+
     this.isHorrorMode = false;
     this.originalNPCData = [];
+    this.originalVehicleData = [];
   }
 }
