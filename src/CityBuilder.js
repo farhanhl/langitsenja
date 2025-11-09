@@ -1011,10 +1011,10 @@ export class CityBuilder {
 
     const stool = new THREE.Mesh(
       new THREE.BoxGeometry(0.35, 0.38, 0.35),
-      new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 })
+      new THREE.MeshLambertMaterial({ color: 0x2563eb })
     );
     stool.position.set(-0.8, 0.19, -0.5);
-    stool.castShadow = true;
+    stool.castShadow = false;  // Disable shadow for performance
     stall.add(stool);
 
     const workLight = new THREE.PointLight(0xffe3b1, 0.9, 10, 2.0);
@@ -1166,14 +1166,14 @@ export class CityBuilder {
 
     const cartBody = new THREE.Mesh(
       new THREE.BoxGeometry(3, 1.2, 2),
-      new THREE.MeshStandardMaterial({ color: 0x9b9b9b, roughness: 0.9 })
+      new THREE.MeshLambertMaterial({ color: 0x9b9b9b })
     );
     cartBody.position.set(0, 0.8, 0);
     cartBody.castShadow = true;
     cart.add(cartBody);
 
     const wheelGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.12, 16);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
     [
       [-1.2, -0.8],
       [1.2, -0.8],
@@ -1189,7 +1189,7 @@ export class CityBuilder {
 
     const canopy = new THREE.Mesh(
       new THREE.BoxGeometry(3.5, 0.1, 2.5),
-      new THREE.MeshStandardMaterial({ color: 0xff6347, roughness: 0.7 })
+      new THREE.MeshLambertMaterial({ color: 0xff6347 })
     );
     canopy.position.set(0, 2.5, 0);
     canopy.castShadow = true;
