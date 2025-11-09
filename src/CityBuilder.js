@@ -76,9 +76,12 @@ export class CityBuilder {
     if (!this.sidewalks) this.sidewalks = [];
     if (!this.sidewalkPaths) this.sidewalkPaths = [];
 
-    const sidewalkGeometry = new THREE.BoxGeometry(width, 0.2, depth);
+    const sidewalkGeometry = new THREE.BoxGeometry(width, 0.1, depth); // Same height as road
     const sidewalk = new THREE.Mesh(sidewalkGeometry, material);
-    sidewalk.position.set(x, 0.1, z);
+    // Roads are positioned at Y=0.05 with height 0.1, so top surface is at Y=0.1
+    // For sidewalks with height 0.1, position slightly below road surface to avoid z-fighting
+    // Position at Y=0.045 so top surface is at Y=0.095 (slightly below road surface at Y=0.1)
+    sidewalk.position.set(x, 0.045, z); // Slightly below road surface to prevent z-fighting
     sidewalk.receiveShadow = true;
 
     this.scene.add(sidewalk);
