@@ -24,16 +24,40 @@ export class CityBuilder {
       size: { length: 42.9, width: 18 },
     });
     this.createTambalBan(0, -25, { scale: 1.5 });
+    this.createTambalBan(-25, 30, { scale: 1.5, rotate: 90 });
+    this.createWarkop(-35, 30, { rotate: 270 });
     this.createAngkringan(0, -35, { scale: 1.5, rotate: 180 });
-    this.createPosRonda(26, 0, { rotate: 270 });
+    this.createPosRonda(25, 0, { rotate: 270 });
+    this.createWarkop(35, 0, { rotate: 90 });
+    this.createPertamini(-35, 0, { rotate: 270 });
+    this.createGerobakBakso(-25, 0, { rotate: 90, scale: 1.6 });
+    this.createGerobakBatagor(-30, -25, { scale: 1.5 });
+    this.createGerobakSeblak(-30, -35, { scale: 1.5, rotate: 180 });
+
+    this.createPertamini(35, 30, { rotate: 90 });
+    this.createGerobakSeblak(25, 30, { rotate: 270 });
+
+    this.createPlangDisewakan(30, -30, { rotate: 270 });
+
     this.createLapanganBolaJalanan(-30, -72, {
       numPlayers: 4,
       rotate: 90,
       scale: 0.9,
     });
     this.createKebunBunga(0, -72, {
-      numPlayers: 4,
       rotate: 90,
+      scale: 0.98,
+    });
+    this.createMasjid(30, -72, {
+      rotate: 90,
+      scale: 0.98,
+    });
+    this.createRumahMakanPadang(-30, 71, {
+      rotate: 270,
+      scale: 0.98,
+    });
+    this.createTamanLabirin(30, 71.6, {
+      rotate: 270,
       scale: 0.98,
     });
     this.createTrafficLights();
@@ -54,9 +78,8 @@ export class CityBuilder {
     const height = 187.5;
 
     const groundGeometry = new THREE.PlaneGeometry(width, height);
-    const groundMaterial = new THREE.MeshStandardMaterial({
+    const groundMaterial = new THREE.MeshLambertMaterial({
       color: 0x6b8e23,
-      roughness: 0.8,
     });
 
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -114,8 +137,8 @@ export class CityBuilder {
 
     const roadWidth = 8;
     const sidewalkWidth = 2;
-    const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
-    const sidewalkMaterial = new THREE.MeshStandardMaterial({
+    const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const sidewalkMaterial = new THREE.MeshLambertMaterial({
       color: 0x888888,
     });
 
@@ -195,41 +218,6 @@ export class CityBuilder {
         );
       }
     });
-  }
-
-  createBicycle(x, z) {
-    const group = new THREE.Group();
-    const frameGeometry = new THREE.BoxGeometry(0.1, 1.2, 2.4);
-    const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-    const frame = new THREE.Mesh(frameGeometry, frameMaterial);
-    frame.position.y = 1;
-    frame.castShadow = true;
-    group.add(frame);
-    const wheelGeometry = new THREE.TorusGeometry(0.6, 0.1, 8, 16);
-    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
-    const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-    frontWheel.rotation.y = Math.PI / 2;
-    frontWheel.position.set(0, 0.8, 1);
-    frontWheel.castShadow = true;
-    group.add(frontWheel);
-    const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-    backWheel.rotation.y = Math.PI / 2;
-    backWheel.position.set(0, 0.8, -1);
-    backWheel.castShadow = true;
-    group.add(backWheel);
-    const handlebarGeometry = new THREE.BoxGeometry(1, 0.1, 0.1);
-    const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
-    handlebar.position.set(0, 1.6, 1.2);
-    group.add(handlebar);
-    const seatGeometry = new THREE.BoxGeometry(0.6, 0.2, 0.4);
-    const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
-    const seat = new THREE.Mesh(seatGeometry, seatMaterial);
-    seat.position.set(0, 1.6, -0.4);
-    group.add(seat);
-
-    group.position.set(x, 0, z);
-    group.rotation.y = Math.random() * 0.3 - 0.15;
-    this.scene.add(group);
   }
 
   createPark() {
@@ -2191,6 +2179,7 @@ export class CityBuilder {
 
     return group;
   }
+
   createKebunBunga(
     x,
     z,
@@ -2361,6 +2350,2956 @@ export class CityBuilder {
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
     group.updateMatrixWorld(true);
     this.scene.add(group);
+    return group;
+  }
+
+  createMasjid(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      size = { length: 44.5, width: 18.2 },
+      name = 'Masjid',
+      withMinaret = true,
+      minarets = 2,
+      withCourtyard = true,
+      registerColliders = true,
+    } = {}
+  ) {
+    const group = new THREE.Group();
+    const L = size.length;
+    const W = size.width;
+
+    const colors = {
+      wall: 0xefe8d8,
+      accent: 0xc9a227,
+      dome: 0x2f855a,
+      roof: 0x1f6f4a,
+      tile: 0xd9d4c7,
+      door: 0x8b5e3c,
+      window: 0x9bc1e2,
+      stone: 0xb8b2a7,
+    };
+
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(r, h, mat, seg = 12) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cone(r, h, mat, seg = 12) {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function ico(r, mat, det = 0) {
+      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, det), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    const matWall = new THREE.MeshStandardMaterial({
+      color: colors.wall,
+      roughness: 0.85,
+    });
+    const matAccent = new THREE.MeshStandardMaterial({
+      color: colors.accent,
+      roughness: 0.5,
+      metalness: 0.3,
+    });
+    const matDome = new THREE.MeshStandardMaterial({
+      color: colors.dome,
+      roughness: 0.6,
+      metalness: 0.1,
+    });
+    const matRoof = new THREE.MeshStandardMaterial({
+      color: colors.roof,
+      roughness: 0.7,
+    });
+    const matTile = new THREE.MeshStandardMaterial({
+      color: colors.tile,
+      roughness: 0.95,
+    });
+    const matDoor = new THREE.MeshStandardMaterial({
+      color: colors.door,
+      roughness: 0.8,
+    });
+    const matWindow = new THREE.MeshStandardMaterial({
+      color: colors.window,
+      roughness: 0.2,
+      metalness: 0.05,
+      opacity: 0.75,
+      transparent: true,
+    });
+    const matStone = new THREE.MeshStandardMaterial({
+      color: colors.stone,
+      roughness: 0.9,
+    });
+
+    const basePadX = L * 0.92;
+    const basePadZ = W * 0.92;
+    if (withCourtyard) {
+      const courtyard = box(basePadX, 0.06, basePadZ, matTile);
+      courtyard.position.set(0, 0.03, 0);
+      courtyard.receiveShadow = true;
+      group.add(courtyard);
+    }
+
+    const hallW = Math.min(L * 0.58, 26);
+    const hallD = Math.min(W * 0.7, 10.5);
+    const hallH = 5.2;
+    const hallBase = box(hallW, hallH, hallD, matWall);
+    hallBase.position.set(0, hallH / 2, 0);
+    group.add(hallBase);
+
+    const socle = box(hallW + 0.6, 0.3, hallD + 0.6, matStone);
+    socle.position.set(0, 0.15, 0);
+    group.add(socle);
+
+    const roofH = 0.6;
+    const roof = box(hallW + 0.2, roofH, hallD + 0.2, matRoof);
+    roof.position.set(0, hallH + roofH / 2, 0);
+    group.add(roof);
+
+    const domeR = Math.min(hallW, hallD) * 0.28;
+    const dome = ico(domeR, matDome, 0);
+    dome.position.set(0, hallH + roofH + domeR * 0.95, 0);
+    group.add(dome);
+
+    const finialBase = cyl(0.12, 0.4, matAccent, 10);
+    finialBase.position.set(0, dome.position.y + domeR * 0.95 + 0.2, 0);
+    const finialCone = cone(0.18, 0.5, matAccent, 10);
+    finialCone.position.set(0, finialBase.position.y + 0.45, 0);
+    group.add(finialBase, finialCone);
+
+    const porchW = hallW * 0.9;
+    const porchD = Math.min(W * 0.18, 2.6);
+    const porchH = 3.0;
+    const porch = box(porchW, porchH, porchD, matWall);
+    porch.position.set(0, porchH / 2, -hallD / 2 - porchD / 2);
+    group.add(porch);
+
+    const porchRoof = box(porchW + 0.1, 0.4, porchD + 0.1, matRoof);
+    porchRoof.position.set(porch.position.x, porchH + 0.2, porch.position.z);
+    group.add(porchRoof);
+
+    const doorW = porchW * 0.28;
+    const doorH = 2.2;
+    const door = box(doorW, doorH, 0.12, matDoor);
+    door.position.set(0, doorH / 2, porch.position.z - porchD / 2);
+    group.add(door);
+
+    const archW = doorW + 0.4;
+    const archH = doorH + 0.5;
+    const archFrame = box(archW, archH, 0.18, matAccent);
+    archFrame.position.set(door.position.x, archH / 2, door.position.z + 0.04);
+    group.add(archFrame);
+
+    if (withMinaret && minarets > 0) {
+      const towerH = 9.5;
+      const shaftR = 0.45;
+      const balconyR = 0.7;
+      const topConeH = 1.2;
+      const positions = [];
+      if (minarets === 1) {
+        positions.push([hallW / 2 + 1.4, -hallD / 2 - 0.8]);
+      } else {
+        positions.push(
+          [-hallW / 2 - 1.4, -hallD / 2 - 0.8],
+          [hallW / 2 + 1.4, -hallD / 2 - 0.8]
+        );
+      }
+      positions.forEach(([px, pz]) => {
+        const base = box(1.2, 0.3, 1.2, matStone);
+        base.position.set(px, 0.15, pz);
+        const shaft = cyl(shaftR, towerH, matWall, 10);
+        shaft.position.set(px, towerH / 2, pz);
+        const belt = cyl(shaftR + 0.08, 0.2, matAccent, 10);
+        belt.position.set(px, 2.2, pz);
+        const balcony = cyl(balconyR, 0.18, matAccent, 12);
+        balcony.position.set(px, 5.6, pz);
+        const lantern = box(0.6, 0.6, 0.6, matRoof);
+        lantern.position.set(px, 6.2, pz);
+        const coneTop = cone(0.45, topConeH, matAccent, 10);
+        coneTop.position.set(px, 6.2 + topConeH / 2 + 0.3, pz);
+        group.add(base, shaft, belt, balcony, lantern, coneTop);
+      });
+    }
+
+    const plazaH = 0.06;
+    const plaza = box(L, plazaH, W, matTile);
+    plaza.position.set(0, 0.03, 0);
+    group.add(plaza);
+
+    const light = new THREE.PointLight(0xfff1c1, 0.8, 28, 2.0);
+    light.position.set(0, 7.5, 0);
+    group.add(light);
+
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    if (registerColliders && this && this.buildings) {
+      hallBase.updateMatrixWorld(true);
+      const bbox = new THREE.Box3().setFromObject(hallBase);
+      this.buildings.push({ mesh: hallBase, boundingBox: bbox, name });
+      porch.updateMatrixWorld(true);
+      const bbox2 = new THREE.Box3().setFromObject(porch);
+      this.buildings.push({
+        mesh: porch,
+        boundingBox: bbox2,
+        name: name + ' Porch',
+      });
+    }
+
+    return group;
+  }
+
+  createRumahMakanPadang(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      size = { length: 50, width: 20.3 },
+      name = 'Rumah Makan Padang',
+      withSign = true,
+      withEtalase = true,
+      registerColliders = true,
+      diningOffsetZ = 1.6,
+    } = {}
+  ) {
+    const group = new THREE.Group();
+    const L = size.length;
+    const W = size.width;
+
+    const colors = {
+      wall: 0xf0e9da,
+      trim: 0x8b5e3c,
+      roof: 0x2b2b2b,
+      accent: 0xc62828,
+      glass: 0x9bc1e2,
+      base: 0xb8b2a7,
+      tile: 0xded9cf,
+      seat: 0x6d4c41,
+      table: 0x8d6e63,
+      pillar: 0x947155,
+      fascia: 0x1f2937,
+    };
+
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(r, h, mat, seg = 10) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cone(r, h, mat, seg = 8) {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    const matWall = new THREE.MeshStandardMaterial({
+      color: colors.wall,
+      roughness: 0.9,
+    });
+    const matTrim = new THREE.MeshStandardMaterial({
+      color: colors.trim,
+      roughness: 0.8,
+    });
+    const matRoof = new THREE.MeshStandardMaterial({
+      color: colors.roof,
+      roughness: 0.7,
+    });
+    const matAccent = new THREE.MeshStandardMaterial({
+      color: colors.accent,
+      roughness: 0.6,
+      metalness: 0.15,
+    });
+    const matGlass = new THREE.MeshStandardMaterial({
+      color: colors.glass,
+      roughness: 0.2,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.6,
+    });
+    const matBase = new THREE.MeshStandardMaterial({
+      color: colors.base,
+      roughness: 0.95,
+    });
+    const matTile = new THREE.MeshStandardMaterial({
+      color: colors.tile,
+      roughness: 0.95,
+    });
+    const matSeat = new THREE.MeshStandardMaterial({
+      color: colors.seat,
+      roughness: 0.8,
+    });
+    const matTable = new THREE.MeshStandardMaterial({
+      color: colors.table,
+      roughness: 0.8,
+    });
+    const matPillar = new THREE.MeshStandardMaterial({
+      color: colors.pillar,
+      roughness: 0.8,
+    });
+    const matFascia = new THREE.MeshStandardMaterial({
+      color: colors.fascia,
+      roughness: 0.7,
+    });
+
+    const ground = box(L * 0.92, 0.06, W * 0.9, matTile);
+    ground.position.set(0, 0.03, 0);
+    group.add(ground);
+
+    const bodyW = Math.min(L * 0.56, 24);
+    const bodyD = Math.min(W * 0.56, 9.0);
+    const bodyH = 4.6;
+
+    const buildingGroup = new THREE.Group();
+
+    const base = box(bodyW + 0.8, 0.28, bodyD + 0.8, matBase);
+    base.position.set(0, 0.14, 0);
+    buildingGroup.add(base);
+
+    const hall = box(bodyW, bodyH, bodyD, matWall);
+    hall.position.set(0, bodyH / 2 + 0.28, 0);
+    buildingGroup.add(hall);
+
+    const cornerP = 0.12;
+    const c1 = cyl(cornerP, bodyH + 0.2, matPillar);
+    c1.position.set(
+      -bodyW / 2 + 0.22,
+      (bodyH + 0.2) / 2 + 0.28,
+      -bodyD / 2 + 0.22
+    );
+    const c2 = c1.clone();
+    c2.position.z = bodyD / 2 - 0.22;
+    const c3 = c1.clone();
+    c3.position.x = bodyW / 2 - 0.22;
+    const c4 = c2.clone();
+    c4.position.x = bodyW / 2 - 0.22;
+    buildingGroup.add(c1, c2, c3, c4);
+
+    const crown = box(bodyW + 0.3, 0.2, bodyD + 0.3, matFascia);
+    crown.position.set(0, bodyH + 0.38, 0);
+    buildingGroup.add(crown);
+
+    const roofBase = box(bodyW + 0.5, 0.36, bodyD + 0.5, matRoof);
+    roofBase.position.set(0, crown.position.y + 0.26, 0);
+    buildingGroup.add(roofBase);
+
+    const ridgeLen = bodyW * 0.92;
+    const ridge = box(ridgeLen, 0.2, 0.42, matRoof);
+    ridge.position.set(0, roofBase.position.y + 0.28, 0);
+    buildingGroup.add(ridge);
+
+    function addGonjong(side = 1, lift = 1.7, r = 0.48) {
+      const tip = cone(r, lift, matRoof, 6);
+      tip.rotation.z = Math.PI / 2;
+      tip.position.set(
+        (ridgeLen / 2 + 0.36) * side,
+        ridge.position.y + 0.26,
+        0
+      );
+      const cap = cyl(0.085, 0.3, matAccent, 8);
+      cap.position.set(tip.position.x, tip.position.y + lift * 0.45, 0);
+      buildingGroup.add(tip, cap);
+    }
+    addGonjong(1);
+    addGonjong(-1);
+
+    const fasciaFront = box(bodyW + 0.6, 0.14, 0.08, matAccent);
+    fasciaFront.position.set(
+      0,
+      roofBase.position.y + 0.04,
+      -(bodyD + 0.5) / 2 + 0.06
+    );
+    const fasciaBack = fasciaFront.clone();
+    fasciaBack.position.z = (bodyD + 0.5) / 2 - 0.06;
+    buildingGroup.add(fasciaFront, fasciaBack);
+
+    const porchD = Math.min(W * 0.16, 2.2);
+    const porchH = 3.2;
+    const porch = box(bodyW * 0.9, porchH, porchD, matWall);
+    porch.position.set(0, porchH / 2 + 0.28, -bodyD / 2 - porchD / 2 + 0.05);
+    buildingGroup.add(porch);
+
+    const porchRoof = box(
+      porch.geometry.parameters.width + 0.2,
+      0.22,
+      porchD + 0.18,
+      matRoof
+    );
+    porchRoof.position.set(
+      0,
+      porch.position.y + porchH / 2 + 0.12,
+      porch.position.z
+    );
+    buildingGroup.add(porchRoof);
+
+    const doorW = 1.9;
+    const doorH = 2.5;
+    const door = box(doorW, doorH, 0.12, matTrim);
+    door.position.set(0, doorH / 2 + 0.28, porch.position.z - porchD / 2);
+    buildingGroup.add(door);
+
+    const canopy = box(
+      porch.geometry.parameters.width + 5,
+      0.14,
+      1.2,
+      matAccent
+    );
+    canopy.position.set(0, porchRoof.position.y + 0.42, door.position.z + 0.58);
+    buildingGroup.add(canopy);
+
+    if (withSign) {
+      const sign = box(
+        porch.geometry.parameters.width * 0.72,
+        0.42,
+        0.08,
+        matAccent
+      );
+      sign.position.set(
+        canopy.position.x,
+        canopy.position.y + 0.36,
+        canopy.position.z + 0.02
+      );
+      buildingGroup.add(sign);
+    }
+
+    if (withEtalase) {
+      const caseW = porch.geometry.parameters.width * 0.86;
+      const caseH = 1.05;
+      const caseD = 0.64;
+      const baseCase = box(caseW, 0.24, caseD, matTrim);
+      baseCase.position.set(
+        0,
+        0.28 + 0.12,
+        porch.position.z - porchD / 2 + 0.36
+      );
+      const frame = box(caseW, 0.06, caseD, matTrim);
+      frame.position.set(
+        baseCase.position.x,
+        0.28 + caseH + 0.03,
+        baseCase.position.z
+      );
+      const glassFront = box(caseW, caseH, 0.04, matGlass);
+      glassFront.position.set(
+        frame.position.x,
+        0.28 + caseH / 2 + 0.03,
+        frame.position.z + caseD / 2 - 0.02
+      );
+      const glassTop = box(caseW, 0.04, caseD, matGlass);
+      glassTop.position.set(
+        frame.position.x,
+        frame.position.y + 0.05,
+        frame.position.z
+      );
+      buildingGroup.add(baseCase, frame, glassFront, glassTop);
+    }
+
+    group.add(buildingGroup);
+
+    function buildDining(sideOffset, zOffset) {
+      const diningW = Math.min((L - bodyW) * 0.42, 9.6) - 2;
+      const diningD = Math.min(W * 0.68, bodyD + 1.8);
+      const diningX = sideOffset * (bodyW / 2 + diningW / 2 + 1.0);
+      const diningZ = 0 + zOffset;
+
+      const awning = box(diningW + 0.2, 0.16, diningD * 0.92 + 2, matAccent);
+      awning.position.set(diningX, 2.8, diningZ);
+      group.add(awning);
+
+      const awnLegR = 0.07;
+      const legCount = 4;
+      for (let i = 0; i < legCount; i++) {
+        const t = -diningD / 2 + (i / (legCount - 1)) * diningD;
+        const lx = diningX - sideOffset * (diningW / 2 - 0.12);
+        const rx = diningX + sideOffset * (diningW / 2 - 0.12);
+        const l = cyl(awnLegR, 2.8, matTrim);
+        l.position.set(lx, 1.4, diningZ + t);
+        const r = cyl(awnLegR, 2.8, matTrim);
+        r.position.set(rx, 1.4, diningZ + t);
+        group.add(l, r);
+      }
+
+      const rows = 2;
+      const cols = 2;
+      const colGap = diningW * 0.32;
+      const rowGap = 1.4;
+      const startX = diningX - sideOffset * ((colGap * (cols - 1)) / 2);
+      const startZ = diningZ - (rowGap * (rows - 1)) / 2;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const tx = startX + sideOffset * (c * colGap);
+          const tz = startZ + r * rowGap;
+
+          const table = box(1.0, 0.08, 0.6, matTable);
+          table.position.set(tx, 0.58, tz);
+
+          const leg1 = cyl(0.06, 0.55, matTable);
+          leg1.position.set(tx - 0.42, 0.305, tz - 0.22);
+          const leg2 = cyl(0.06, 0.55, matTable);
+          leg2.position.set(tx + 0.42, 0.305, tz - 0.22);
+          const leg3 = cyl(0.06, 0.55, matTable);
+          leg3.position.set(tx - 0.42, 0.305, tz + 0.22);
+          const leg4 = cyl(0.06, 0.55, matTable);
+          leg4.position.set(tx + 0.42, 0.305, tz + 0.22);
+
+          const benchL = box(0.9, 0.06, 0.28, matSeat);
+          benchL.position.set(tx, 0.36, tz - 0.5);
+          const benchR = box(0.9, 0.06, 0.28, matSeat);
+          benchR.position.set(tx, 0.36, tz + 0.5);
+
+          group.add(table, leg1, leg2, leg3, leg4, benchL, benchR);
+        }
+      }
+    }
+
+    buildDining(1, diningOffsetZ);
+    buildDining(-1, diningOffsetZ);
+
+    const lightFront = new THREE.PointLight(0xfff1c1, 0.8, 24, 2.0);
+    lightFront.position.set(0, bodyH + 3.0, -bodyD / 2 - 0.8);
+    group.add(lightFront);
+
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    if (registerColliders && this) {
+      this.buildings = this.buildings || [];
+      group.updateMatrixWorld(true);
+      buildingGroup.updateMatrixWorld(true);
+      const bbox = new THREE.Box3().setFromObject(buildingGroup);
+      this.buildings.push({ mesh: buildingGroup, boundingBox: bbox, name });
+    }
+
+    return group;
+  }
+
+  createTamanLabirin(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      size = { length: 45, width: 22.5 },
+      registerColliders = true,
+
+      rows = 11,
+      cols = 17,
+      margin = 1.2,
+      wallThickness = 0.25,
+      wallHeight = 1.8,
+      pathHeight = 0.08,
+
+      pathColor = 0xc9c3a1,
+      hedgeColor = 0x2f6f3a,
+      curbColor = 0x8b5e3c,
+      grassColor = 0x3a7a4a,
+
+      colliderEndGap = 0.12,
+      colliderThicknessScale = 0.7,
+    } = {}
+  ) {
+    const group = new THREE.Group();
+    const L = size.length;
+    const W = size.width;
+
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    const self = this;
+    function regCollider(mesh, name) {
+      if (!registerColliders) return;
+      try {
+        if (typeof self.addColliderFromObject === 'function') {
+          self.addColliderFromObject(mesh, name);
+        } else if (self && self.buildings) {
+          mesh.updateMatrixWorld(true);
+          const bbox = new THREE.Box3().setFromObject(mesh);
+          self.buildings.push({ mesh, boundingBox: bbox, name });
+        }
+      } catch (_) {}
+    }
+
+    const matGrass = new THREE.MeshStandardMaterial({
+      color: grassColor,
+      roughness: 0.95,
+    });
+    const matPath = new THREE.MeshStandardMaterial({
+      color: pathColor,
+      roughness: 0.92,
+    });
+    const matHedge = new THREE.MeshStandardMaterial({
+      color: hedgeColor,
+      roughness: 0.65,
+    });
+    const matCurb = new THREE.MeshStandardMaterial({
+      color: curbColor,
+      roughness: 0.85,
+    });
+    const matGhost = new THREE.MeshStandardMaterial({
+      visible: false,
+      color: 0x000000,
+    });
+
+    const grass = box(L, 0.06, W, matGrass);
+    grass.position.set(0, 0.03, 0);
+    group.add(grass);
+
+    const innerL = L - 2 * margin;
+    const innerW = W - 2 * margin;
+
+    const path = box(innerL, pathHeight, innerW, matPath);
+    path.position.set(0, pathHeight / 2, 0);
+    group.add(path);
+
+    const curbH = 0.2,
+      curbT = 0.22;
+    const curb1 = box(L, curbH, curbT, matCurb);
+    curb1.position.set(0, curbH / 2, -W / 2 + curbT / 2);
+    const curb2 = box(L, curbH, curbT, matCurb);
+    curb2.position.set(0, curbH / 2, W / 2 - curbT / 2);
+    const curb3 = box(curbT, curbH, W, matCurb);
+    curb3.position.set(-L / 2 + curbT / 2, curbH / 2, 0);
+    const curb4 = box(curbT, curbH, W, matCurb);
+    curb4.position.set(L / 2 - curbT / 2, curbH / 2, 0);
+    group.add(curb1, curb2, curb3, curb4);
+
+    rows = Math.max(5, Math.floor(rows));
+    cols = Math.max(5, Math.floor(cols));
+
+    const cellW = innerL / cols;
+    const cellH = innerW / rows;
+
+    const originX = -innerL / 2;
+    const originZ = -innerW / 2;
+
+    function makeGrid(r, c) {
+      const g = new Array(r);
+      for (let i = 0; i < r; i++) {
+        g[i] = new Array(c);
+        for (let j = 0; j < c; j++) {
+          g[i][j] = {
+            visited: false,
+            walls: { N: true, E: true, S: true, W: true },
+          };
+        }
+      }
+      return g;
+    }
+    const grid = makeGrid(rows, cols);
+
+    function neighbors(r, c) {
+      const list = [];
+      if (r > 0) list.push({ r: r - 1, c, dir: 'N', opp: 'S' });
+      if (c < cols - 1) list.push({ r, c: c + 1, dir: 'E', opp: 'W' });
+      if (r < rows - 1) list.push({ r: r + 1, c, dir: 'S', opp: 'N' });
+      if (c > 0) list.push({ r, c: c - 1, dir: 'W', opp: 'E' });
+      return list;
+    }
+
+    (function carve() {
+      const stack = [];
+      let cr = rows - 1,
+        cc = Math.floor(cols / 2);
+      grid[cr][cc].visited = true;
+      stack.push({ r: cr, c: cc });
+
+      while (stack.length) {
+        const cur = stack[stack.length - 1];
+        const cand = neighbors(cur.r, cur.c).filter(
+          (n) => !grid[n.r][n.c].visited
+        );
+        if (!cand.length) {
+          stack.pop();
+          continue;
+        }
+        const pick = cand[(Math.random() * cand.length) | 0];
+        grid[cur.r][cur.c].walls[pick.dir] = false;
+        grid[pick.r][pick.c].walls[pick.opp] = false;
+        grid[pick.r][pick.c].visited = true;
+        stack.push({ r: pick.r, c: pick.c });
+      }
+
+      const southC = Math.floor(cols / 2);
+      grid[rows - 1][southC].walls.S = false;
+      const northC = (Math.random() * cols) | 0;
+      grid[0][northC].walls.N = false;
+    })();
+
+    const wallsGroup = new THREE.Group();
+    const colliderMeshes = [];
+
+    function makeWallSegment({
+      w_vis,
+      d_vis,
+      h,
+      posX,
+      posZ,
+      axis,
+      name,
+      isBoundaryA = false,
+      isBoundaryB = false,
+    }) {
+      const vis = box(w_vis, h, d_vis, matHedge);
+      vis.position.set(posX, pathHeight + h / 2, posZ);
+      wallsGroup.add(vis);
+
+      const shrinkA = isBoundaryA ? 0 : colliderEndGap;
+      const shrinkB = isBoundaryB ? 0 : colliderEndGap;
+
+      let w_col = w_vis,
+        d_col = d_vis;
+
+      if (axis === 'X') {
+        w_col = Math.max(0.001, w_vis - (shrinkA + shrinkB));
+        d_col = Math.max(0.001, d_vis * colliderThicknessScale);
+
+        const shift = (shrinkB - shrinkA) / 2;
+        const col = box(w_col, h, d_col, matGhost);
+        col.position.set(posX + shift, pathHeight + h / 2, posZ);
+        col.visible = false;
+        wallsGroup.add(col);
+        colliderMeshes.push({ mesh: col, name: name + '_col' });
+      } else {
+        d_col = Math.max(0.001, d_vis - (shrinkA + shrinkB));
+        w_col = Math.max(0.001, w_vis * colliderThicknessScale);
+
+        const shift = (shrinkB - shrinkA) / 2;
+        const col = box(w_col, h, d_col, matGhost);
+        col.position.set(posX, pathHeight + h / 2, posZ + shift);
+        col.visible = false;
+        wallsGroup.add(col);
+        colliderMeshes.push({ mesh: col, name: name + '_col' });
+      }
+
+      return vis;
+    }
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = grid[r][c];
+        if (cell.walls.N) {
+          const w = cellW;
+          const d = wallThickness;
+          const h = wallHeight;
+          const x = originX + c * cellW + w / 2;
+          const z = originZ + r * cellH;
+          makeWallSegment({
+            w_vis: w,
+            d_vis: d,
+            h,
+            posX: x,
+            posZ: z,
+            axis: 'X',
+            name: `MazeWall_N_${r}_${c}`,
+            isBoundaryA: c === 0,
+            isBoundaryB: c === cols - 1,
+          });
+        }
+
+        if (cell.walls.W) {
+          const w = wallThickness;
+          const d = cellH;
+          const h = wallHeight;
+          const x = originX + c * cellW;
+          const z = originZ + r * cellH + d / 2;
+          makeWallSegment({
+            w_vis: w,
+            d_vis: d,
+            h,
+            posX: x,
+            posZ: z,
+            axis: 'Z',
+            name: `MazeWall_W_${r}_${c}`,
+            isBoundaryA: r === rows - 1,
+            isBoundaryB: r === 0,
+          });
+        }
+
+        if (c === cols - 1 && cell.walls.E) {
+          const w = wallThickness;
+          const d = cellH;
+          const h = wallHeight;
+          const x = originX + (c + 1) * cellW;
+          const z = originZ + r * cellH + d / 2;
+          makeWallSegment({
+            w_vis: w,
+            d_vis: d,
+            h,
+            posX: x,
+            posZ: z,
+            axis: 'Z',
+            name: `MazeWall_E_${r}_${c}`,
+            isBoundaryA: r === rows - 1,
+            isBoundaryB: r === 0,
+          });
+        }
+
+        if (r === rows - 1 && cell.walls.S) {
+          const w = cellW;
+          const d = wallThickness;
+          const h = wallHeight;
+          const x = originX + c * cellW + w / 2;
+          const z = originZ + (r + 1) * cellH;
+          makeWallSegment({
+            w_vis: w,
+            d_vis: d,
+            h,
+            posX: x,
+            posZ: z,
+            axis: 'X',
+            name: `MazeWall_S_${r}_${c}`,
+            isBoundaryA: c === 0,
+            isBoundaryB: c === cols - 1,
+          });
+        }
+      }
+    }
+
+    group.add(wallsGroup);
+
+    const entranceC = Math.floor(cols / 2);
+    const rampW = cellW * 0.6;
+    const rampD = wallThickness * 0.9;
+    const rampH = pathHeight + 0.02;
+    const ramp = box(rampW, rampH, rampD, matPath);
+    ramp.position.set(
+      originX + entranceC * cellW + cellW / 2,
+      rampH / 2,
+      originZ + rows * cellH + rampD / 2
+    );
+    group.add(ramp);
+
+    const light = new THREE.PointLight(
+      0xfff1c1,
+      0.5,
+      Math.max(L, W) * 1.2,
+      2.0
+    );
+    light.position.set(0, 4.2, 0);
+    group.add(light);
+
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    if (registerColliders) {
+      for (const { mesh, name } of colliderMeshes) regCollider(mesh, name);
+    }
+
+    return group;
+  }
+
+  createWarkop(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      characterFactory = null,
+      npcScale = 0.85,
+      vendorBack = 0.7,
+    } = {}
+  ) {
+    const group = new THREE.Group();
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      body.castShadow = true;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      head.castShadow = true;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      leftArm.castShadow = rightArm.castShadow = true;
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      leftLeg.castShadow = rightLeg.castShadow = true;
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+
+    function poseLesehan(char) {
+      if (char.userData?.leftLeg && char.userData?.rightLeg) {
+        const s = char.userData.scale || 1;
+        const { leftLeg, rightLeg, leftArm, rightArm, body } = char.userData;
+        leftLeg.rotation.x = THREE.MathUtils.degToRad(90);
+        rightLeg.rotation.x = THREE.MathUtils.degToRad(90);
+        leftLeg.position.y = -0.15 * s;
+        rightLeg.position.y = -0.15 * s;
+        leftLeg.position.z = 0.18 * s;
+        rightLeg.position.z = 0.18 * s;
+        if (leftArm) leftArm.rotation.x = THREE.MathUtils.degToRad(15);
+        if (rightArm) rightArm.rotation.x = THREE.MathUtils.degToRad(10);
+        if (body)
+          body.rotation.z = THREE.MathUtils.degToRad(Math.random() * 6 - 3);
+      }
+    }
+
+    function poseVendor(char) {
+      if (!char.userData) return;
+      if (char.userData.leftArm)
+        char.userData.leftArm.rotation.x = THREE.MathUtils.degToRad(-20);
+      if (char.userData.rightArm)
+        char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-10);
+    }
+
+    function makeMat(px, pz, color = 0x8b5a2b) {
+      const mat = new THREE.Mesh(
+        new THREE.BoxGeometry(3.4, 0.04, 2.4),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.9 })
+      );
+      mat.position.set(px, 0.02, pz);
+      mat.receiveShadow = true;
+      return mat;
+    }
+    group.add(makeMat(-2.6, 1.5, 0x6b4f35), makeMat(2.6, 1.2, 0x5a3d2b));
+
+    const cart = new THREE.Group();
+
+    const cartBody = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 1.25, 2.0),
+      new THREE.MeshStandardMaterial({ color: 0x8b5e3c, roughness: 0.85 })
+    );
+    cartBody.position.set(0, 0.8, 0);
+    cartBody.castShadow = true;
+    cart.add(cartBody);
+
+    const wheelGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.12, 16);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x2f2f2f });
+    [
+      [-1.3, -0.85],
+      [1.3, -0.85],
+      [-1.3, 0.85],
+      [1.3, 0.85],
+    ].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.position.set(wx, 0.2, wz);
+      w.rotation.z = Math.PI / 2;
+      w.castShadow = true;
+      cart.add(w);
+    });
+
+    const canopy = new THREE.Mesh(
+      new THREE.BoxGeometry(3.7, 0.1, 2.6),
+      new THREE.MeshStandardMaterial({ color: 0xd8c7a4, roughness: 0.7 })
+    );
+    canopy.position.set(0, 2.5, 0);
+    canopy.castShadow = true;
+    cart.add(canopy);
+
+    const groundTopY = 0;
+    const canopyHalfH = canopy.geometry.parameters.height / 2;
+    const canopyUnderY = canopy.position.y - canopyHalfH;
+    const eps = 0.01;
+    const poleHeight = Math.max(0.1, canopyUnderY - groundTopY - eps);
+    const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, poleHeight, 12);
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x5b5b5b });
+    [
+      [-1.7, -1.2],
+      [1.7, -1.2],
+      [-1.7, 1.2],
+      [1.7, 1.2],
+    ].forEach(([px, pz]) => {
+      const p = new THREE.Mesh(poleGeo, poleMat);
+      p.position.set(px, groundTopY + poleHeight / 2, pz);
+      p.castShadow = true;
+      p.receiveShadow = true;
+      cart.add(p);
+    });
+
+    const menuBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 1.2, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.8 })
+    );
+    menuBoard.position.set(-2.1, 0.65, -0.2);
+    menuBoard.castShadow = true;
+    cart.add(menuBoard);
+
+    const sign = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 0.22, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x2b2b2b, emissive: 0x000000 })
+    );
+    sign.position.set(0, 2.15, 1.05);
+    cart.add(sign);
+    function addSignText(str, startX, y, z, scaleX = 0.08, space = 0.06) {
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === ' ') {
+          startX += space * 2;
+          continue;
+        }
+        const letter = new THREE.Mesh(
+          new THREE.BoxGeometry(scaleX, 0.14, 0.02),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
+        );
+        letter.position.set(startX + i * (scaleX + space), y, z);
+        cart.add(letter);
+      }
+    }
+    addSignText('WARUNG KOPI', -0.9, 2.16, 1.12, 0.09, 0.05);
+
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 16, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xffb347,
+        emissive: 0xffb347,
+        emissiveIntensity: 0.9,
+      })
+    );
+    bulb.position.set(0, 2.25, 0);
+    cart.add(bulb);
+    const point = new THREE.PointLight(0xffe0b5, 1.0, 10, 2.0);
+    point.position.set(0, 2.25, 0);
+    cart.add(point);
+
+    const top = new THREE.Mesh(
+      new THREE.BoxGeometry(3.1, 0.08, 1.9),
+      new THREE.MeshStandardMaterial({ color: 0x9c6b3a, roughness: 0.7 })
+    );
+    top.position.set(0, 1.45, 0);
+    cart.add(top);
+
+    const kettleBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.22, 0.22, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0x888888,
+        metalness: 0.7,
+        roughness: 0.3,
+      })
+    );
+    kettleBody.position.set(-0.9, 1.55, -0.4);
+    cart.add(kettleBody);
+    const kettleLid = new THREE.Mesh(
+      new THREE.ConeGeometry(0.12, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.7 })
+    );
+    kettleLid.position.set(-0.9, 1.69, -0.4);
+    cart.add(kettleLid);
+    const kettleHandle = new THREE.Mesh(
+      new THREE.TorusGeometry(0.16, 0.03, 8, 16, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0x444444 })
+    );
+    kettleHandle.rotation.y = Math.PI / 2;
+    kettleHandle.position.set(-0.9, 1.72, -0.4);
+    cart.add(kettleHandle);
+
+    for (let i = 0; i < 5; i++) {
+      const cup = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.055, 0.1, 12),
+        new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.6 })
+      );
+      cup.position.set(-0.2 + i * 0.12, 1.5, 0.55);
+      cart.add(cup);
+    }
+
+    const jar1 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.22, 14),
+      new THREE.MeshStandardMaterial({ color: 0x5c3b27, roughness: 0.8 })
+    );
+    jar1.position.set(0.6, 1.55, 0.4);
+    cart.add(jar1);
+    const jar2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.22, 14),
+      new THREE.MeshStandardMaterial({ color: 0xc2a97a, roughness: 0.8 })
+    );
+    jar2.position.set(0.9, 1.55, 0.4);
+    cart.add(jar2);
+
+    const dripper = new THREE.Mesh(
+      new THREE.ConeGeometry(0.12, 0.1, 12),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 })
+    );
+    dripper.rotation.x = Math.PI;
+    dripper.position.set(0.2, 1.54, -0.1);
+    cart.add(dripper);
+    const server = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.09, 0.18, 12),
+      new THREE.MeshStandardMaterial({
+        color: 0x3b2f2f,
+        metalness: 0.1,
+        roughness: 0.9,
+      })
+    );
+    server.position.set(0.2, 1.47, -0.28);
+    cart.add(server);
+
+    const grinderBase = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.12, 0.16),
+      new THREE.MeshStandardMaterial({ color: 0x6f4e37, roughness: 0.75 })
+    );
+    grinderBase.position.set(-0.4, 1.52, 0.1);
+    cart.add(grinderBase);
+    const grinderTop = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 0.1, 12),
+      new THREE.MeshStandardMaterial({ color: 0x444444 })
+    );
+    grinderTop.position.set(-0.4, 1.62, 0.1);
+    cart.add(grinderTop);
+    const grinderHandle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.02, 0.02),
+      new THREE.MeshStandardMaterial({ color: 0x222222 })
+    );
+    grinderHandle.position.set(-0.32, 1.66, 0.1);
+    cart.add(grinderHandle);
+
+    const stove = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.12, 0.32),
+      new THREE.MeshStandardMaterial({ color: 0x355e9a })
+    );
+    stove.position.set(1.05, 1.46, -0.45);
+    stove.castShadow = true;
+    cart.add(stove);
+    const fire = new THREE.Mesh(
+      new THREE.ConeGeometry(0.08, 0.16, 8),
+      new THREE.MeshStandardMaterial({
+        color: 0xff4500,
+        emissive: 0xff4500,
+        emissiveIntensity: 1,
+      })
+    );
+    fire.position.set(1.05, 1.56, -0.45);
+    cart.add(fire);
+
+    cart.position.set(0, 0, -1.8);
+    group.add(cart);
+
+    const vendor = characterFactory
+      ? characterFactory(0x8b4513, npcScale)
+      : makeMinecraftCharacterWithJoints(0x8b4513, npcScale);
+    const standY = 1 * npcScale;
+    vendor.position.set(0, standY, -2.9 - vendorBack);
+    poseVendor(vendor);
+    group.add(vendor);
+
+    const sitSpots = [
+      { x: -2.8, z: 1.3, face: 15 },
+      { x: 2.6, z: 1.1, face: 160 },
+    ];
+    function makeGlass(color = 0x3b2f2f) {
+      return new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.055, 0.12, 12),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.6 })
+      );
+    }
+
+    for (let i = 0; i < 2; i++) {
+      const spot = sitSpots[i];
+      const color = i % 2 ? 0x2563eb : 0x22c55e;
+      const npc = characterFactory
+        ? characterFactory(color, npcScale)
+        : makeMinecraftCharacterWithJoints(color, npcScale);
+      npc.position.set(spot.x, 0.46 * npcScale, spot.z);
+      npc.rotation.y = THREE.MathUtils.degToRad(spot.face);
+      poseLesehan(npc);
+      group.add(npc);
+
+      const glass = makeGlass(0x3b2f2f);
+      if (npc.userData?.rightArm) {
+        const s = npc.userData.scale || 1;
+        glass.position.set(0, -0.32 * s, 0.12 * s);
+        npc.userData.rightArm.add(glass);
+      } else {
+        glass.position.set(spot.x + 0.18, 0.06, spot.z + 0.06);
+        group.add(glass);
+      }
+    }
+
+    const warm = new THREE.PointLight(0xffe3b1, 0.8, 12, 2.0);
+    warm.position.set(-2.6, 2.2, 1.5);
+    group.add(warm);
+
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    cart.updateMatrixWorld(true);
+    const cartBox = new THREE.Box3().setFromObject(cart);
+    this.buildings &&
+      this.buildings.push({
+        mesh: cart,
+        boundingBox: cartBox,
+        name: 'Warung Kopi - Gerobak',
+      });
+
+    return group;
+  }
+
+  createPertamini(
+    x,
+    z,
+    {
+      scale = 1.35,
+      rotate = 0,
+      registerColliders = true,
+
+      hasCanopy = true,
+      pumpsCount = 1,
+      brandColor = 0xe11d48,
+      trimColor = 0xffffff,
+      baseColor = 0x222222,
+      floorColor = 0xbdbdbd,
+      poleColor = 0x5b5b5b,
+
+      pricePertalite = 10000,
+      pricePertamax = 13500,
+
+      // NPC
+      withVendor = true,
+      npcScale = 0.9,
+      npcColor = 0x2563eb, // biru kaos
+      vendorOffsetZ = 1.0, // mundurkan/majukan vendor relatif ke kios
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    // ---------- Utils ----------
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(r, h, mat, seg = 20) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    // karakter (simple minecraft-ish, sama gaya dengan fungsi kamu)
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+
+    // collider registrar (aman, daftar setelah transform)
+    const self = this;
+    function regCollider(mesh, name) {
+      if (!registerColliders) return;
+      try {
+        if (typeof self.addColliderFromObject === 'function') {
+          self.addColliderFromObject(mesh, name);
+        } else if (self && self.buildings) {
+          mesh.updateMatrixWorld(true);
+          const bbox = new THREE.Box3().setFromObject(mesh);
+          self.buildings.push({ mesh, boundingBox: bbox, name });
+        }
+      } catch (_) {}
+    }
+
+    // ---------- Materials ----------
+    const matFloor = new THREE.MeshStandardMaterial({
+      color: floorColor,
+      roughness: 0.95,
+    });
+    const matBrand = new THREE.MeshStandardMaterial({
+      color: brandColor,
+      roughness: 0.6,
+    });
+    const matTrim = new THREE.MeshStandardMaterial({
+      color: trimColor,
+      roughness: 0.6,
+    });
+    const matBase = new THREE.MeshStandardMaterial({
+      color: baseColor,
+      roughness: 0.7,
+    });
+    const matPole = new THREE.MeshStandardMaterial({
+      color: poleColor,
+      roughness: 0.6,
+      metalness: 0.2,
+    });
+    const matGlass = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.15,
+      roughness: 0.2,
+      metalness: 0.0,
+    });
+    const matHose = new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      roughness: 0.9,
+    });
+    const matJerry = new THREE.MeshStandardMaterial({
+      color: 0xcc0000,
+      roughness: 0.7,
+    });
+
+    const marka = box(
+      2.2,
+      0.01,
+      0.06,
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 })
+    );
+    marka.position.set(0, 0.09, 1.2);
+    group.add(marka);
+
+    // ---------- Kanopi (opsional) ----------
+    let canopy;
+    if (hasCanopy) {
+      canopy = box(6.0, 0.12, 3.0, matTrim);
+      canopy.position.set(0, 3.0, 0);
+      group.add(canopy);
+
+      // border strip brand
+      const strip = box(6.0, 0.08, 0.2, matBrand);
+      strip.position.set(0, 3.06, 1.4);
+      group.add(strip);
+
+      // tiang turun ke tanah (menghitung tinggi otomatis)
+      const groundY = 0;
+      const canopyUnderY = canopy.position.y - 0.06; // setengah tebal canopy = 0.06
+      const poleH = Math.max(0.1, canopyUnderY - groundY - 0.01);
+      const poleGeo = new THREE.CylinderGeometry(0.09, 0.09, poleH, 16);
+      [
+        [-2.7, -1.2],
+        [2.7, -1.2],
+        [-2.7, 1.2],
+        [2.7, 1.2],
+      ].forEach(([px, pz]) => {
+        const p = new THREE.Mesh(poleGeo, matPole);
+        p.position.set(px, groundY + poleH / 2, pz);
+        p.castShadow = true;
+        p.receiveShadow = true;
+        group.add(p);
+      });
+
+      // lampu hangat di bawah kanopi
+      const lamp = new THREE.PointLight(0xffe0b5, 0.85, 12, 2.0);
+      lamp.position.set(0, 2.7, 0);
+      group.add(lamp);
+    }
+
+    // ---------- Modul pompa/dispenser ----------
+    const pumpsGroup = new THREE.Group();
+
+    function makePump(nameTag = 'Pump') {
+      const g = new THREE.Group();
+
+      // base & body
+      const base = box(1.1, 0.12, 0.9, matBase);
+      base.position.set(0, 0.06, 0);
+      g.add(base);
+
+      const body = box(1.0, 1.6, 0.7, matTrim);
+      body.position.set(0, 0.06 + 0.8, 0);
+      g.add(body);
+
+      // head brand / top cap
+      const head = box(1.02, 0.18, 0.72, matBrand);
+      head.position.set(0, 0.06 + 1.6 + 0.09, 0);
+      g.add(head);
+
+      // panel kaca (display)
+      const glass = box(0.82, 0.5, 0.04, matGlass);
+      glass.position.set(0, 0.06 + 1.05, 0.37);
+      g.add(glass);
+
+      // frame display (hitam)
+      const frame = box(0.86, 0.56, 0.02, matBase);
+      frame.position.set(0, 0.06 + 1.05, 0.39);
+      g.add(frame);
+
+      // “angka” (bar tebal putih sebagai angka) – simpel non-3D text
+      const digit = box(
+        0.12,
+        0.06,
+        0.01,
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      const digits = [];
+      for (let i = 0; i < 4; i++) {
+        const d = digit.clone();
+        d.position.set(-0.24 + i * 0.16, 0.06 + 1.05, 0.395);
+        digits.push(d);
+        g.add(d);
+      }
+
+      // selang & nozzle (low poly)
+      const hose = cyl(0.025, 0.9, matHose, 12);
+      hose.rotation.x = Math.PI / 2;
+      hose.position.set(0.45, 0.06 + 1.0, 0.2);
+      g.add(hose);
+
+      const nozzle = box(
+        0.18,
+        0.06,
+        0.05,
+        new THREE.MeshStandardMaterial({ color: 0x444444 })
+      );
+      nozzle.position.set(0.55, 0.06 + 0.8, 0.25);
+      g.add(nozzle);
+
+      // label kecil (warna brand)
+      const label = box(0.7, 0.12, 0.02, matBrand);
+      label.position.set(0, 0.06 + 0.55, 0.39);
+      g.add(label);
+
+      g.userData = { nameTag, colliders: [base, body, head] }; // collider coarse di elemen besar
+      return g;
+    }
+
+    const spacing = 1.5;
+    const count = Math.max(1, Math.min(2, Math.floor(pumpsCount)));
+    for (let i = 0; i < count; i++) {
+      const pump = makePump(`Pump_${i + 1}`);
+      const offsetX = count === 1 ? 0 : -spacing / 2 + i * spacing;
+      pump.position.set(offsetX, 0, 0);
+      pumpsGroup.add(pump);
+    }
+    pumpsGroup.position.set(0, 0, 0);
+    group.add(pumpsGroup);
+
+    // ---------- Papan harga ----------
+    const priceBoard = new THREE.Group();
+    const board = box(1.2, 1.4, 0.1, matBase);
+    board.position.set(0, 0.7, 0);
+    priceBoard.add(board);
+
+    const header = box(1.18, 0.18, 0.12, matBrand);
+    header.position.set(0, 1.35, 0.01);
+    priceBoard.add(header);
+
+    // strip angka harga (blok putih)
+    function addPriceRow(y, labelBlocks = 5) {
+      // label putih kecil + “angka”
+      const row = new THREE.Group();
+      const label = box(
+        0.28,
+        0.08,
+        0.02,
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      label.position.set(-0.36, y, 0.055);
+      row.add(label);
+      for (let i = 0; i < labelBlocks; i++) {
+        const digit = box(
+          0.09,
+          0.06,
+          0.02,
+          new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        digit.position.set(-0.15 + i * 0.12, y, 0.055);
+        row.add(digit);
+      }
+      return row;
+    }
+    priceBoard.add(addPriceRow(1.02)); // Pertalite
+    priceBoard.add(addPriceRow(0.78)); // Pertamax
+
+    priceBoard.position.set(-2.2, 0, -0.2);
+    group.add(priceBoard);
+
+    // ---------- Drum / jerrycan samping ----------
+    const stash = new THREE.Group();
+    const drum = cyl(
+      0.3,
+      0.9,
+      new THREE.MeshStandardMaterial({ color: 0x9e1b32, roughness: 0.6 }),
+      20
+    );
+    drum.position.set(0, 0.45, 0);
+    stash.add(drum);
+
+    for (let i = 0; i < 3; i++) {
+      const j = box(0.26, 0.34, 0.16, matJerry);
+      j.position.set(0.5 + i * 0.28, 0.17, -0.1 + (i % 2) * 0.18);
+      stash.add(j);
+    }
+    stash.position.set(2.2, 0, -0.2);
+    group.add(stash);
+
+    // ---------- Vendor (opsional) ----------
+    if (withVendor) {
+      const vendor = makeMinecraftCharacterWithJoints(npcColor, npcScale);
+      // pose tangan sedikit maju
+      if (vendor.userData?.leftArm)
+        vendor.userData.leftArm.rotation.x = THREE.MathUtils.degToRad(-15);
+      if (vendor.userData?.rightArm)
+        vendor.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-5);
+      const standY = 1 * npcScale;
+      vendor.position.set(0.9, standY, vendorOffsetZ);
+      group.add(vendor);
+    }
+
+    // ---------- Pencahayaan tambahan ----------
+    const warm = new THREE.PointLight(0xffe3b1, 0.7, 10, 2.0);
+    warm.position.set(0, 2.2, 1.2);
+    group.add(warm);
+
+    // ---------- Transform akhir ----------
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    // ---------- Register Colliders (setelah transform!) ----------
+    if (registerColliders) {
+      // collider coarse untuk setiap pump (base + body + head)
+      pumpsGroup.traverse((obj) => {
+        if (obj?.userData?.colliders) {
+          for (const m of obj.userData.colliders)
+            regCollider(m, 'Pertamini_Pump');
+        }
+      });
+      // papan harga & drum/jerrycan → collider kasar
+      regCollider(priceBoard, 'Pertamini_Board');
+      regCollider(stash, 'Pertamini_Stash');
+      // tiang kanopi (kalau ada) aman karena sudah terhubung ke group; kalau ingin block movement:
+      // (pilihan) aktifkan collider untuk empat tiang – cukup komentar kalau perlu
+      if (hasCanopy) {
+        // cari semua cylinder tiang dengan radius 0.09 kira-kira: kita reg di level group (coarse)
+        regCollider(group, 'Pertamini_Area'); // coarse total (opsional). Matikan kalau mau bebas gerak.
+      }
+    }
+
+    return group;
+  }
+
+  createGerobakBakso(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      characterFactory = null,
+      npcScale = 0.9,
+      vendorBack = 0.6,
+      registerColliders = true,
+      colors = {
+        wood: 0x8b5e3c,
+        trim: 0x6b4f2a,
+        metal: 0x7a7a7a,
+        wheel: 0x2f2f2f,
+        glass: 0xffffff,
+        signBg: 0x111111,
+        signText: 0xffffff,
+        tarp: 0xd8c7a4,
+        stove: 0x355e9a,
+        bowl: 0xeeeeee,
+        condimentA: 0xc28436,
+        condimentB: 0xd64545,
+        condimentC: 0xc9b458,
+        lamp: 0xffb347,
+      },
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(r, h, mat, seg = 20) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cone(r, h, mat, seg = 12) {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+
+    function poseVendor(char) {
+      if (!char?.userData) return;
+      if (char.userData.leftArm)
+        char.userData.leftArm.rotation.x = THREE.MathUtils.degToRad(-18);
+      if (char.userData.rightArm)
+        char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-8);
+    }
+
+    const matWood = new THREE.MeshStandardMaterial({
+      color: colors.wood,
+      roughness: 0.85,
+    });
+    const matTrim = new THREE.MeshStandardMaterial({
+      color: colors.trim,
+      roughness: 0.8,
+    });
+    const matMetal = new THREE.MeshStandardMaterial({
+      color: colors.metal,
+      roughness: 0.5,
+      metalness: 0.3,
+    });
+    const matWheel = new THREE.MeshStandardMaterial({ color: colors.wheel });
+    const matGlass = new THREE.MeshStandardMaterial({
+      color: colors.glass,
+      transparent: true,
+      opacity: 0.15,
+      roughness: 0.2,
+    });
+    const matSignBg = new THREE.MeshStandardMaterial({
+      color: colors.signBg,
+      roughness: 0.6,
+    });
+    const matSignTx = new THREE.MeshStandardMaterial({
+      color: colors.signText,
+      roughness: 0.6,
+    });
+    const matTarp = new THREE.MeshStandardMaterial({
+      color: colors.tarp,
+      roughness: 0.7,
+    });
+    const matStove = new THREE.MeshStandardMaterial({
+      color: colors.stove,
+      roughness: 0.6,
+    });
+    const matBowl = new THREE.MeshStandardMaterial({
+      color: colors.bowl,
+      roughness: 0.6,
+    });
+    const matCondA = new THREE.MeshStandardMaterial({
+      color: colors.condimentA,
+      roughness: 0.8,
+    });
+    const matCondB = new THREE.MeshStandardMaterial({
+      color: colors.condimentB,
+      roughness: 0.8,
+    });
+    const matCondC = new THREE.MeshStandardMaterial({
+      color: colors.condimentC,
+      roughness: 0.8,
+    });
+    const matLamp = new THREE.MeshStandardMaterial({
+      color: colors.lamp,
+      emissive: colors.lamp,
+      emissiveIntensity: 0.9,
+    });
+
+    const cart = new THREE.Group();
+
+    const base = box(3.2, 0.14, 1.6, matTrim);
+    base.position.set(0, 0.07, 0);
+    cart.add(base);
+
+    const body = box(3.2, 1.0, 1.6, matWood);
+    body.position.set(0, 0.64, 0);
+    cart.add(body);
+
+    const glassFront = box(3.0, 0.7, 0.06, matGlass);
+    glassFront.position.set(0, 1.1, 0.83);
+    cart.add(glassFront);
+
+    const counter = box(3.2, 0.06, 1.6, matTrim);
+    counter.position.set(0, 1.2, 0);
+    cart.add(counter);
+
+    const canopy = box(3.4, 0.1, 1.8, matTarp);
+    canopy.position.set(0, 2.2, 0);
+    cart.add(canopy);
+
+    const groundTopY = 0;
+    const canopyUnderY = canopy.position.y - 0.05;
+    const poleH = Math.max(0.1, canopyUnderY - groundTopY - 0.01);
+    const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, poleH, 12);
+    const poleMat = matMetal;
+    [
+      [-1.55, -0.75],
+      [1.55, -0.75],
+      [-1.55, 0.75],
+      [1.55, 0.75],
+    ].forEach(([px, pz]) => {
+      const p = new THREE.Mesh(poleGeo, poleMat);
+      p.position.set(px, groundTopY + poleH / 2, pz);
+      p.castShadow = true;
+      p.receiveShadow = true;
+      cart.add(p);
+    });
+
+    // roda
+    const wheelGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.14, 16);
+    [
+      [-1.2, -0.8],
+      [1.2, -0.8],
+    ].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(wheelGeo, matWheel);
+      w.position.set(wx, 0.26, wz);
+      w.rotation.z = Math.PI / 2;
+      cart.add(w);
+    });
+
+    const sign = box(2.4, 0.22, 0.08, matSignBg);
+    sign.position.set(0, 2.0, 0.86);
+    cart.add(sign);
+    function addFlatText(
+      str,
+      centerX,
+      y,
+      z,
+      charW = 0.12,
+      charH = 0.14,
+      space = 0.04
+    ) {
+      const startX =
+        centerX -
+        (str.replace(/ /g, '').length * charW + (str.length - 1) * space) / 2;
+      let idx = 0;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === ' ') {
+          idx++;
+          continue;
+        }
+        const letter = box(charW, charH, 0.02, matSignTx);
+        letter.position.set(startX + i * (charW + space), y, z);
+        cart.add(letter);
+        idx++;
+      }
+    }
+    addFlatText('BAKSO', 0, 2.02, 0.9, 0.16, 0.16, 0.05);
+
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 16, 16),
+      matLamp
+    );
+    bulb.position.set(0, 2.0, 0);
+    cart.add(bulb);
+    const lamp = new THREE.PointLight(colors.lamp, 0.95, 10, 2.0);
+    lamp.position.set(0, 2.0, 0);
+    cart.add(lamp);
+
+    const pot = cyl(0.32, 0.32, matMetal, 20);
+    pot.position.set(-0.8, 1.28, -0.35);
+    cart.add(pot);
+    const lid = cone(0.34, 0.14, matMetal, 16);
+    lid.position.set(-0.8, 1.47, -0.35);
+    cart.add(lid);
+    const vent = cyl(0.05, 0.12, matMetal, 12);
+    vent.position.set(-0.8, 1.57, -0.35);
+    cart.add(vent);
+
+    const stove = box(0.5, 0.12, 0.4, matStove);
+    stove.position.set(-0.1, 1.26, -0.35);
+    cart.add(stove);
+    const fire = cone(
+      0.08,
+      0.16,
+      new THREE.MeshStandardMaterial({
+        color: 0xff4500,
+        emissive: 0xff4500,
+        emissiveIntensity: 1,
+      }),
+      8
+    );
+    fire.position.set(-0.1, 1.36, -0.35);
+    cart.add(fire);
+
+    for (let i = 0; i < 5; i++) {
+      const bowl = cyl(0.11, 0.06, matBowl, 12);
+      bowl.position.set(0.65, 1.26 + i * 0.055, 0.32);
+      cart.add(bowl);
+    }
+
+    const bottles = [
+      { x: 0.35, z: 0.35, mat: matCondB },
+      { x: 0.5, z: 0.35, mat: matCondC },
+      { x: 0.65, z: 0.35, mat: matCondA },
+    ];
+    bottles.forEach(({ x, z, mat }) => {
+      const b = cyl(0.05, 0.16, mat, 12);
+      b.position.set(x, 1.34, z);
+      cart.add(b);
+      const cap = cone(0.055, 0.06, mat, 8);
+      cap.position.set(x, 1.46, z);
+      cart.add(cap);
+    });
+
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 4; j++) {
+        const food = box(
+          0.12,
+          0.06,
+          0.12,
+          new THREE.MeshStandardMaterial({ color: 0xd2a679 })
+        );
+        food.position.set(-0.6 + i * 0.6, 1.05, 0.55 - j * 0.25);
+        cart.add(food);
+      }
+    }
+
+    const ladle = new THREE.Group();
+    const handle = box(0.22, 0.02, 0.02, matMetal);
+    handle.position.set(0.11, 0, 0);
+    ladle.add(handle);
+    const cup = cyl(0.04, 0.03, matMetal, 10);
+    cup.rotation.x = Math.PI / 2;
+    cup.position.set(0.21, -0.02, 0);
+    ladle.add(cup);
+
+    const vendor = characterFactory
+      ? characterFactory(0xb45309, npcScale)
+      : makeMinecraftCharacterWithJoints(0xb45309, npcScale);
+    const standY = 1 * npcScale;
+    vendor.position.set(0, standY, -1.7 - vendorBack);
+    poseVendor(vendor);
+    group.add(vendor);
+
+    if (vendor.userData?.rightArm) {
+      const s = vendor.userData.scale || 1;
+      const l = ladle.clone();
+      l.position.set(0.05 * s, -0.35 * s, 0.1 * s);
+      l.rotation.z = THREE.MathUtils.degToRad(-15);
+      vendor.userData.rightArm.add(l);
+    }
+
+    cart.position.set(0, 0, 0);
+    group.add(cart);
+
+    const warm = new THREE.PointLight(0xffe3b1, 0.75, 10, 2.0);
+    warm.position.set(0.6, 1.8, 0.9);
+    group.add(warm);
+
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    if (registerColliders) {
+      const self = this;
+      function regCollider(mesh, name) {
+        try {
+          if (typeof self.addColliderFromObject === 'function') {
+            self.addColliderFromObject(mesh, name);
+          } else if (self && self.buildings) {
+            mesh.updateMatrixWorld(true);
+            const bbox = new THREE.Box3().setFromObject(mesh);
+            self.buildings.push({ mesh, boundingBox: bbox, name });
+          }
+        } catch (_) {}
+      }
+
+      regCollider(body, 'GerobakBakso_Body');
+      regCollider(counter, 'GerobakBakso_Counter');
+    }
+
+    return group;
+  }
+
+  createGerobakBatagor(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      characterFactory = null,
+      npcScale = 0.9,
+      vendorBack = 0.6,
+      registerColliders = true,
+      colors = {
+        wood: 0x8b5e3c,
+        trim: 0x6b4f2a,
+        metal: 0x7a7a7a,
+        wheel: 0x2f2f2f,
+        glass: 0xffffff,
+        tarp: 0xd8c7a4,
+        fryer: 0x3b3b3b,
+        oil: 0xe6b800,
+        stove: 0x355e9a,
+        bowl: 0xededed,
+        sambal: 0xd64545,
+        kecap: 0x27211a,
+        kacang: 0xc28436,
+        signBg: 0x111111,
+        signText: 0xffffff,
+        lamp: 0xffb347,
+      },
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    // ===== Utils =====
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(r, h, mat, seg = 20) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cone(r, h, mat, seg = 12) {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    // ===== NPC (minecraft-ish) =====
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      g.add(head);
+
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      g.add(leftArm, rightArm);
+
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      g.add(leftLeg, rightLeg);
+
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+    function poseVendor(char) {
+      if (!char?.userData) return;
+      if (char.userData.leftArm)
+        char.userData.leftArm.rotation.x = THREE.MathUtils.degToRad(-18);
+      if (char.userData.rightArm)
+        char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-6);
+    }
+
+    // ===== Materials =====
+    const matWood = new THREE.MeshStandardMaterial({
+      color: colors.wood,
+      roughness: 0.85,
+    });
+    const matTrim = new THREE.MeshStandardMaterial({
+      color: colors.trim,
+      roughness: 0.8,
+    });
+    const matMetal = new THREE.MeshStandardMaterial({
+      color: colors.metal,
+      roughness: 0.5,
+      metalness: 0.3,
+    });
+    const matWheel = new THREE.MeshStandardMaterial({ color: colors.wheel });
+    const matGlass = new THREE.MeshStandardMaterial({
+      color: colors.glass,
+      transparent: true,
+      opacity: 0.15,
+      roughness: 0.2,
+    });
+    const matTarp = new THREE.MeshStandardMaterial({
+      color: colors.tarp,
+      roughness: 0.7,
+    });
+    const matFryer = new THREE.MeshStandardMaterial({
+      color: colors.fryer,
+      roughness: 0.6,
+      metalness: 0.2,
+    });
+    const matOil = new THREE.MeshStandardMaterial({
+      color: colors.oil,
+      roughness: 0.9,
+      transparent: true,
+      opacity: 0.85,
+    });
+    const matStove = new THREE.MeshStandardMaterial({
+      color: colors.stove,
+      roughness: 0.6,
+    });
+    const matBowl = new THREE.MeshStandardMaterial({
+      color: colors.bowl,
+      roughness: 0.6,
+    });
+    const matSambal = new THREE.MeshStandardMaterial({
+      color: colors.sambal,
+      roughness: 0.8,
+    });
+    const matKecap = new THREE.MeshStandardMaterial({
+      color: colors.kecap,
+      roughness: 0.8,
+    });
+    const matKacang = new THREE.MeshStandardMaterial({
+      color: colors.kacang,
+      roughness: 0.8,
+    });
+    const matSignBg = new THREE.MeshStandardMaterial({
+      color: colors.signBg,
+      roughness: 0.6,
+    });
+    const matSignTx = new THREE.MeshStandardMaterial({
+      color: colors.signText,
+      roughness: 0.6,
+    });
+    const matLamp = new THREE.MeshStandardMaterial({
+      color: colors.lamp,
+      emissive: colors.lamp,
+      emissiveIntensity: 0.9,
+    });
+
+    // ===== Gerobak =====
+    const cart = new THREE.Group();
+
+    // rangka dasar
+    const base = box(3.1, 0.14, 1.6, matTrim);
+    base.position.set(0, 0.07, 0);
+    cart.add(base);
+
+    // badan kayu
+    const body = box(3.1, 1.0, 1.6, matWood);
+    body.position.set(0, 0.64, 0);
+    cart.add(body);
+
+    // etalase depan (kaca)
+    const glassFront = box(2.9, 0.7, 0.06, matGlass);
+    glassFront.position.set(0, 1.08, 0.82);
+    cart.add(glassFront);
+
+    // top meja
+    const counter = box(3.1, 0.06, 1.6, matTrim);
+    counter.position.set(0, 1.2, 0);
+    cart.add(counter);
+
+    // kanopi
+    const canopy = box(3.3, 0.1, 1.8, matTarp);
+    canopy.position.set(0, 2.1, 0);
+    cart.add(canopy);
+
+    // tiang kanopi sampai tanah (auto)
+    const groundTopY = 0;
+    const canopyUnderY = canopy.position.y - 0.05;
+    const poleH = Math.max(0.1, canopyUnderY - groundTopY - 0.01);
+    const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, poleH, 12);
+    [
+      [-1.5, -0.75],
+      [1.5, -0.75],
+      [-1.5, 0.75],
+      [1.5, 0.75],
+    ].forEach(([px, pz]) => {
+      const p = new THREE.Mesh(poleGeo, matMetal);
+      p.position.set(px, groundTopY + poleH / 2, pz);
+      p.castShadow = true;
+      p.receiveShadow = true;
+      cart.add(p);
+    });
+
+    // roda
+    const wheelGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.14, 16);
+    [
+      [-1.1, -0.8],
+      [1.1, -0.8],
+    ].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(wheelGeo, matWheel);
+      w.position.set(wx, 0.26, wz);
+      w.rotation.z = Math.PI / 2;
+      cart.add(w);
+    });
+
+    // signage "BATAGOR"
+    const sign = box(2.3, 0.22, 0.08, matSignBg);
+    sign.position.set(0, 1.95, 0.86);
+    cart.add(sign);
+    function addFlatText(
+      str,
+      centerX,
+      y,
+      z,
+      charW = 0.13,
+      charH = 0.15,
+      space = 0.05
+    ) {
+      const visibleChars = str.replace(/ /g, '').length;
+      const totalW = visibleChars * charW + (str.length - 1) * space;
+      let cursor = centerX - totalW / 2;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === ' ') {
+          cursor += space;
+          continue;
+        }
+        const letter = box(charW, charH, 0.02, matSignTx);
+        letter.position.set(cursor + charW / 2, y, z);
+        cart.add(letter);
+        cursor += charW + space;
+      }
+    }
+    addFlatText('BATAGOR', 0, 1.97, 0.9);
+
+    // lampu
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matLamp);
+    bulb.position.set(0, 1.9, 0);
+    cart.add(bulb);
+    const lamp = new THREE.PointLight(colors.lamp, 0.95, 10, 2.0);
+    lamp.position.set(0, 1.9, 0);
+    cart.add(lamp);
+
+    // ===== Dapur Batagor =====
+    // bak penggorengan (rectangular fryer) + minyak
+    const fryer = box(0.6, 0.14, 0.42, matFryer);
+    fryer.position.set(-0.8, 1.26, -0.35);
+    cart.add(fryer);
+    const oil = box(0.56, 0.04, 0.38, matOil);
+    oil.position.set(-0.8, 1.29, -0.35);
+    cart.add(oil);
+
+    // kompor
+    const stove = box(0.7, 0.12, 0.5, matStove);
+    stove.position.set(-0.8, 1.2, -0.35);
+    cart.add(stove);
+
+    // kukusan siomay (panci bertingkat)
+    const steamerBase = cyl(0.22, 0.16, matMetal, 16);
+    steamerBase.position.set(0.15, 1.28, -0.25);
+    cart.add(steamerBase);
+    const steamerTier = cyl(0.22, 0.14, matMetal, 16);
+    steamerTier.position.set(0.15, 1.38, -0.25);
+    cart.add(steamerTier);
+    const steamerLid = cone(0.24, 0.12, matMetal, 16);
+    steamerLid.position.set(0.15, 1.49, -0.25);
+    cart.add(steamerLid);
+
+    // mangkuk (stack)
+    for (let i = 0; i < 6; i++) {
+      const bowl = cyl(0.1, 0.055, matBowl, 12);
+      bowl.position.set(0.65, 1.24 + i * 0.05, 0.35);
+      cart.add(bowl);
+    }
+
+    // botol saus (sambal, kecap, kacang)
+    const bottles = [
+      { x: 0.35, z: 0.35, mat: matSambal },
+      { x: 0.5, z: 0.35, mat: matKecap },
+      { x: 0.65, z: 0.35, mat: matKacang },
+    ];
+    bottles.forEach(({ x, z, mat }) => {
+      const b = cyl(0.05, 0.16, mat, 12);
+      b.position.set(x, 1.33, z);
+      cart.add(b);
+      const cap = cone(0.055, 0.06, mat, 8);
+      cap.position.set(x, 1.44, z);
+      cart.add(cap);
+    });
+
+    // keranjang batagor mentah (kubus kecil)
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 4; j++) {
+        const item = box(
+          0.12,
+          0.06,
+          0.12,
+          new THREE.MeshStandardMaterial({ color: 0xd9b382 })
+        );
+        item.position.set(-0.2 + i * 0.24, 1.24, 0.5 - j * 0.22);
+        cart.add(item);
+      }
+    }
+
+    // penjepit (tongs) sederhana → ditaruh di tangan kanan vendor nanti
+    const tongs = new THREE.Group();
+    const barA = box(0.22, 0.02, 0.02, matMetal);
+    barA.position.set(0.11, 0, 0.01);
+    tongs.add(barA);
+    const barB = box(0.22, 0.02, 0.02, matMetal);
+    barB.position.set(0.11, 0, -0.01);
+    tongs.add(barB);
+    const tip = box(0.04, 0.02, 0.04, matMetal);
+    tip.position.set(0.22, 0, 0);
+    tongs.add(tip);
+
+    // ===== NPC Vendor =====
+    const vendor = characterFactory
+      ? characterFactory(0xb45309, npcScale)
+      : makeMinecraftCharacterWithJoints(0xb45309, npcScale);
+    const standY = 1 * npcScale;
+    vendor.position.set(0, standY, -1.7 - vendorBack);
+    poseVendor(vendor);
+    group.add(vendor);
+
+    // pasang penjepit di tangan kanan
+    if (vendor.userData?.rightArm) {
+      const s = vendor.userData.scale || 1;
+      const t = tongs.clone();
+      t.position.set(0.06 * s, -0.33 * s, 0.08 * s);
+      t.rotation.z = THREE.MathUtils.degToRad(-10);
+      vendor.userData.rightArm.add(t);
+    }
+
+    // ===== Penempatan gerobak =====
+    cart.position.set(0, 0, 0);
+    group.add(cart);
+
+    // ===== Lighting ambience =====
+    const warm = new THREE.PointLight(colors.lamp, 0.75, 10, 2.0);
+    warm.position.set(0.5, 1.8, 0.9);
+    group.add(warm);
+
+    // ===== Transform akhir =====
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    // ===== Collider (DAFTAR SETELAH TRANSFORM) =====
+    if (registerColliders) {
+      const self = this;
+      function regCollider(mesh, name) {
+        try {
+          if (typeof self.addColliderFromObject === 'function') {
+            self.addColliderFromObject(mesh, name);
+          } else if (self && self.buildings) {
+            mesh.updateMatrixWorld(true);
+            const bbox = new THREE.Box3().setFromObject(mesh);
+            self.buildings.push({ mesh, boundingBox: bbox, name });
+          }
+        } catch (_) {}
+      }
+      // collider coarse: badan & counter (cukup menghambat player agar tak nembus etalase)
+      regCollider(body, 'GerobakBatagor_Body');
+      regCollider(counter, 'GerobakBatagor_Counter');
+      // (opsional) aktifkan collider tiang jika perlu padat:
+      // cart.children.filter(m => m.geometry instanceof THREE.CylinderGeometry).forEach(p => regCollider(p, 'GerobakBatagor_Pole'));
+    }
+
+    return group;
+  }
+
+  createGerobakSeblak(
+    x,
+    z,
+    {
+      scale = 1.4,
+      rotate = 0,
+      characterFactory = null,
+      npcScale = 0.9,
+      vendorBack = 0.6,
+      registerColliders = true,
+      colors = {
+        wood: 0x8b5e3c,
+        trim: 0x6b4f2a,
+        metal: 0x7a7a7a,
+        wheel: 0x2f2f2f,
+        glass: 0xffffff,
+        tarp: 0xd8c7a4,
+        stove: 0x355e9a,
+        wok: 0x3b3b3b,
+        gas: 0x5cb85c,
+        bowl: 0xededed,
+        oil: 0xe6b800,
+        sambal: 0xd64545,
+        cikur: 0xc28436,
+        kecap: 0x27211a,
+        signBg: 0x111111,
+        signText: 0xffffff,
+        lamp: 0xffb347,
+      },
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    // ===== Utils =====
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(r, h, mat, seg = 20) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cone(r, h, mat, seg = 12) {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+
+    // ===== NPC (minecraft-ish) =====
+    function makeMinecraftCharacterWithJoints(color, cScale = 1) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8 * cScale, 1.2 * cScale, 0.4 * cScale),
+        new THREE.MeshStandardMaterial({ color })
+      );
+      body.position.y = 0.6 * cScale;
+      g.add(body);
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 * cScale, 0.6 * cScale, 0.6 * cScale),
+        new THREE.MeshStandardMaterial({ color: 0xfdbcb4 })
+      );
+      head.position.y = 1.5 * cScale;
+      g.add(head);
+      const armGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const armMat = new THREE.MeshStandardMaterial({ color });
+      const leftArm = new THREE.Mesh(armGeo, armMat);
+      leftArm.position.set(-0.6 * cScale, 0.6 * cScale, 0);
+      const rightArm = new THREE.Mesh(armGeo, armMat);
+      rightArm.position.set(0.6 * cScale, 0.6 * cScale, 0);
+      g.add(leftArm, rightArm);
+      const legGeo = new THREE.BoxGeometry(
+        0.3 * cScale,
+        0.9 * cScale,
+        0.3 * cScale
+      );
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+      const leftLeg = new THREE.Mesh(legGeo, legMat);
+      leftLeg.position.set(-0.25 * cScale, -0.45 * cScale, 0);
+      const rightLeg = new THREE.Mesh(legGeo, legMat);
+      rightLeg.position.set(0.25 * cScale, -0.45 * cScale, 0);
+      g.add(leftLeg, rightLeg);
+      g.userData = {
+        leftArm,
+        rightArm,
+        leftLeg,
+        rightLeg,
+        body,
+        head,
+        scale: cScale,
+      };
+      return g;
+    }
+    function poseVendor(char) {
+      if (!char?.userData) return;
+      if (char.userData.leftArm)
+        char.userData.leftArm.rotation.x = THREE.MathUtils.degToRad(-18);
+      if (char.userData.rightArm)
+        char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-8);
+    }
+
+    // ===== Materials =====
+    const matWood = new THREE.MeshStandardMaterial({
+      color: colors.wood,
+      roughness: 0.85,
+    });
+    const matTrim = new THREE.MeshStandardMaterial({
+      color: colors.trim,
+      roughness: 0.8,
+    });
+    const matMetal = new THREE.MeshStandardMaterial({
+      color: colors.metal,
+      roughness: 0.5,
+      metalness: 0.3,
+    });
+    const matWheel = new THREE.MeshStandardMaterial({ color: colors.wheel });
+    const matGlass = new THREE.MeshStandardMaterial({
+      color: colors.glass,
+      transparent: true,
+      opacity: 0.15,
+      roughness: 0.2,
+    });
+    const matTarp = new THREE.MeshStandardMaterial({
+      color: colors.tarp,
+      roughness: 0.7,
+    });
+    const matStove = new THREE.MeshStandardMaterial({
+      color: colors.stove,
+      roughness: 0.6,
+    });
+    const matWok = new THREE.MeshStandardMaterial({
+      color: colors.wok,
+      roughness: 0.6,
+      metalness: 0.2,
+    });
+    const matGas = new THREE.MeshStandardMaterial({
+      color: colors.gas,
+      roughness: 0.7,
+    });
+    const matBowl = new THREE.MeshStandardMaterial({
+      color: colors.bowl,
+      roughness: 0.6,
+    });
+    const matOil = new THREE.MeshStandardMaterial({
+      color: colors.oil,
+      roughness: 0.9,
+      transparent: true,
+      opacity: 0.85,
+    });
+    const matSambal = new THREE.MeshStandardMaterial({
+      color: colors.sambal,
+      roughness: 0.8,
+    });
+    const matCikur = new THREE.MeshStandardMaterial({
+      color: colors.cikur,
+      roughness: 0.8,
+    });
+    const matKecap = new THREE.MeshStandardMaterial({
+      color: colors.kecap,
+      roughness: 0.8,
+    });
+    const matSignBg = new THREE.MeshStandardMaterial({
+      color: colors.signBg,
+      roughness: 0.6,
+    });
+    const matSignTx = new THREE.MeshStandardMaterial({
+      color: colors.signText,
+      roughness: 0.6,
+    });
+    const matLamp = new THREE.MeshStandardMaterial({
+      color: colors.lamp,
+      emissive: colors.lamp,
+      emissiveIntensity: 0.9,
+    });
+
+    // ===== Gerobak =====
+    const cart = new THREE.Group();
+
+    // rangka & badan
+    const base = box(3.1, 0.14, 1.6, matTrim);
+    base.position.set(0, 0.07, 0);
+    cart.add(base);
+    const body = box(3.1, 1.0, 1.6, matWood);
+    body.position.set(0, 0.64, 0);
+    cart.add(body);
+
+    // etalase
+    const glassFront = box(2.9, 0.7, 0.06, matGlass);
+    glassFront.position.set(0, 1.08, 0.82);
+    cart.add(glassFront);
+    const counter = box(3.1, 0.06, 1.6, matTrim);
+    counter.position.set(0, 1.2, 0);
+    cart.add(counter);
+
+    // kanopi & tiang (menyentuh tanah)
+    const canopy = box(3.3, 0.1, 1.8, matTarp);
+    canopy.position.set(0, 2.1, 0);
+    cart.add(canopy);
+    const groundTopY = 0;
+    const poleH = Math.max(0.1, canopy.position.y - 0.05 - groundTopY - 0.01);
+    const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, poleH, 12);
+    [
+      [-1.5, -0.75],
+      [1.5, -0.75],
+      [-1.5, 0.75],
+      [1.5, 0.75],
+    ].forEach(([px, pz]) => {
+      const p = new THREE.Mesh(poleGeo, matMetal);
+      p.position.set(px, groundTopY + poleH / 2, pz);
+      p.castShadow = true;
+      p.receiveShadow = true;
+      cart.add(p);
+    });
+
+    // roda
+    const wheelGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.14, 16);
+    [
+      [-1.1, -0.8],
+      [1.1, -0.8],
+    ].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(wheelGeo, matWheel);
+      w.position.set(wx, 0.26, wz);
+      w.rotation.z = Math.PI / 2;
+      cart.add(w);
+    });
+
+    // signage "SEBLAK"
+    const sign = box(2.0, 0.22, 0.08, matSignBg);
+    sign.position.set(0, 1.95, 0.86);
+    cart.add(sign);
+    function addFlatText(
+      str,
+      centerX,
+      y,
+      z,
+      charW = 0.13,
+      charH = 0.15,
+      space = 0.05
+    ) {
+      const visible = str.replace(/ /g, '').length;
+      const totalW = visible * charW + (str.length - 1) * space;
+      let cursor = centerX - totalW / 2;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === ' ') {
+          cursor += space;
+          continue;
+        }
+        const letter = box(charW, charH, 0.02, matSignTx);
+        letter.position.set(cursor + charW / 2, y, z);
+        cart.add(letter);
+        cursor += charW + space;
+      }
+    }
+    addFlatText('SEBLAK', 0, 1.97, 0.9);
+
+    // lampu
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matLamp);
+    bulb.position.set(0, 1.9, 0);
+    cart.add(bulb);
+    const lamp = new THREE.PointLight(colors.lamp, 0.95, 10, 2.0);
+    lamp.position.set(0, 1.9, 0);
+    cart.add(lamp);
+
+    // ===== Dapur Seblak =====
+    // kompor + wajan cekung besar
+    const stove = box(0.7, 0.12, 0.5, matStove);
+    stove.position.set(-0.8, 1.2, -0.35);
+    cart.add(stove);
+    const wok = cyl(0.32, 0.14, matWok, 16);
+    wok.position.set(-0.8, 1.29, -0.35);
+    cart.add(wok);
+    const oil = cyl(0.3, 0.04, matOil, 16);
+    oil.position.set(-0.8, 1.31, -0.35);
+    cart.add(oil); // efek minyak
+
+    // bak topping (bakso/kerupuk/makaroni/cikur)
+    const rail = box(1.2, 0.08, 0.5, matTrim);
+    rail.position.set(0.2, 1.26, -0.25);
+    cart.add(rail);
+    for (let i = 0; i < 4; i++) {
+      const bin = box(0.26, 0.12, 0.22, matMetal);
+      bin.position.set(-0.38 + i * 0.32, 1.29, -0.25);
+      cart.add(bin);
+    }
+    // isi topping sederhana
+    const topColors = [0xd9b382, 0xffe199, 0xc97f6b, 0xc28436];
+    for (let i = 0; i < 4; i++) {
+      const fill = box(
+        0.24,
+        0.06,
+        0.2,
+        new THREE.MeshStandardMaterial({ color: topColors[i], roughness: 0.9 })
+      );
+      fill.position.set(-0.38 + i * 0.32, 1.32, -0.25);
+      cart.add(fill);
+    }
+
+    // botol bumbu (sambal, cikur, kecap)
+    const bottles = [
+      { x: 0.35, z: 0.35, mat: matSambal },
+      { x: 0.5, z: 0.35, mat: matCikur },
+      { x: 0.65, z: 0.35, mat: matKecap },
+    ];
+    bottles.forEach(({ x, z, mat }) => {
+      const b = cyl(0.05, 0.16, mat, 12);
+      b.position.set(x, 1.33, z);
+      cart.add(b);
+      const cap = cone(0.055, 0.06, mat, 8);
+      cap.position.set(x, 1.44, z);
+      cart.add(cap);
+    });
+
+    // mangkuk (stack)
+    for (let i = 0; i < 6; i++) {
+      const bowl = cyl(0.1, 0.055, matBowl, 12);
+      bowl.position.set(0.65, 1.24 + i * 0.05, 0.35);
+      cart.add(bowl);
+    }
+
+    // tabung gas
+    const gas = cyl(0.16, 0.36, matGas, 16);
+    gas.position.set(-1.35, 0.26, -0.2);
+    cart.add(gas);
+    const gasTop = box(0.18, 0.08, 0.18, matGas);
+    gasTop.position.set(-1.35, 0.44, -0.2);
+    cart.add(gasTop);
+
+    // sodet (spatula) → ke tangan kanan vendor
+    const spatula = new THREE.Group();
+    const handle = box(0.22, 0.02, 0.02, matMetal);
+    handle.position.set(0.11, 0, 0);
+    spatula.add(handle);
+    const head = box(0.06, 0.02, 0.08, matMetal);
+    head.position.set(0.22, 0, 0);
+    spatula.add(head);
+
+    // ===== Vendor =====
+    const vendor = characterFactory
+      ? characterFactory(0xb45309, npcScale)
+      : makeMinecraftCharacterWithJoints(0xb45309, npcScale);
+    const standY = 1 * npcScale;
+    vendor.position.set(0, standY, -1.7 - vendorBack);
+    poseVendor(vendor);
+    group.add(vendor);
+
+    if (vendor.userData?.rightArm) {
+      const s = vendor.userData.scale || 1;
+      const sp = spatula.clone();
+      sp.position.set(0.06 * s, -0.33 * s, 0.08 * s);
+      sp.rotation.z = THREE.MathUtils.degToRad(-10);
+      vendor.userData.rightArm.add(sp);
+    }
+
+    // ===== Penempatan gerobak & lighting =====
+    cart.position.set(0, 0, 0);
+    group.add(cart);
+
+    const warm = new THREE.PointLight(colors.lamp, 0.75, 10, 2.0);
+    warm.position.set(0.5, 1.8, 0.9);
+    group.add(warm);
+
+    // ===== Transform akhir =====
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    // ===== Collider (DAFTAR SETELAH TRANSFORM) =====
+    if (registerColliders) {
+      const self = this;
+      function regCollider(mesh, name) {
+        try {
+          if (typeof self.addColliderFromObject === 'function') {
+            self.addColliderFromObject(mesh, name);
+          } else if (self && self.buildings) {
+            mesh.updateMatrixWorld(true);
+            const bbox = new THREE.Box3().setFromObject(mesh);
+            self.buildings.push({ mesh, boundingBox: bbox, name });
+          }
+        } catch (_) {}
+      }
+      // collider kasar cukup pada body & counter agar pemain tidak menembus etalase
+      regCollider(body, 'GerobakSeblak_Body');
+      regCollider(counter, 'GerobakSeblak_Counter');
+      // (opsional) aktifkan collider tiang/kanopi bila ingin benar-benar solid:
+      // cart.children.filter(m => m.geometry instanceof THREE.CylinderGeometry).forEach(p => regCollider(p, 'GerobakSeblak_Pole'));
+    }
+
+    return group;
+  }
+
+  createPlangDisewakan(
+    x,
+    z,
+    {
+      scale = 1.3,
+      rotate = 0,
+      registerColliders = true,
+      colors = {
+        board: 0xffffff,
+        border: 0x333333,
+        text: 0xff0000, // merah khas plang disewakan
+        pole: 0x444444,
+      },
+    } = {}
+  ) {
+    const group = new THREE.Group();
+
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = m.receiveShadow = true;
+      return m;
+    }
+
+    const matBoard = new THREE.MeshStandardMaterial({ color: colors.board });
+    const matBorder = new THREE.MeshStandardMaterial({ color: colors.border });
+    const matText = new THREE.MeshStandardMaterial({ color: colors.text });
+    const matPole = new THREE.MeshStandardMaterial({ color: colors.pole });
+
+    const boardW = 3.2;
+    const boardH = 1.4;
+
+    const board = box(boardW, boardH, 0.12, matBoard);
+    board.position.set(0, 1.8, 0);
+    group.add(board);
+
+    const frameT = box(boardW + 0.1, 0.08, 0.14, matBorder);
+    const frameB = box(boardW + 0.1, 0.08, 0.14, matBorder);
+    const frameL = box(0.08, boardH, 0.14, matBorder);
+    const frameR = box(0.08, boardH, 0.14, matBorder);
+
+    frameT.position.set(0, 1.8 + boardH / 2 + 0.04, 0);
+    frameB.position.set(0, 1.8 - boardH / 2 - 0.04, 0);
+    frameL.position.set(-boardW / 2 - 0.04, 1.8, 0);
+    frameR.position.set(boardW / 2 + 0.04, 1.8, 0);
+
+    group.add(frameT, frameB, frameL, frameR);
+
+    function addCanvasTextLabel({
+      text = 'DISEWAKAN',
+      w = 2.9,
+      h = 1.0,
+      y = 1.8,
+      z = 0.061,
+      fg = '#ff0000',
+      bg = 'transparent',
+      font = 'Bold 140px Arial',
+      align = 'center',
+      baseline = 'middle',
+    }) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (bg !== 'transparent') {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.fillStyle = fg;
+      ctx.font = font;
+      ctx.textAlign = align;
+      ctx.textBaseline = baseline;
+
+      let size = 140;
+      do {
+        ctx.font = `bold ${size}px Arial`;
+        size -= 6;
+      } while (ctx.measureText(text).width > canvas.width * 0.9 && size > 40);
+
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.anisotropy = 4;
+      tex.needsUpdate = true;
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: bg === 'transparent',
+      });
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+      plane.position.set(0, y, z);
+      plane.renderOrder = 2;
+      group.add(plane);
+
+      return plane;
+    }
+
+    addCanvasTextLabel({
+      text: 'DISEWAKAN',
+      w: 2.9,
+      h: 0.8,
+      y: 1.8,
+      z: 0.07,
+      fg: '#ff0000',
+      bg: 'transparent',
+    });
+
+    const pole = box(0.18, 2.2, 0.18, matPole);
+    pole.position.set(0, 1.1, -0.1);
+    group.add(pole);
+
+    group.position.set(x, 0, z);
+    group.scale.set(scale, scale, scale);
+    group.rotation.y = THREE.MathUtils.degToRad(rotate);
+    group.updateMatrixWorld(true);
+    this.scene.add(group);
+
+    if (registerColliders) {
+      const self = this;
+      function reg(mesh, name) {
+        try {
+          mesh.updateMatrixWorld(true);
+          if (typeof self.addColliderFromObject === 'function') {
+            self.addColliderFromObject(mesh, name);
+          } else if (self.buildings) {
+            const bbox = new THREE.Box3().setFromObject(mesh);
+            self.buildings.push({ mesh, boundingBox: bbox, name });
+          }
+        } catch (_) {}
+      }
+      reg(board, 'PlangDisewakan_Board');
+      reg(pole, 'PlangDisewakan_Pole');
+    }
+
     return group;
   }
 }

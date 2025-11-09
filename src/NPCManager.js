@@ -670,24 +670,24 @@ export class NPCManager {
   createSpecialNPCs() {
     const specialCharacters = [
       {
+        name: 'Zait',
+        position: { x: 30, z: 75 },
+        dialogue: 'Astaga, aku gak nyangka kamu nemu aku.',
+      },
+      {
+        name: 'Putra',
+        position: { x: -38, z: 80 },
+        dialogue: 'Waduh, kamu nemuin aku juga.',
+      },
+      {
         name: 'Ariman',
         position: { x: -55, z: -120 },
         dialogue: 'Yah aku ketawan.',
       },
       {
-        name: 'Putra',
-        position: { x: 40, z: 57 },
-        dialogue: 'Waduh, kamu nemuin aku juga.',
-      },
-      {
         name: 'Ananda',
-        position: { x: -40, z: 57 },
+        position: { x: 38, z: -75 },
         dialogue: 'Hehe, kamu jago banget nyarinya.',
-      },
-      {
-        name: 'Zait',
-        position: { x: -73, z: -67 },
-        dialogue: 'Astaga, aku gak nyangka kamu nemu aku.',
       },
       {
         name: 'Mahardhika',
