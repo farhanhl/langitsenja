@@ -330,7 +330,6 @@ export class GameManager {
   }
 
   togglePause() {
-    if (!this.missionActive) return;
     this.isPaused = !this.isPaused;
 
     if (this.isPaused) {
@@ -355,34 +354,60 @@ export class GameManager {
 
     if (!pauseMenu) {
       const newPauseMenu = document.createElement('div');
+      const cheatsUnlocked = this.gameState === 'won';
+      console.log(cheatsUnlocked);
+      console.log(this.gameState);
       newPauseMenu.id = 'pauseMenu';
       newPauseMenu.className = 'modal';
       newPauseMenu.innerHTML = `
-        <div class="modal-content">
-          <h2 class="modal-title">Langit Senja</h2>
-          <div class="control-section">
-            <strong class="control-title">Kontrol:</strong>
-            <div class="control-parent">
-              <p class="control-list"><span class="control-list-span">WASD / Arrow</span> - Bergerak</p>
-              <p class="control-list"><span class="control-list-span">Shift</span> - Lari</p>
-              <p class="control-list"><span class="control-list-span">Spacebar</span> - Lompat</p>
-              <p class="control-list"><span class="control-list-span">Mouse</span> - Putar Kamera</p>
-              <p class="control-list"><span class="control-list-span">E</span> - Berinteraksi</p>
-              <p class="control-list"><span class="control-list-span">F</span> - FullScreen</p>
-              <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
-            </div>
-          </div>
-          <div class="button-list">
-            <button id="resumeBtn">Lanjutkan</button>
-          </div>
-          <div class="button-list">
-            <button id="muteToggleBtn">🔊 Suara: ON</button>
-          </div>
-          <div class="button-list">
-            <button id="quitBtn"> Keluar</button>
-          </div>
-        </div>
-      `;
+  <div class="modal-content">
+    <h2 class="modal-title">Langit Senja</h2>
+
+    <div class="control-section">
+      <strong class="control-title">Kontrol:</strong>
+      <div class="control-parent">
+        <p class="control-list"><span class="control-list-span">WASD / Arrow</span> - Bergerak</p>
+        <p class="control-list"><span class="control-list-span">Shift</span> - Lari</p>
+        <p class="control-list"><span class="control-list-span">Spacebar</span> - Lompat</p>
+        <p class="control-list"><span class="control-list-span">Mouse</span> - Putar Kamera</p>
+        <p class="control-list"><span class="control-list-span">E</span> - Berinteraksi</p>
+        <p class="control-list"><span class="control-list-span">F</span> - FullScreen</p>
+        <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
+      </div>
+    </div>
+
+    ${
+      cheatsUnlocked
+        ? `
+    <div class="control-section" id="cheatSection">
+      <strong class="control-title">Cheat:</strong>
+      <div class="control-parent">
+        <p class="control-list"><span class="control-list-span">GODZILLA</span> - Memanggil Godzilla</p>
+        <p class="control-list"><span class="control-list-span">SANTA</span> - Memanggil Santa</p>
+        <p class="control-list"><span class="control-list-span">HOREG</span> - Rombongan sound Horeg</p>
+        <p class="control-list"><span class="control-list-span">TORNADO</span> - Memanggil Tornado</p>
+        <p class="control-list"><span class="control-list-span">UFO</span> - UFO menculik orang</p>
+        <p class="control-list"><span class="control-list-span">NIGHT</span> - Ubah waktu malam</p>
+        <p class="control-list"><span class="control-list-span">RAIN</span> - Cuaca hujan</p>
+        <p class="control-list"><span class="control-list-span">CLEAR</span> - Cuaca cerah</p>
+      </div>
+    </div>
+    `
+        : ''
+    }
+
+    <div class="button-list">
+      <button id="resumeBtn">Lanjutkan</button>
+    </div>
+    <div class="button-list">
+      <button id="muteToggleBtn">🔊 Suara: ON</button>
+    </div>
+    <div class="button-list">
+      <button id="quitBtn">Keluar</button>
+    </div>
+  </div>
+`;
+
       document.body.appendChild(newPauseMenu);
 
       document.getElementById('resumeBtn').addEventListener('click', () => {
@@ -408,7 +433,6 @@ export class GameManager {
       });
     } else {
       pauseMenu.style.display = 'flex';
-      // Update mute button text when menu is displayed
       this.updateMuteDisplay();
     }
   }
