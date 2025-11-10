@@ -18,7 +18,7 @@ export class CheatCodeManager {
       CLEAR: () => this.activateClear(),
     };
 
-    this.cheatSound = new Audio('music/cheat.mp3');
+    this.cheatSound = new Audio('/music/cheat.mp3');
     this.cheatSound.volume = 0.7;
 
     if (

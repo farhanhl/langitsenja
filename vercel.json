@@ -27,6 +27,15 @@
       }
     },
     {
+      "src": "/music/(.*)",
+      "dest": "/music/$1",
+      "headers": {
+        "Content-Type": "audio/mpeg",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "src": "/assets/(.*)",
       "dest": "/assets/$1",
       "headers": {

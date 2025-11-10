@@ -15,7 +15,7 @@ export class Horeg {
     this.rotationOffsetY = 0;
     this.scaleFactor = 0.58;
     this.destroyedBuildings = new Set();
-    this.music = new Audio('music/horeg.mp3');
+    this.music = new Audio('/music/horeg.mp3');
     this.music.volume = 0.75;
     this.music.loop = true;
 

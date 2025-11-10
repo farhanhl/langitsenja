@@ -16,7 +16,7 @@ export class Tornado {
     this.debrisParticles = [];
     this.particleCount = 100;
     this.pullRadius = 25;
-    this.sound = new Audio('music/wind.mp3');
+    this.sound = new Audio('/music/wind.mp3');
     this.sound.volume = 0.75;
     this.sound.loop = true;
 

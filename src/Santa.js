@@ -31,10 +31,10 @@ export class Santa {
     this.snowTimer = 0;
 
     // Audio
-    this.bellSound = new Audio('music/bell.mp3');
+    this.bellSound = new Audio('/music/bell.mp3');
     this.bellSound.volume = 0.6;
     this.bellSound.loop = true;
-    this.hohoSound = new Audio('music/hoho.mp3');
+    this.hohoSound = new Audio('/music/hoho.mp3');
     this.hohoSound.volume = 0.7;
 
     // Register audio elements with game manager for centralized mute

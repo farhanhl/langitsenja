@@ -21,7 +21,7 @@ export class Godzilla {
     this.rightArm = null;
     this.tail = null;
     this.head = null;
-    this.roarSound = new Audio('music/roar.mp3');
+    this.roarSound = new Audio('/music/roar.mp3');
     this.roarSound.volume = 0.7;
 
     // Register audio element with game manager for centralized mute

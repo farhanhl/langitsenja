@@ -40,15 +40,15 @@ export class GameManager {
 
   setupAudio() {
     // Create day music
-    this.dayMusic = new Audio('music/day.mp3');
+    this.dayMusic = new Audio('/music/day.mp3');
     this.dayMusic.loop = true;
     this.dayMusic.volume = 0.5;
 
-    this.nightMusic = new Audio('music/night.mp3');
+    this.nightMusic = new Audio('/music/night.mp3');
     this.nightMusic.loop = true;
     this.nightMusic.volume = 0.5;
 
-    this.foundSound = new Audio('music/found.mp3');
+    this.foundSound = new Audio('/music/found.mp3');
     this.foundSound.volume = 0.8;
 
     this.allAudioElements = [this.dayMusic, this.nightMusic, this.foundSound];
@@ -371,7 +371,7 @@ export class GameManager {
         <p class="control-list"><span class="control-list-span">Spacebar</span> - Lompat</p>
         <p class="control-list"><span class="control-list-span">Mouse</span> - Putar Kamera</p>
         <p class="control-list"><span class="control-list-span">E</span> - Berinteraksi</p>
-        <p class="control-list"><span class="control-list-span">F</span> - FullScreen</p>
+        <p class="control-list"><span class="control-list-span">F</span> - Fullscreen</p>
         <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
       </div>
     </div>
