@@ -72,7 +72,6 @@ export class NPCManager {
   createMinecraftCharacter(color, scale = 1) {
     const group = new THREE.Group();
 
-    // Body
     const bodyGeometry = new THREE.BoxGeometry(
       0.8 * scale,
       1.2 * scale,
@@ -84,7 +83,6 @@ export class NPCManager {
     body.castShadow = true;
     group.add(body);
 
-    // Head
     const headGeometry = new THREE.BoxGeometry(
       0.6 * scale,
       0.6 * scale,
@@ -96,7 +94,6 @@ export class NPCManager {
     head.castShadow = true;
     group.add(head);
 
-    // Arms
     const armGeometry = new THREE.BoxGeometry(
       0.3 * scale,
       0.9 * scale,
@@ -114,7 +111,6 @@ export class NPCManager {
     rightArm.castShadow = true;
     group.add(rightArm);
 
-    // Legs
     const legGeometry = new THREE.BoxGeometry(
       0.3 * scale,
       0.9 * scale,
@@ -672,27 +668,27 @@ export class NPCManager {
       {
         name: 'Zait',
         position: { x: 30, z: 75 },
-        dialogue: 'Astaga, aku gak nyangka kamu nemu aku.',
+        dialogue: 'Hahaha kamu pasti kesusahan jalan kesininya ya.',
       },
       {
         name: 'Putra',
         position: { x: -38, z: 80 },
-        dialogue: 'Waduh, kamu nemuin aku juga.',
+        dialogue: 'Wah kamu jago banget, padahal aku udah ngumpet jauh.',
       },
       {
         name: 'Ariman',
-        position: { x: -55, z: -120 },
-        dialogue: 'Yah aku ketawan.',
+        position: { x: 35, z: -5 },
+        dialogue: 'Yah, tadi mau ngumpet tapi diajak ngopi sama temen.',
       },
       {
         name: 'Ananda',
         position: { x: 38, z: -75 },
-        dialogue: 'Hehe, kamu jago banget nyarinya.',
+        dialogue: 'Aduh, udah ngumpet jauh masih ketawan aja.',
       },
       {
         name: 'Mahardhika',
-        position: { x: -3, z: 22 },
-        dialogue: 'Haha, ketahuan juga deh aku.',
+        position: { x: -28, z: 3 },
+        dialogue: 'Yah ketawan, yaudah aku jajan dulu deh.',
       },
     ];
 
@@ -821,9 +817,9 @@ export class NPCManager {
       bird.mesh.position.z = bird.centerZ + Math.sin(bird.angle) * bird.radius;
       bird.mesh.rotation.y = bird.angle + Math.PI / 2;
       if (bird.mesh.userData.wings) {
-        // Increment wing flapping phase using delta time instead of Date.now()
         bird.wingFlapPhase = (bird.wingFlapPhase || 0) + delta * bird.flapSpeed;
-        bird.mesh.userData.wings.rotation.z = Math.sin(index + bird.wingFlapPhase) * 0.3;
+        bird.mesh.userData.wings.rotation.z =
+          Math.sin(index + bird.wingFlapPhase) * 0.3;
       }
     });
 
