@@ -371,7 +371,7 @@ export class GameManager {
         <p class="control-list"><span class="control-list-span">Spacebar</span> - Lompat</p>
         <p class="control-list"><span class="control-list-span">Mouse</span> - Putar Kamera</p>
         <p class="control-list"><span class="control-list-span">E</span> - Berinteraksi</p>
-        <p class="control-list"><span class="control-list-span">F</span> - Fullscreen</p>
+        <p class="control-list"><span class="control-list-span">F11</span> - Fullscreen</p>
         <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
       </div>
     </div>

@@ -399,7 +399,7 @@ class LangitSenja {
   }
 
   handleFKey(e) {
-    if (e.key.toLowerCase() === 'f') {
+    if (e.key === 'F11') {
       window.toggleFullscreen();
       e.preventDefault();
     }
