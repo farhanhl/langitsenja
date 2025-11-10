@@ -821,8 +821,9 @@ export class NPCManager {
       bird.mesh.position.z = bird.centerZ + Math.sin(bird.angle) * bird.radius;
       bird.mesh.rotation.y = bird.angle + Math.PI / 2;
       if (bird.mesh.userData.wings) {
-        bird.mesh.userData.wings.rotation.z =
-          Math.sin(index + Date.now() * 0.01 * bird.flapSpeed) * 0.3;
+        // Increment wing flapping phase using delta time instead of Date.now()
+        bird.wingFlapPhase = (bird.wingFlapPhase || 0) + delta * bird.flapSpeed;
+        bird.mesh.userData.wings.rotation.z = Math.sin(index + bird.wingFlapPhase) * 0.3;
       }
     });
 

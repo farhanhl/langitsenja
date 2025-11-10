@@ -84,7 +84,7 @@ export class CityBuilder {
 
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
+    ground.receiveShadow = false; // Disable ground shadow reception for performance
 
     this.scene.add(ground);
     this.ground = ground;
@@ -107,7 +107,7 @@ export class CityBuilder {
     const sidewalkGeometry = new THREE.BoxGeometry(width, 0.1, depth);
     const sidewalk = new THREE.Mesh(sidewalkGeometry, material);
     sidewalk.position.set(x, 0.045, z);
-    sidewalk.receiveShadow = true;
+    sidewalk.receiveShadow = false; // Disable sidewalk shadow reception for performance
 
     this.scene.add(sidewalk);
     this.sidewalks.push(sidewalk);
@@ -170,7 +170,7 @@ export class CityBuilder {
       const roadGeometry = new THREE.BoxGeometry(pos.width, 0.1, pos.depth);
       const road = new THREE.Mesh(roadGeometry, roadMaterial);
       road.position.set(pos.x, 0.05, pos.z);
-      road.receiveShadow = true;
+      road.receiveShadow = false; // Disable road shadow reception for performance
       this.scene.add(road);
       this.roads.push(road);
 
@@ -1014,7 +1014,7 @@ export class CityBuilder {
       new THREE.MeshLambertMaterial({ color: 0x2563eb })
     );
     stool.position.set(-0.8, 0.19, -0.5);
-    stool.castShadow = false;  // Disable shadow for performance
+    stool.castShadow = false; // Disable shadow for performance
     stall.add(stool);
 
     const workLight = new THREE.PointLight(0xffe3b1, 0.9, 10, 2.0);

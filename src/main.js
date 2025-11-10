@@ -12,6 +12,11 @@ import { Horeg } from './Horeg.js';
 import { Santa } from './Santa.js';
 import { Tornado } from './Tornado.js';
 import { CheatCodeManager } from './CheatCodeManager.js';
+import { ObjectPool } from './ObjectPool.js';
+import { FrustumCuller } from './FrustumCuller.js';
+import { BatchRenderer } from './BatchRenderer.js';
+import { DistanceCuller } from './DistanceCuller.js';
+import { LODManager } from './LODManager.js';
 
 class LangitSenja {
   constructor() {
@@ -26,7 +31,13 @@ class LangitSenja {
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.BasicShadowMap; // Less intensive than PCFSoft
+    // Additional performance optimizations
+    this.renderer.physicallyCorrectLights = false; // Faster lighting calculations
+    this.renderer.outputEncoding = THREE.sRGBEncoding; // Optimizes color processing
+    this.renderer.toneMapping = THREE.NoToneMapping; // Removes tone mapping processing overhead
+    this.renderer.toneMappingExposure = 1.0;
+    
     document.body.appendChild(this.renderer.domElement);
     this.renderer.domElement.id = 'gameCanvas';
     this.clock = new THREE.Clock();
@@ -83,8 +94,13 @@ class LangitSenja {
     this.sunLight.shadow.camera.top = 93.75;
     this.sunLight.shadow.camera.bottom = -93.75;
     this.sunLight.shadow.camera.far = 375;
-    this.sunLight.shadow.mapSize.width = 2048;
-    this.sunLight.shadow.mapSize.height = 2048;
+    // Optimize shadow map resolution for performance
+    this.sunLight.shadow.mapSize.width = 1024;  // Reduced from 2048
+    this.sunLight.shadow.mapSize.height = 1024; // Reduced from 2048
+    // Optimize shadow rendering
+    this.sunLight.shadow.bias = 0.0005;
+    this.sunLight.shadow.normalBias = 0.5;
+    this.sunLight.shadow.radius = 2; // Use PCF filtering radius for softer shadows
     this.scene.add(this.sunLight);
     const hemiLight = new THREE.HemisphereLight(0xff9966, 0x775533, 0.4);
     this.scene.add(hemiLight);
@@ -94,8 +110,20 @@ class LangitSenja {
     requestAnimationFrame(() => this.animate());
 
     const delta = this.clock.getDelta();
+    
+    // Apply frustum culling to only update visible objects
+    if (this.frustumCuller) {
+      this.frustumCuller.updateFrustum();
+      
+      // Only update NPCs that are in the camera view
+      if (this.npcManager) {
+        this.npcManager.update(delta, this.frustumCuller);
+      }
+    } else {
+      this.npcManager.update(delta);
+    }
+    
     this.player.update(delta);
-    this.npcManager.update(delta);
     this.gameManager.update(delta);
     this.skySystem.update();
 
@@ -127,6 +155,32 @@ class LangitSenja {
       this.horrorManager.update(delta);
     }
 
+    // Apply performance optimizations before rendering
+    
+    // Update batched objects if needed
+    if (this.batchRenderer) {
+      this.batchRenderer.update();
+    }
+
+    // Apply distance-based culling to hide far objects
+    if (this.distanceCuller && this.player) {
+      this.distanceCuller.player = this.player;
+      // Apply distance culling to various object types
+      if (this.npcManager && this.npcManager.npcs) {
+        this.distanceCuller.updateVisibility(this.npcManager.npcs.map(npc => npc.mesh));
+      }
+      if (this.npcManager && this.npcManager.vehicleNPCs) {
+        this.distanceCuller.updateVisibility(this.npcManager.vehicleNPCs.map(vehicle => vehicle.mesh));
+      }
+    }
+
+    // Update Level of Detail based on distance
+    if (this.lodManager) {
+      this.lodManager.player = this.player;
+      this.lodManager.update();
+    }
+
+    // Render scene
     this.renderer.render(this.scene, this.camera);
   }
   
