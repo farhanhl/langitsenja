@@ -366,10 +366,15 @@ export class GameManager {
             <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
           </div>
         </div>
+        <div class="button-full">
+          <button id="muteToggleBtn">Suara: ON/OFF</button>
+        </div>
 
-        <div class="button-list"><button id="resumeBtn">Lanjutkan</button></div>
-        <div class="button-list"><button id="muteToggleBtn">...</button></div>
-        <div class="button-list"><button id="quitBtn">Keluar</button></div>
+        <div class="button-row">
+          <button id="resumeBtn">Lanjutkan</button>
+          <button id="quitBtn" class="secondary">Keluar</button>
+        </div>
+        <p style="margin-top: 10px"> Developed with ❤️ by <a href="https://farhanhl.dev" style="color: white;" target="_blank" rel="noopener noreferrer"> Farhan Hadi Lutfi </a></p>
       </div>
     `;
       document.body.appendChild(pauseMenu);

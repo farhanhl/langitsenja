@@ -348,6 +348,24 @@ body {
   box-shadow: 0 0 20px rgba(255, 51, 0, 0.5);
 }
 
+.button-full button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  font-size: 16px;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+}
+
+.button-row button {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+}
+
 /* Pulse animation untuk mute button */
 @keyframes muteButtonPulse {
   0%,
