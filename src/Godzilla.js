@@ -8,8 +8,8 @@ export class Godzilla {
     this.gameManager = gameManager; // Added reference to game manager for centralized mute
     this.group = null;
     this.active = false;
-    this.position = { x: 125, z: -125 };
-    this.targetPosition = { x: -125, z: 125 };
+    this.position = { x: 50, z: -50 };
+    this.targetPosition = { x: -50, z: 50 };
     this.speed = 8;
     this.destroyedBuildings = new Set();
     this.walkCycle = 0;
@@ -25,7 +25,10 @@ export class Godzilla {
     this.roarSound.volume = 0.7;
 
     // Register audio element with game manager for centralized mute
-    if (this.gameManager && typeof this.gameManager.addAudioElement === 'function') {
+    if (
+      this.gameManager &&
+      typeof this.gameManager.addAudioElement === 'function'
+    ) {
       this.gameManager.addAudioElement(this.roarSound);
     }
   }
@@ -355,7 +358,7 @@ export class Godzilla {
 
     this.active = false;
     this.destroyedBuildings.clear();
-    this.position = { x: -125, z: -125 };
+    this.position = { x: 50, z: -50 };
   }
 
   isActive() {

@@ -16,6 +16,24 @@ export class Tornado {
     this.debrisParticles = [];
     this.particleCount = 100;
     this.pullRadius = 25;
+    this.sound = new Audio('music/wind.mp3');
+    this.sound.volume = 0.75;
+    this.sound.loop = true;
+
+    // Register audio element with game manager for centralized mute
+    if (
+      this.gameManager &&
+      typeof this.gameManager.addAudioElement === 'function'
+    ) {
+      this.gameManager.addAudioElement(this.sound);
+    }
+  }
+
+  playSound() {
+    try {
+      this.sound.currentTime = 0;
+      this.sound.play().catch(() => {});
+    } catch {}
   }
 
   spawn() {
@@ -23,6 +41,7 @@ export class Tornado {
 
     this.active = true;
     this.createTornado();
+    this.playSound();
   }
 
   createTornado() {
@@ -45,7 +64,7 @@ export class Tornado {
         true
       );
 
-      const material = new THREE.MeshStandardMaterial({
+      const material = new THREE.MeshBasicMaterial({
         color: 0x666666,
         transparent: true,
         opacity: 0.3 - i * 0.02,
@@ -56,6 +75,8 @@ export class Tornado {
       const cone = new THREE.Mesh(geometry, material);
       cone.position.y = i * 4.5;
       cone.rotation.y = i * 0.3;
+      cone.castShadow = false; // Disable shadows for performance
+      cone.receiveShadow = false; // Disable shadows for performance
       this.group.add(cone);
       cones.push(cone);
     }
@@ -80,7 +101,10 @@ export class Tornado {
     const positions = [];
     const velocities = [];
 
-    for (let i = 0; i < this.particleCount; i++) {
+    // Reduce particle count for performance
+    const reducedParticleCount = Math.floor(this.particleCount * 0.6); // 60% of original
+
+    for (let i = 0; i < reducedParticleCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const radius = Math.random() * 15;
       const height = Math.random() * 50;
@@ -121,10 +145,11 @@ export class Tornado {
     for (let i = 0; i < 8; i++) {
       const cloudGeometry = new THREE.SphereGeometry(
         5 + Math.random() * 3,
-        16,
-        16
+        8, // Reduced segments for performance (from 16 to 8)
+        8 // Reduced segments for performance (from 16 to 8)
       );
-      const cloudMaterial = new THREE.MeshStandardMaterial({
+      const cloudMaterial = new THREE.MeshBasicMaterial({
+        // Use Basic instead of Standard for performance
         color: 0x333333,
         transparent: true,
         opacity: 0.6,
@@ -136,6 +161,8 @@ export class Tornado {
         55 + Math.random() * 3,
         (Math.random() - 0.5) * 15
       );
+      cloud.castShadow = false; // Disable shadows for performance
+      cloud.receiveShadow = false; // Disable shadows for performance
       cloudGroup.add(cloud);
     }
 
@@ -162,10 +189,14 @@ export class Tornado {
         this.tornadoLight.position.set(this.position.x, 30, this.position.z);
       }
 
-      if (this.cones) {
-        this.cones.forEach((cone, i) => {
-          cone.rotation.y += this.rotationSpeed * delta * (1 + i * 0.1);
-        });
+      // Only update rotation for some of the cones to reduce computation
+      if (Math.random() < 0.7) {
+        // Only update 70% of the time
+        if (this.cones) {
+          this.cones.forEach((cone, i) => {
+            cone.rotation.y += this.rotationSpeed * delta * (1 + i * 0.1);
+          });
+        }
       }
 
       this.animateDebrisParticles(delta);
@@ -174,9 +205,17 @@ export class Tornado {
         this.cloudGroup.rotation.y += delta * 0.5;
       }
 
-      this.pullNearbyObjects(delta);
+      // Only pull nearby objects periodically to reduce computation
+      if (Math.random() < 0.4) {
+        // Only pull 40% of the time
+        this.pullNearbyObjects(delta);
+      }
 
-      this.scareNearbyNPCs();
+      // Only scare nearby NPCs periodically to reduce computation
+      if (Math.random() < 0.3) {
+        // Only scare 30% of the time
+        this.scareNearbyNPCs();
+      }
     } else {
       this.despawn();
     }
@@ -187,7 +226,10 @@ export class Tornado {
 
     const positions = this.particles.geometry.attributes.position.array;
 
-    for (let i = 0; i < this.particleCount; i++) {
+    // Only update a subset of particles to reduce computation
+    const updateCount = Math.floor(this.particleVelocities.length * 0.7); // Update 70% of particles
+
+    for (let i = 0; i < updateCount; i++) {
       const vel = this.particleVelocities[i];
       const idx = i * 3;
 
@@ -210,7 +252,13 @@ export class Tornado {
   pullNearbyObjects(delta) {
     if (!this.npcManager || !this.npcManager.npcs) return;
 
-    this.npcManager.npcs.forEach((npc) => {
+    // Limit number of objects processed to prevent performance issues
+    const maxAffectedNPCs = 10; // Limit to 10 NPCs at a time
+    let affectedCount = 0;
+
+    for (const npc of this.npcManager.npcs) {
+      if (affectedCount >= maxAffectedNPCs) break; // Stop after max count
+
       if (!npc.mesh) return;
       const dx = npc.mesh.position.x - this.position.x;
       const dz = npc.mesh.position.z - this.position.z;
@@ -246,8 +294,10 @@ export class Tornado {
         if (liftedObj.height > 50) {
           this.dropObject(liftedObj);
         }
+
+        affectedCount++;
       }
-    });
+    }
   }
 
   dropObject(liftedObj) {
@@ -280,8 +330,13 @@ export class Tornado {
     if (!this.npcManager || !this.npcManager.npcs) return;
 
     const scareRadius = 40;
+    // Limit number of NPCs scared to prevent performance issues
+    const maxAffectedNPCs = 8; // Limit to 8 NPCs at a time
+    let affectedCount = 0;
 
-    this.npcManager.npcs.forEach((npc) => {
+    for (const npc of this.npcManager.npcs) {
+      if (affectedCount >= maxAffectedNPCs) break; // Stop after max count
+
       if (!npc.mesh) return;
 
       const dx = npc.mesh.position.x - this.position.x;
@@ -296,8 +351,10 @@ export class Tornado {
 
         npc.targetPosition = { x: fleeX, z: fleeZ };
         npc.speed = npc.walkSpeed * 3;
+
+        affectedCount++;
       }
-    });
+    }
   }
 
   despawn() {
@@ -320,6 +377,16 @@ export class Tornado {
     this.active = false;
     this.liftedObjects = [];
     this.position = { x: 0, z: -125 };
+    this.sound.pause();
+    this.sound = null;
+  }
+
+  destroy() {
+    this.despawn();
+    if (this.sound) {
+      this.sound.pause();
+      this.sound = null;
+    }
   }
 
   isActive() {

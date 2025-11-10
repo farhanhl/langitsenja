@@ -3,7 +3,7 @@ export class CheatCodeManager {
     this.game = game;
     this.inputBuffer = '';
     this.bufferTimeout = null;
-    this.cheatHintTimeout = null; // Store timeout reference
+    this.cheatHintTimeout = null;
     this.maxBufferLength = 20;
     this.resetDelay = 2000;
 
@@ -12,8 +12,7 @@ export class CheatCodeManager {
       SANTA: () => this.activateSanta(),
       HOREG: () => this.activateHoreg(),
       TORNADO: () => this.activateTornado(),
-      UFO: () => this.activateUFO(),
-      ALIEN: () => this.activateUFO(),
+      UFO: () => this.activateUFOCheat(),
       NIGHT: () => this.activateNight(),
       RAIN: () => this.activateRain(),
       CLEAR: () => this.activateClear(),
@@ -29,7 +28,6 @@ export class CheatCodeManager {
       this.game.gameManager.addAudioElement(this.cheatSound);
     }
 
-    // Store bound function for proper removal
     this.boundKeyPress = this.handleKeyPress.bind(this);
 
     this.setupKeyListener();
@@ -39,7 +37,7 @@ export class CheatCodeManager {
   setupKeyListener() {
     window.addEventListener('keypress', this.boundKeyPress);
   }
-  
+
   handleKeyPress(event) {
     if (
       event.target.tagName === 'INPUT' ||
@@ -89,12 +87,12 @@ export class CheatCodeManager {
     }
 
     if (this.game.godzilla.isActive()) {
-      this.showNotification('Godzilla is already rampaging!', 'warning');
+      this.showNotification('GODZILLA is already active!', 'warning');
       return;
     }
 
     this.game.godzilla.spawn();
-    this.showNotification('🦖 GODZILLA HAS ARRIVED! 🦖', 'danger');
+    this.showNotification('GODZILLA Activated', 'danger');
   }
 
   activateSanta() {
@@ -103,12 +101,12 @@ export class CheatCodeManager {
     }
 
     if (this.game.santa.isActive()) {
-      this.showNotification('santa is already rampaging!', 'warning');
+      this.showNotification('SANTA is already active!', 'warning');
       return;
     }
 
     this.game.santa.spawn();
-    this.showNotification('🦖 santa HAS ARRIVED! 🦖', 'danger');
+    this.showNotification('SANTA Activated', 'danger');
   }
 
   activateHoreg() {
@@ -117,12 +115,12 @@ export class CheatCodeManager {
     }
 
     if (this.game.horeg.isActive()) {
-      this.showNotification('horeg is already rampaging!', 'warning');
+      this.showNotification('HOREG is already active!', 'warning');
       return;
     }
 
     this.game.horeg.spawn();
-    this.showNotification('🦖 horeg HAS ARRIVED! 🦖', 'danger');
+    this.showNotification('HOREG Activated', 'danger');
   }
 
   activateTornado() {
@@ -131,26 +129,31 @@ export class CheatCodeManager {
     }
 
     if (this.game.tornado.isActive()) {
-      this.showNotification('Tornado is already raging!', 'warning');
+      this.showNotification('TORNADO is already active!', 'warning');
       return;
     }
 
     this.game.tornado.spawn();
-    this.showNotification('🌪️ TORNADO HAS SPAWNED! 🌪️', 'danger');
+    this.showNotification('TORNADO Activated', 'danger');
   }
 
-  activateUFO() {
+  activateUFOCheat() {
     if (!this.game.ufo) {
       return;
     }
 
-    if (this.game.ufo.isActive()) {
-      this.showNotification('UFO is already here!', 'warning');
+    if (this.game.gameManager && this.game.gameManager.gameState === 'lost') {
+      this.showNotification('UFO tidak bisa dipanggil malam hari', 'warning');
       return;
     }
 
-    this.game.ufo.spawn();
-    this.showNotification('🛸 UFO HAS ARRIVED! 🛸', 'info');
+    if (this.game.ufo.isActive()) {
+      this.showNotification('UFO is already active!', 'warning');
+      return;
+    } else {
+      this.game.ufo.activateUFO();
+      this.showNotification('UFO Activated', 'danger');
+    }
   }
 
   activateNight() {
@@ -159,7 +162,7 @@ export class CheatCodeManager {
     }
 
     this.game.gameManager.activateNightCheat();
-    this.showNotification('🌙 NIGHT MODE ACTIVATED! 🌙', 'info');
+    this.showNotification('NIGHT Activated', 'danger');
   }
 
   activateRain() {
@@ -168,7 +171,7 @@ export class CheatCodeManager {
     }
 
     this.game.gameManager.activateRainCheat();
-    this.showNotification('🌧️ RAIN MODE ACTIVATED! 🌧️', 'info');
+    this.showNotification('RAIN Activated', 'danger');
   }
 
   activateClear() {
@@ -177,7 +180,7 @@ export class CheatCodeManager {
     }
 
     this.game.gameManager.activateClearCheat();
-    this.showNotification('☀️ CLEAR WEATHER ACTIVATED! ☀️', 'info');
+    this.showNotification('CLEAR Activated', 'danger');
   }
 
   showNotification(message, type = 'info') {
@@ -232,17 +235,15 @@ export class CheatCodeManager {
 
     if (!hasSeenHint) {
       this.cheatHintTimeout = setTimeout(() => {
-        this.showNotification('💡 Tip: Try typing secret codes...', 'info');
+        this.showNotification('💡 Tip: Try typing secret codes...', 'danger');
         localStorage.setItem('cheatHintSeen', 'true');
       }, 5000);
     }
   }
-  
-  // Clean up event listeners to prevent memory leaks
+
   destroy() {
     window.removeEventListener('keypress', this.boundKeyPress);
-    
-    // Clear any pending timeouts
+
     if (this.bufferTimeout) {
       clearTimeout(this.bufferTimeout);
     }

@@ -5,7 +5,7 @@ export class UFO {
     this.scene = scene;
     this.npcManager = npcManager;
     this.gameManager = gameManager;
-    this.isActive = false;
+    this._isActive = false;
     this.isAbducting = false;
     this.mesh = null;
     this.beamLight = null;
@@ -18,9 +18,6 @@ export class UFO {
     this.inputSequence = [];
     this.secretCode = ['u', 'f', 'o'];
     this.inputTimeout = null;
-    
-    // Store bound function for proper removal
-    this.boundKeyDown = this.handleKeyDown.bind(this);
 
     this.createUFO();
     this.setupInputListener();
@@ -103,36 +100,9 @@ export class UFO {
   setupInputListener() {
     window.addEventListener('keydown', this.boundKeyDown);
   }
-  
-  handleKeyDown(e) {
-    const key = e.key.toLowerCase();
-    if (this.inputTimeout) {
-      clearTimeout(this.inputTimeout);
-    }
-    this.inputSequence.push(key);
-    if (this.inputSequence.length > 3) {
-      this.inputSequence.shift();
-    }
-    if (this.inputSequence.join('') === this.secretCode.join('')) {
-      this.activateUFO();
-      this.inputSequence = [];
-    }
-    this.inputTimeout = setTimeout(() => {
-      this.inputSequence = [];
-    }, 2000);
-  }
 
   activateUFO() {
-    if (this.isActive || this.state !== 'idle') {
-      return;
-    }
-
-    if (this.gameManager && this.gameManager.gameState === 'lost') {
-      this.showNotification('🌙 UFOs only appear during sunset...');
-      return;
-    }
-
-    this.isActive = true;
+    this._isActive = true;
     this.state = 'descending';
 
     const walkingNPCs = this.npcManager.npcs.filter(
@@ -151,58 +121,32 @@ export class UFO {
       this.mesh.position.y = this.height;
       this.mesh.position.z = this.targetNPC.mesh.position.z;
     } else {
-      this.state = 'idle';
-      this.isActive = false;
+      this.resetState(); // Use resetState to properly reset all values
       return;
     }
-    this.showNotification('🛸 ADA UFO DATANG!');
-  }
-
-  showNotification(message) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 255, 0, 0.9);
-      color: black;
-      padding: 20px 40px;
-      border-radius: 10px;
-      font-size: 24px;
-      font-weight: bold;
-      z-index: 10000;
-      animation: pulse 1s ease-in-out infinite;
-      box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
   }
 
   update(delta) {
-    if (!this.mesh) return;
-    this.mesh.rotation.y += this.rotationSpeed * delta;
-    switch (this.state) {
-      case 'descending':
-        this.updateDescending(delta);
-        break;
-      case 'abducting':
-        this.updateAbducting(delta);
-        break;
-      case 'ascending':
-        this.updateAscending(delta);
-        break;
+    if (this._isActive == true) {
+      if (!this.mesh) return;
+      this.mesh.rotation.y += this.rotationSpeed * delta;
+      switch (this.state) {
+        case 'descending':
+          this.updateDescending(delta);
+          break;
+        case 'abducting':
+          this.updateAbducting(delta);
+          break;
+        case 'ascending':
+          this.updateAscending(delta);
+          break;
+      }
     }
   }
 
   updateDescending(delta) {
     if (!this.targetNPC) {
-      this.state = 'idle';
-      this.isActive = false;
+      this.resetState();
       return;
     }
 
@@ -266,30 +210,63 @@ export class UFO {
         if (index > -1) {
           this.npcManager.npcs.splice(index, 1);
         }
-        this.showNotification('👽 UFO SUDAH MENCULIK ORANG!');
         this.targetNPC = null;
       }
 
-      this.state = 'idle';
-      this.isActive = false;
-      this.beamLight.material.opacity = 0;
+      this.resetState();
     }
   }
-  
+
+  isActive() {
+    return this._isActive && this.state !== 'idle';
+  }
+
+  resetState() {
+    this._isActive = false;
+    this.state = 'idle';
+    this.isAbducting = false;
+    if (this.beamLight && this.beamLight.material) {
+      this.beamLight.material.opacity = 0;
+    }
+    this.targetNPC = null;
+  }
+
+  despawn() {
+    if (!this._isActive) return; // If not active, nothing to despawn
+
+    if (this.targetNPC) {
+      this.scene.remove(this.targetNPC.mesh);
+      const index = this.npcManager.npcs.indexOf(this.targetNPC);
+      if (index > -1) {
+        this.npcManager.npcs.splice(index, 1);
+      }
+      this.targetNPC = null;
+    }
+
+    if (this.mesh && this.mesh.parent) {
+      this.mesh.parent.remove(this.mesh);
+    }
+
+    this.resetState(); // Reset all states
+  }
+
   // Clean up event listeners to prevent memory leaks
   destroy() {
     // Remove the event listener
     window.removeEventListener('keydown', this.boundKeyDown);
-    
+
     // Clear any pending timeout
     if (this.inputTimeout) {
       clearTimeout(this.inputTimeout);
       this.inputTimeout = null;
     }
-    
+
     // Remove UFO mesh from scene if it exists
     if (this.mesh && this.mesh.parent) {
       this.mesh.parent.remove(this.mesh);
     }
+
+    // Reset state to ensure no lingering activity
+    this.resetState();
   }
 }

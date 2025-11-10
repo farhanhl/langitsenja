@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 
 export class Santa {
-  constructor(scene, cityData, npcManager, weatherSystem, skySystem, gameManager) {
+  constructor(
+    scene,
+    cityData,
+    npcManager,
+    weatherSystem,
+    skySystem,
+    gameManager
+  ) {
     this.scene = scene;
     this.cityData = cityData;
     this.npcManager = npcManager;
@@ -12,8 +19,8 @@ export class Santa {
     this.group = null;
     this.active = false;
 
-    this.position = { x: 125, z: -125, y: 45 };
-    this.targetPosition = { x: -125, z: 125, y: 45 };
+    this.position = { x: 50, z: -50, y: 50 };
+    this.targetPosition = { x: -50, z: 50, y: 50 };
     this.speed = 18;
 
     // Anim params
@@ -31,7 +38,10 @@ export class Santa {
     this.hohoSound.volume = 0.7;
 
     // Register audio elements with game manager for centralized mute
-    if (this.gameManager && typeof this.gameManager.addAudioElement === 'function') {
+    if (
+      this.gameManager &&
+      typeof this.gameManager.addAudioElement === 'function'
+    ) {
       this.gameManager.addAudioElement(this.bellSound);
       this.gameManager.addAudioElement(this.hohoSound);
     }
@@ -81,7 +91,7 @@ export class Santa {
       this.group = null;
     }
     this.active = false;
-    this.position = { x: -135, z: -135, y: 50 };
+    this.position = { x: 50, z: -50, y: 50 };
   }
 
   createSinterclass() {
