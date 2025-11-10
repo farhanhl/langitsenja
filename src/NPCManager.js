@@ -690,6 +690,11 @@ export class NPCManager {
         position: { x: -28, z: 3 },
         dialogue: 'Yah ketawan, yaudah aku jajan dulu deh.',
       },
+      {
+        name: 'Hari',
+        position: { x: -33, z: -93 },
+        dialogue: 'Ah ketawan, eh iya Nanda ada di belakang Masjid HAHAHA.',
+      },
     ];
 
     specialCharacters.forEach((char) => {

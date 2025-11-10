@@ -11,7 +11,7 @@ export class GameManager {
     this.missionActive = false;
     this.timeRemaining = 300;
     this.friendsFound = 0;
-    this.totalFriends = 5;
+    this.totalFriends = 6;
 
     this.nearbyNPC = null;
     this.interactionPromptElement =
