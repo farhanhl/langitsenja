@@ -27,7 +27,10 @@ class LangitSenja {
       0.1,
       1000
     );
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: true // Required for transparent rendering
+    });
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
@@ -37,6 +40,9 @@ class LangitSenja {
     this.renderer.outputEncoding = THREE.sRGBEncoding; // Optimizes color processing
     this.renderer.toneMapping = THREE.NoToneMapping; // Removes tone mapping processing overhead
     this.renderer.toneMappingExposure = 1.0;
+    
+    // Enable blending for particle effects
+    this.renderer.setClearAlpha(1); // Ensure proper background rendering
     
     document.body.appendChild(this.renderer.domElement);
     this.renderer.domElement.id = 'gameCanvas';

@@ -379,25 +379,82 @@ export class SkySystem {
   }
 
   createStars() {
-    const starGeometry = new THREE.BufferGeometry();
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.5,
-      transparent: true,
-    });
-
-    const starVertices = [];
-    for (let i = 0; i < 1000; i++) {
+    // Create GPU-based star particle system with optimized attributes
+    const starCount = 1000;
+    const positions = new Float32Array(starCount * 3);
+    const sizes = new Float32Array(starCount);
+    
+    for (let i = 0; i < starCount; i++) {
+      // Position stars in a spherical distribution around the sky
       const x = (Math.random() - 0.5) * 600;
       const y = Math.random() * 200 + 50;
       const z = (Math.random() - 0.5) * 600;
-      starVertices.push(x, y, z);
+      
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+      
+      // Random sizes for twinkling effect
+      sizes[i] = 0.3 + Math.random() * 0.4; // Size between 0.3 and 0.7
     }
 
-    starGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(starVertices, 3)
-    );
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    // Use shader material for more efficient rendering and twinkling effect
+    const starMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        color: { value: new THREE.Color(0xffffff) },
+        time: { value: 0 },
+        size: { value: 0.5 }
+      },
+      vertexShader: `
+        attribute float size;
+        uniform float time;
+        varying float vAlpha;
+        
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          
+          // Twinkling effect based on position and time (simplified for performance)
+          float twinkle = sin(position.x * 0.01 + time) * 
+                         sin(position.z * 0.01 + time * 1.3);
+          
+          // Calculate size with twinkling effect
+          float adjustedSize = size * (0.8 + 0.2 * twinkle);
+          
+          // Calculate alpha with twinkling effect
+          vAlpha = 0.7 + 0.2 * twinkle;
+          
+          gl_PointSize = adjustedSize * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        varying float vAlpha;
+        
+        void main() {
+          // Create circular star shape
+          vec2 coord = gl_PointCoord - vec2(0.5);
+          float distance = length(coord);
+          
+          // Only render if within the circular area
+          if (distance > 0.5) {
+            discard;
+          }
+          
+          // Calculate alpha based on distance from center of the star for smooth edges
+          float alpha = 1.0 - smoothstep(0.4, 0.5, distance);
+          gl_FragColor = vec4(color, alpha * vAlpha);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
     this.stars = new THREE.Points(starGeometry, starMaterial);
     this.scene.add(this.stars);
   }
@@ -419,6 +476,11 @@ export class SkySystem {
 
     if (this.moonGlow && this.isNight) {
       this.moonGlow.rotation.y += 0.0005;
+    }
+    
+    // Update shader uniforms for twinkling stars
+    if (this.stars && this.stars.material) {
+      this.stars.material.uniforms.time.value = performance.now() / 1000;
     }
   }
 }

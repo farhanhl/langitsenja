@@ -56,7 +56,7 @@ export class CityBuilder {
       rotate: 270,
       scale: 0.98,
     });
-    this.createTamanLabirin(30, 71.6, {
+    this.createTamanLabirin(30, 72.2, {
       rotate: 270,
       scale: 0.98,
     });
@@ -84,7 +84,7 @@ export class CityBuilder {
 
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = false; // Disable ground shadow reception for performance
+    ground.receiveShadow = false;
 
     this.scene.add(ground);
     this.ground = ground;
@@ -107,7 +107,7 @@ export class CityBuilder {
     const sidewalkGeometry = new THREE.BoxGeometry(width, 0.1, depth);
     const sidewalk = new THREE.Mesh(sidewalkGeometry, material);
     sidewalk.position.set(x, 0.045, z);
-    sidewalk.receiveShadow = false; // Disable sidewalk shadow reception for performance
+    sidewalk.receiveShadow = false;
 
     this.scene.add(sidewalk);
     this.sidewalks.push(sidewalk);
@@ -170,7 +170,7 @@ export class CityBuilder {
       const roadGeometry = new THREE.BoxGeometry(pos.width, 0.1, pos.depth);
       const road = new THREE.Mesh(roadGeometry, roadMaterial);
       road.position.set(pos.x, 0.05, pos.z);
-      road.receiveShadow = false; // Disable road shadow reception for performance
+      road.receiveShadow = false;
       this.scene.add(road);
       this.roads.push(road);
 
@@ -1014,7 +1014,7 @@ export class CityBuilder {
       new THREE.MeshLambertMaterial({ color: 0x2563eb })
     );
     stool.position.set(-0.8, 0.19, -0.5);
-    stool.castShadow = false; // Disable shadow for performance
+    stool.castShadow = false;
     stall.add(stool);
 
     const workLight = new THREE.PointLight(0xffe3b1, 0.9, 10, 2.0);
@@ -2906,7 +2906,7 @@ export class CityBuilder {
     {
       scale = 1.4,
       rotate = 0,
-      size = { length: 45, width: 22.5 },
+      size = { length: 44, width: 19 },
       registerColliders = true,
 
       rows = 11,
@@ -3617,16 +3617,14 @@ export class CityBuilder {
       pricePertalite = 10000,
       pricePertamax = 13500,
 
-      // NPC
       withVendor = true,
       npcScale = 0.9,
-      npcColor = 0x2563eb, // biru kaos
-      vendorOffsetZ = 1.0, // mundurkan/majukan vendor relatif ke kios
+      npcColor = 0x2563eb,
+      vendorOffsetZ = 1.0,
     } = {}
   ) {
     const group = new THREE.Group();
 
-    // ---------- Utils ----------
     function box(w, h, d, mat) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       m.castShadow = true;
@@ -3640,7 +3638,6 @@ export class CityBuilder {
       return m;
     }
 
-    // karakter (simple minecraft-ish, sama gaya dengan fungsi kamu)
     function makeMinecraftCharacterWithJoints(color, cScale = 1) {
       const g = new THREE.Group();
       const body = new THREE.Mesh(
@@ -3693,7 +3690,6 @@ export class CityBuilder {
       return g;
     }
 
-    // collider registrar (aman, daftar setelah transform)
     const self = this;
     function regCollider(mesh, name) {
       if (!registerColliders) return;
@@ -3708,7 +3704,6 @@ export class CityBuilder {
       } catch (_) {}
     }
 
-    // ---------- Materials ----------
     const matFloor = new THREE.MeshStandardMaterial({
       color: floorColor,
       roughness: 0.95,
@@ -3755,21 +3750,18 @@ export class CityBuilder {
     marka.position.set(0, 0.09, 1.2);
     group.add(marka);
 
-    // ---------- Kanopi (opsional) ----------
     let canopy;
     if (hasCanopy) {
       canopy = box(6.0, 0.12, 3.0, matTrim);
       canopy.position.set(0, 3.0, 0);
       group.add(canopy);
 
-      // border strip brand
       const strip = box(6.0, 0.08, 0.2, matBrand);
       strip.position.set(0, 3.06, 1.4);
       group.add(strip);
 
-      // tiang turun ke tanah (menghitung tinggi otomatis)
       const groundY = 0;
-      const canopyUnderY = canopy.position.y - 0.06; // setengah tebal canopy = 0.06
+      const canopyUnderY = canopy.position.y - 0.06;
       const poleH = Math.max(0.1, canopyUnderY - groundY - 0.01);
       const poleGeo = new THREE.CylinderGeometry(0.09, 0.09, poleH, 16);
       [
@@ -3785,19 +3777,16 @@ export class CityBuilder {
         group.add(p);
       });
 
-      // lampu hangat di bawah kanopi
       const lamp = new THREE.PointLight(0xffe0b5, 0.85, 12, 2.0);
       lamp.position.set(0, 2.7, 0);
       group.add(lamp);
     }
 
-    // ---------- Modul pompa/dispenser ----------
     const pumpsGroup = new THREE.Group();
 
     function makePump(nameTag = 'Pump') {
       const g = new THREE.Group();
 
-      // base & body
       const base = box(1.1, 0.12, 0.9, matBase);
       base.position.set(0, 0.06, 0);
       g.add(base);
@@ -3806,22 +3795,18 @@ export class CityBuilder {
       body.position.set(0, 0.06 + 0.8, 0);
       g.add(body);
 
-      // head brand / top cap
       const head = box(1.02, 0.18, 0.72, matBrand);
       head.position.set(0, 0.06 + 1.6 + 0.09, 0);
       g.add(head);
 
-      // panel kaca (display)
       const glass = box(0.82, 0.5, 0.04, matGlass);
       glass.position.set(0, 0.06 + 1.05, 0.37);
       g.add(glass);
 
-      // frame display (hitam)
       const frame = box(0.86, 0.56, 0.02, matBase);
       frame.position.set(0, 0.06 + 1.05, 0.39);
       g.add(frame);
 
-      // “angka” (bar tebal putih sebagai angka) – simpel non-3D text
       const digit = box(
         0.12,
         0.06,
@@ -3836,7 +3821,6 @@ export class CityBuilder {
         g.add(d);
       }
 
-      // selang & nozzle (low poly)
       const hose = cyl(0.025, 0.9, matHose, 12);
       hose.rotation.x = Math.PI / 2;
       hose.position.set(0.45, 0.06 + 1.0, 0.2);
@@ -3851,12 +3835,11 @@ export class CityBuilder {
       nozzle.position.set(0.55, 0.06 + 0.8, 0.25);
       g.add(nozzle);
 
-      // label kecil (warna brand)
       const label = box(0.7, 0.12, 0.02, matBrand);
       label.position.set(0, 0.06 + 0.55, 0.39);
       g.add(label);
 
-      g.userData = { nameTag, colliders: [base, body, head] }; // collider coarse di elemen besar
+      g.userData = { nameTag, colliders: [base, body, head] };
       return g;
     }
 
@@ -3871,7 +3854,6 @@ export class CityBuilder {
     pumpsGroup.position.set(0, 0, 0);
     group.add(pumpsGroup);
 
-    // ---------- Papan harga ----------
     const priceBoard = new THREE.Group();
     const board = box(1.2, 1.4, 0.1, matBase);
     board.position.set(0, 0.7, 0);
@@ -3881,9 +3863,7 @@ export class CityBuilder {
     header.position.set(0, 1.35, 0.01);
     priceBoard.add(header);
 
-    // strip angka harga (blok putih)
     function addPriceRow(y, labelBlocks = 5) {
-      // label putih kecil + “angka”
       const row = new THREE.Group();
       const label = box(
         0.28,
@@ -3905,13 +3885,12 @@ export class CityBuilder {
       }
       return row;
     }
-    priceBoard.add(addPriceRow(1.02)); // Pertalite
-    priceBoard.add(addPriceRow(0.78)); // Pertamax
+    priceBoard.add(addPriceRow(1.02));
+    priceBoard.add(addPriceRow(0.78));
 
     priceBoard.position.set(-2.2, 0, -0.2);
     group.add(priceBoard);
 
-    // ---------- Drum / jerrycan samping ----------
     const stash = new THREE.Group();
     const drum = cyl(
       0.3,
@@ -3930,10 +3909,8 @@ export class CityBuilder {
     stash.position.set(2.2, 0, -0.2);
     group.add(stash);
 
-    // ---------- Vendor (opsional) ----------
     if (withVendor) {
       const vendor = makeMinecraftCharacterWithJoints(npcColor, npcScale);
-      // pose tangan sedikit maju
       if (vendor.userData?.leftArm)
         vendor.userData.leftArm.rotation.x = THREE.MathUtils.degToRad(-15);
       if (vendor.userData?.rightArm)
@@ -3943,35 +3920,27 @@ export class CityBuilder {
       group.add(vendor);
     }
 
-    // ---------- Pencahayaan tambahan ----------
     const warm = new THREE.PointLight(0xffe3b1, 0.7, 10, 2.0);
     warm.position.set(0, 2.2, 1.2);
     group.add(warm);
 
-    // ---------- Transform akhir ----------
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
     group.updateMatrixWorld(true);
     this.scene.add(group);
 
-    // ---------- Register Colliders (setelah transform!) ----------
     if (registerColliders) {
-      // collider coarse untuk setiap pump (base + body + head)
       pumpsGroup.traverse((obj) => {
         if (obj?.userData?.colliders) {
           for (const m of obj.userData.colliders)
             regCollider(m, 'Pertamini_Pump');
         }
       });
-      // papan harga & drum/jerrycan → collider kasar
       regCollider(priceBoard, 'Pertamini_Board');
       regCollider(stash, 'Pertamini_Stash');
-      // tiang kanopi (kalau ada) aman karena sudah terhubung ke group; kalau ingin block movement:
-      // (pilihan) aktifkan collider untuk empat tiang – cukup komentar kalau perlu
       if (hasCanopy) {
-        // cari semua cylinder tiang dengan radius 0.09 kira-kira: kita reg di level group (coarse)
-        regCollider(group, 'Pertamini_Area'); // coarse total (opsional). Matikan kalau mau bebas gerak.
+        regCollider(group, 'Pertamini_Area');
       }
     }
 
@@ -4186,7 +4155,6 @@ export class CityBuilder {
       cart.add(p);
     });
 
-    // roda
     const wheelGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.14, 16);
     [
       [-1.2, -0.8],
@@ -4387,7 +4355,6 @@ export class CityBuilder {
   ) {
     const group = new THREE.Group();
 
-    // ===== Utils =====
     function box(w, h, d, mat) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       m.castShadow = true;
@@ -4407,7 +4374,6 @@ export class CityBuilder {
       return m;
     }
 
-    // ===== NPC (minecraft-ish) =====
     function makeMinecraftCharacterWithJoints(color, cScale = 1) {
       const g = new THREE.Group();
 
@@ -4468,7 +4434,6 @@ export class CityBuilder {
         char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-6);
     }
 
-    // ===== Materials =====
     const matWood = new THREE.MeshStandardMaterial({
       color: colors.wood,
       roughness: 0.85,
@@ -4538,35 +4503,28 @@ export class CityBuilder {
       emissiveIntensity: 0.9,
     });
 
-    // ===== Gerobak =====
     const cart = new THREE.Group();
 
-    // rangka dasar
     const base = box(3.1, 0.14, 1.6, matTrim);
     base.position.set(0, 0.07, 0);
     cart.add(base);
 
-    // badan kayu
     const body = box(3.1, 1.0, 1.6, matWood);
     body.position.set(0, 0.64, 0);
     cart.add(body);
 
-    // etalase depan (kaca)
     const glassFront = box(2.9, 0.7, 0.06, matGlass);
     glassFront.position.set(0, 1.08, 0.82);
     cart.add(glassFront);
 
-    // top meja
     const counter = box(3.1, 0.06, 1.6, matTrim);
     counter.position.set(0, 1.2, 0);
     cart.add(counter);
 
-    // kanopi
     const canopy = box(3.3, 0.1, 1.8, matTarp);
     canopy.position.set(0, 2.1, 0);
     cart.add(canopy);
 
-    // tiang kanopi sampai tanah (auto)
     const groundTopY = 0;
     const canopyUnderY = canopy.position.y - 0.05;
     const poleH = Math.max(0.1, canopyUnderY - groundTopY - 0.01);
@@ -4584,7 +4542,6 @@ export class CityBuilder {
       cart.add(p);
     });
 
-    // roda
     const wheelGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.14, 16);
     [
       [-1.1, -0.8],
@@ -4596,7 +4553,6 @@ export class CityBuilder {
       cart.add(w);
     });
 
-    // signage "BATAGOR"
     const sign = box(2.3, 0.22, 0.08, matSignBg);
     sign.position.set(0, 1.95, 0.86);
     cart.add(sign);
@@ -4625,7 +4581,6 @@ export class CityBuilder {
     }
     addFlatText('BATAGOR', 0, 1.97, 0.9);
 
-    // lampu
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matLamp);
     bulb.position.set(0, 1.9, 0);
     cart.add(bulb);
@@ -4633,8 +4588,6 @@ export class CityBuilder {
     lamp.position.set(0, 1.9, 0);
     cart.add(lamp);
 
-    // ===== Dapur Batagor =====
-    // bak penggorengan (rectangular fryer) + minyak
     const fryer = box(0.6, 0.14, 0.42, matFryer);
     fryer.position.set(-0.8, 1.26, -0.35);
     cart.add(fryer);
@@ -4642,12 +4595,10 @@ export class CityBuilder {
     oil.position.set(-0.8, 1.29, -0.35);
     cart.add(oil);
 
-    // kompor
     const stove = box(0.7, 0.12, 0.5, matStove);
     stove.position.set(-0.8, 1.2, -0.35);
     cart.add(stove);
 
-    // kukusan siomay (panci bertingkat)
     const steamerBase = cyl(0.22, 0.16, matMetal, 16);
     steamerBase.position.set(0.15, 1.28, -0.25);
     cart.add(steamerBase);
@@ -4658,14 +4609,12 @@ export class CityBuilder {
     steamerLid.position.set(0.15, 1.49, -0.25);
     cart.add(steamerLid);
 
-    // mangkuk (stack)
     for (let i = 0; i < 6; i++) {
       const bowl = cyl(0.1, 0.055, matBowl, 12);
       bowl.position.set(0.65, 1.24 + i * 0.05, 0.35);
       cart.add(bowl);
     }
 
-    // botol saus (sambal, kecap, kacang)
     const bottles = [
       { x: 0.35, z: 0.35, mat: matSambal },
       { x: 0.5, z: 0.35, mat: matKecap },
@@ -4680,7 +4629,6 @@ export class CityBuilder {
       cart.add(cap);
     });
 
-    // keranjang batagor mentah (kubus kecil)
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 4; j++) {
         const item = box(
@@ -4694,7 +4642,6 @@ export class CityBuilder {
       }
     }
 
-    // penjepit (tongs) sederhana → ditaruh di tangan kanan vendor nanti
     const tongs = new THREE.Group();
     const barA = box(0.22, 0.02, 0.02, matMetal);
     barA.position.set(0.11, 0, 0.01);
@@ -4706,7 +4653,6 @@ export class CityBuilder {
     tip.position.set(0.22, 0, 0);
     tongs.add(tip);
 
-    // ===== NPC Vendor =====
     const vendor = characterFactory
       ? characterFactory(0xb45309, npcScale)
       : makeMinecraftCharacterWithJoints(0xb45309, npcScale);
@@ -4715,7 +4661,6 @@ export class CityBuilder {
     poseVendor(vendor);
     group.add(vendor);
 
-    // pasang penjepit di tangan kanan
     if (vendor.userData?.rightArm) {
       const s = vendor.userData.scale || 1;
       const t = tongs.clone();
@@ -4724,23 +4669,19 @@ export class CityBuilder {
       vendor.userData.rightArm.add(t);
     }
 
-    // ===== Penempatan gerobak =====
     cart.position.set(0, 0, 0);
     group.add(cart);
 
-    // ===== Lighting ambience =====
     const warm = new THREE.PointLight(colors.lamp, 0.75, 10, 2.0);
     warm.position.set(0.5, 1.8, 0.9);
     group.add(warm);
 
-    // ===== Transform akhir =====
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
     group.updateMatrixWorld(true);
     this.scene.add(group);
 
-    // ===== Collider (DAFTAR SETELAH TRANSFORM) =====
     if (registerColliders) {
       const self = this;
       function regCollider(mesh, name) {
@@ -4754,11 +4695,8 @@ export class CityBuilder {
           }
         } catch (_) {}
       }
-      // collider coarse: badan & counter (cukup menghambat player agar tak nembus etalase)
       regCollider(body, 'GerobakBatagor_Body');
       regCollider(counter, 'GerobakBatagor_Counter');
-      // (opsional) aktifkan collider tiang jika perlu padat:
-      // cart.children.filter(m => m.geometry instanceof THREE.CylinderGeometry).forEach(p => regCollider(p, 'GerobakBatagor_Pole'));
     }
 
     return group;
@@ -4797,7 +4735,6 @@ export class CityBuilder {
   ) {
     const group = new THREE.Group();
 
-    // ===== Utils =====
     function box(w, h, d, mat) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       m.castShadow = true;
@@ -4817,7 +4754,6 @@ export class CityBuilder {
       return m;
     }
 
-    // ===== NPC (minecraft-ish) =====
     function makeMinecraftCharacterWithJoints(color, cScale = 1) {
       const g = new THREE.Group();
       const body = new THREE.Mesh(
@@ -4873,7 +4809,6 @@ export class CityBuilder {
         char.userData.rightArm.rotation.x = THREE.MathUtils.degToRad(-8);
     }
 
-    // ===== Materials =====
     const matWood = new THREE.MeshStandardMaterial({
       color: colors.wood,
       roughness: 0.85,
@@ -4947,10 +4882,8 @@ export class CityBuilder {
       emissiveIntensity: 0.9,
     });
 
-    // ===== Gerobak =====
     const cart = new THREE.Group();
 
-    // rangka & badan
     const base = box(3.1, 0.14, 1.6, matTrim);
     base.position.set(0, 0.07, 0);
     cart.add(base);
@@ -4958,7 +4891,6 @@ export class CityBuilder {
     body.position.set(0, 0.64, 0);
     cart.add(body);
 
-    // etalase
     const glassFront = box(2.9, 0.7, 0.06, matGlass);
     glassFront.position.set(0, 1.08, 0.82);
     cart.add(glassFront);
@@ -4966,7 +4898,6 @@ export class CityBuilder {
     counter.position.set(0, 1.2, 0);
     cart.add(counter);
 
-    // kanopi & tiang (menyentuh tanah)
     const canopy = box(3.3, 0.1, 1.8, matTarp);
     canopy.position.set(0, 2.1, 0);
     cart.add(canopy);
@@ -4986,7 +4917,6 @@ export class CityBuilder {
       cart.add(p);
     });
 
-    // roda
     const wheelGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.14, 16);
     [
       [-1.1, -0.8],
@@ -4998,7 +4928,6 @@ export class CityBuilder {
       cart.add(w);
     });
 
-    // signage "SEBLAK"
     const sign = box(2.0, 0.22, 0.08, matSignBg);
     sign.position.set(0, 1.95, 0.86);
     cart.add(sign);
@@ -5027,7 +4956,6 @@ export class CityBuilder {
     }
     addFlatText('SEBLAK', 0, 1.97, 0.9);
 
-    // lampu
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matLamp);
     bulb.position.set(0, 1.9, 0);
     cart.add(bulb);
@@ -5035,8 +4963,6 @@ export class CityBuilder {
     lamp.position.set(0, 1.9, 0);
     cart.add(lamp);
 
-    // ===== Dapur Seblak =====
-    // kompor + wajan cekung besar
     const stove = box(0.7, 0.12, 0.5, matStove);
     stove.position.set(-0.8, 1.2, -0.35);
     cart.add(stove);
@@ -5045,9 +4971,7 @@ export class CityBuilder {
     cart.add(wok);
     const oil = cyl(0.3, 0.04, matOil, 16);
     oil.position.set(-0.8, 1.31, -0.35);
-    cart.add(oil); // efek minyak
-
-    // bak topping (bakso/kerupuk/makaroni/cikur)
+    cart.add(oil);
     const rail = box(1.2, 0.08, 0.5, matTrim);
     rail.position.set(0.2, 1.26, -0.25);
     cart.add(rail);
@@ -5056,7 +4980,6 @@ export class CityBuilder {
       bin.position.set(-0.38 + i * 0.32, 1.29, -0.25);
       cart.add(bin);
     }
-    // isi topping sederhana
     const topColors = [0xd9b382, 0xffe199, 0xc97f6b, 0xc28436];
     for (let i = 0; i < 4; i++) {
       const fill = box(
@@ -5069,7 +4992,6 @@ export class CityBuilder {
       cart.add(fill);
     }
 
-    // botol bumbu (sambal, cikur, kecap)
     const bottles = [
       { x: 0.35, z: 0.35, mat: matSambal },
       { x: 0.5, z: 0.35, mat: matCikur },
@@ -5084,14 +5006,12 @@ export class CityBuilder {
       cart.add(cap);
     });
 
-    // mangkuk (stack)
     for (let i = 0; i < 6; i++) {
       const bowl = cyl(0.1, 0.055, matBowl, 12);
       bowl.position.set(0.65, 1.24 + i * 0.05, 0.35);
       cart.add(bowl);
     }
 
-    // tabung gas
     const gas = cyl(0.16, 0.36, matGas, 16);
     gas.position.set(-1.35, 0.26, -0.2);
     cart.add(gas);
@@ -5099,7 +5019,6 @@ export class CityBuilder {
     gasTop.position.set(-1.35, 0.44, -0.2);
     cart.add(gasTop);
 
-    // sodet (spatula) → ke tangan kanan vendor
     const spatula = new THREE.Group();
     const handle = box(0.22, 0.02, 0.02, matMetal);
     handle.position.set(0.11, 0, 0);
@@ -5108,7 +5027,6 @@ export class CityBuilder {
     head.position.set(0.22, 0, 0);
     spatula.add(head);
 
-    // ===== Vendor =====
     const vendor = characterFactory
       ? characterFactory(0xb45309, npcScale)
       : makeMinecraftCharacterWithJoints(0xb45309, npcScale);
@@ -5125,7 +5043,6 @@ export class CityBuilder {
       vendor.userData.rightArm.add(sp);
     }
 
-    // ===== Penempatan gerobak & lighting =====
     cart.position.set(0, 0, 0);
     group.add(cart);
 
@@ -5133,14 +5050,12 @@ export class CityBuilder {
     warm.position.set(0.5, 1.8, 0.9);
     group.add(warm);
 
-    // ===== Transform akhir =====
     group.position.set(x, 0, z);
     group.scale.set(scale, scale, scale);
     group.rotation.y = THREE.MathUtils.degToRad(rotate);
     group.updateMatrixWorld(true);
     this.scene.add(group);
 
-    // ===== Collider (DAFTAR SETELAH TRANSFORM) =====
     if (registerColliders) {
       const self = this;
       function regCollider(mesh, name) {
@@ -5154,11 +5069,8 @@ export class CityBuilder {
           }
         } catch (_) {}
       }
-      // collider kasar cukup pada body & counter agar pemain tidak menembus etalase
       regCollider(body, 'GerobakSeblak_Body');
       regCollider(counter, 'GerobakSeblak_Counter');
-      // (opsional) aktifkan collider tiang/kanopi bila ingin benar-benar solid:
-      // cart.children.filter(m => m.geometry instanceof THREE.CylinderGeometry).forEach(p => regCollider(p, 'GerobakSeblak_Pole'));
     }
 
     return group;
@@ -5174,7 +5086,7 @@ export class CityBuilder {
       colors = {
         board: 0xffffff,
         border: 0x333333,
-        text: 0xff0000, // merah khas plang disewakan
+        text: 0xff0000,
         pole: 0x444444,
       },
     } = {}
