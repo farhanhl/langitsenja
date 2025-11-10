@@ -504,25 +504,65 @@ window.toggleFullscreen = function () {
   }
 };
 
-window.game = new LangitSenja();
+// Mobile device detection function
+function isMobileDevice() {
+  return (
+    typeof window.orientation !== 'undefined' ||
+    navigator.userAgent.indexOf('IEMobile') !== -1 ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+  );
+}
 
-window.addEventListener('resize', window.game.handleResize.bind(window.game));
+document.addEventListener('DOMContentLoaded', function () {
+  if (isMobileDevice()) {
+    const mobileModal = document.getElementById('mobileModal');
+    mobileModal.style.display = 'flex';
+    document.getElementById('loading').style.display = 'none';
+    const howToPlayModal = document.getElementById('howToPlay');
+    if (howToPlayModal) {
+      howToPlayModal.style.display = 'none';
+    }
 
-window.addEventListener(
-  'keydown',
-  window.game.handleEscapeKey.bind(window.game),
-  true
-);
-window.addEventListener(
-  'keydown',
-  window.game.handleMKey.bind(window.game),
-  true
-);
+    const uiElements = document.getElementById('ui');
+    if (uiElements) {
+      uiElements.style.display = 'none';
+    }
 
-window.addEventListener(
-  'keydown',
-  window.game.handleFKey.bind(window.game),
-  true
-);
+    const pauseButton = document.getElementById('pauseButton');
+    if (pauseButton) {
+      pauseButton.style.display = 'none';
+    }
+
+    // Prevent game initialization
+    return;
+  } else {
+    // Initialize the game if not on mobile
+    window.game = new LangitSenja();
+
+    window.addEventListener(
+      'resize',
+      window.game.handleResize.bind(window.game)
+    );
+
+    window.addEventListener(
+      'keydown',
+      window.game.handleEscapeKey.bind(window.game),
+      true
+    );
+    window.addEventListener(
+      'keydown',
+      window.game.handleMKey.bind(window.game),
+      true
+    );
+
+    window.addEventListener(
+      'keydown',
+      window.game.handleFKey.bind(window.game),
+      true
+    );
+  }
+});
 
 window.addEventListener('load', function () {});

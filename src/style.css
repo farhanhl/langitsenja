@@ -309,6 +309,45 @@ body {
   margin-top: 30px;
 }
 
+/* Mobile Detection Modal */
+#mobileModal .modal-content {
+  background: rgba(30, 30, 30, 0.98);
+  max-width: 500px;
+  width: 80%;
+  text-align: center;
+  border: 3px solid #ff3300;
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+#mobileModal h2 {
+  color: #ff6600;
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+#mobileModal p {
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+#mobileModal button {
+  background: #ff3300;
+  color: white;
+  padding: 12px 30px;
+  font-size: 16px;
+}
+
+#mobileModal button:hover {
+  background: #ff4400;
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 51, 0, 0.5);
+}
+
 /* Pulse animation untuk mute button */
 @keyframes muteButtonPulse {
   0%,
