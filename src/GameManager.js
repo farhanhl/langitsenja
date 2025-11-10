@@ -6,40 +6,32 @@ export class GameManager {
     this.npcManager = npcManager;
     this.skySystem = skySystem;
 
-    // Game state
     this.gameState = 'playing'; // playing, won, lost
 
-    // Mission state
-    this.missionActive = false; // Will be set to true when user starts the game
-    this.timeRemaining = 300; // 5 minutes in seconds (changed from 10)
+    this.missionActive = false;
+    this.timeRemaining = 300;
     this.friendsFound = 0;
     this.totalFriends = 5;
 
-    // Interaction state
     this.nearbyNPC = null;
     this.interactionPromptElement =
       document.getElementById('interactionPrompt');
 
-    // UI elements
     this.timerElement = document.getElementById('timer');
     this.friendCounterElement = document.getElementById('friendCounter');
     this.dialogueElement = document.getElementById('dialogue');
 
-    // Audio system
     this.dayMusic = null;
     this.nightMusic = null;
     this.currentMusic = null;
     this.setupAudio();
 
-    // Setup interaction controls
     this.setupInteractionControls();
 
-    // Show how to play modal first
     this.showHowToPlay();
   }
 
   setupAudio() {
-    // Create day music
     this.dayMusic = new Audio('/music/day.mp3');
     this.dayMusic.loop = true;
     this.dayMusic.volume = 0.5;
@@ -86,7 +78,6 @@ export class GameManager {
   }
 
   setupInteractionControls() {
-    // Interaction key (E)
     window.addEventListener('keydown', (e) => {
       if (e.key.toLowerCase() === 'e') {
         this.tryInteract();
@@ -130,11 +121,9 @@ export class GameManager {
     this.checkNPCProximity();
     if (!this.missionActive || this.isPaused) return;
 
-    // Update timer
     this.timeRemaining -= delta;
     this.updateUI();
 
-    // Check if time is up
     if (this.timeRemaining <= 0) {
       this.lose();
       return;
@@ -227,7 +216,6 @@ export class GameManager {
     messageElement.textContent = message;
     dialogueBox.style.display = 'block';
 
-    // Auto-close after 3 seconds
     setTimeout(() => {
       this.closeDialogue();
     }, 6000);
@@ -240,7 +228,6 @@ export class GameManager {
   win() {
     this.missionActive = false;
     this.gameState = 'won';
-    // Keep playing day music
     this.playDayMusic();
     document.getElementById('winPopup').style.display = 'block';
   }
@@ -298,12 +285,10 @@ export class GameManager {
     if (howToPlayModal && startGameBtn) {
       howToPlayModal.style.display = 'flex';
 
-      // Add event listener to the start button
       startGameBtn.addEventListener('click', () => {
         this.startGame();
       });
 
-      // Also allow keyboard to start the game
       const startGameKey = (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           this.startGame();
@@ -333,52 +318,19 @@ export class GameManager {
     this.isPaused = !this.isPaused;
 
     if (this.isPaused) {
-      if (this.currentMusic === 'day' && this.dayMusic) {
-        this.dayMusic.pause();
-      } else if (this.currentMusic === 'night' && this.nightMusic) {
-        this.nightMusic.pause();
-      }
+      this.toggleMute();
       this.showPauseMenu();
     } else {
-      if (this.currentMusic === 'day' && this.dayMusic) {
-        this.dayMusic.play().catch((err) => {});
-      } else if (this.currentMusic === 'night' && this.nightMusic) {
-        this.nightMusic.play().catch((err) => {});
-      }
+      this.toggleMute();
       this.hidePauseMenu();
     }
   }
 
   showPauseMenu() {
-    const pauseMenu = document.getElementById('pauseMenu');
+    let pauseMenu = document.getElementById('pauseMenu');
+    const cheatsUnlocked = this.gameState === 'won';
 
-    if (!pauseMenu) {
-      const newPauseMenu = document.createElement('div');
-      const cheatsUnlocked = this.gameState == 'won';
-      console.log(cheatsUnlocked);
-      console.log(this.gameState);
-      newPauseMenu.id = 'pauseMenu';
-      newPauseMenu.className = 'modal';
-      newPauseMenu.innerHTML = `
-  <div class="modal-content">
-    <h2 class="modal-title">Langit Senja</h2>
-
-    <div class="control-section">
-      <strong class="control-title">Kontrol:</strong>
-      <div class="control-parent">
-        <p class="control-list"><span class="control-list-span">WASD / Arrow</span> - Bergerak</p>
-        <p class="control-list"><span class="control-list-span">Shift</span> - Lari</p>
-        <p class="control-list"><span class="control-list-span">Spacebar</span> - Lompat</p>
-        <p class="control-list"><span class="control-list-span">Mouse</span> - Putar Kamera</p>
-        <p class="control-list"><span class="control-list-span">E</span> - Berinteraksi</p>
-        <p class="control-list"><span class="control-list-span">F11</span> - Fullscreen</p>
-        <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
-      </div>
-    </div>
-
-    ${
-      cheatsUnlocked
-        ? `
+    const cheatHTML = `
     <div class="control-section" id="cheatSection">
       <strong class="control-title">Cheat:</strong>
       <div class="control-parent">
@@ -392,49 +344,70 @@ export class GameManager {
         <p class="control-list"><span class="control-list-span">CLEAR</span> - Cuaca cerah</p>
       </div>
     </div>
-    `
-        : ''
+  `;
+
+    if (!pauseMenu) {
+      pauseMenu = document.createElement('div');
+      pauseMenu.id = 'pauseMenu';
+      pauseMenu.className = 'modal';
+      pauseMenu.innerHTML = `
+      <div class="modal-content">
+        <h2 class="modal-title">Langit Senja</h2>
+
+        <div class="control-section" id="controlSection">
+          <strong class="control-title">Kontrol:</strong>
+          <div class="control-parent">
+            <p class="control-list"><span class="control-list-span">WASD / Arrow</span> - Bergerak</p>
+            <p class="control-list"><span class="control-list-span">Shift</span> - Lari</p>
+            <p class="control-list"><span class="control-list-span">Spacebar</span> - Lompat</p>
+            <p class="control-list"><span class="control-list-span">Mouse</span> - Putar Kamera</p>
+            <p class="control-list"><span class="control-list-span">E</span> - Berinteraksi</p>
+            <p class="control-list"><span class="control-list-span">F11</span> - Fullscreen</p>
+            <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
+          </div>
+        </div>
+
+        <div class="button-list"><button id="resumeBtn">Lanjutkan</button></div>
+        <div class="button-list"><button id="muteToggleBtn">...</button></div>
+        <div class="button-list"><button id="quitBtn">Keluar</button></div>
+      </div>
+    `;
+      document.body.appendChild(pauseMenu);
+
+      const resumeBtn = pauseMenu.querySelector('#resumeBtn');
+      const muteToggleBtn = pauseMenu.querySelector('#muteToggleBtn');
+      const quitBtn = pauseMenu.querySelector('#quitBtn');
+
+      resumeBtn &&
+        resumeBtn.addEventListener('click', () => this.togglePause());
+      muteToggleBtn &&
+        muteToggleBtn.addEventListener('click', () => {
+          if (typeof window.toggleMute === 'function') window.toggleMute();
+          this.isMuted = !!this.isMuted;
+          muteToggleBtn.textContent = this.isMuted
+            ? '🔇 Suara: OFF'
+            : '🔊 Suara: ON';
+        });
+      quitBtn && quitBtn.addEventListener('click', () => this.quitToMenu());
     }
 
-    <div class="button-list">
-      <button id="resumeBtn">Lanjutkan</button>
-    </div>
-    <div class="button-list">
-      <button id="muteToggleBtn">🔊 Suara: ON</button>
-    </div>
-    <div class="button-list">
-      <button id="quitBtn">Keluar</button>
-    </div>
-  </div>
-`;
+    const controlSection = pauseMenu.querySelector('#controlSection');
+    const cheatSection = pauseMenu.querySelector('#cheatSection');
 
-      document.body.appendChild(newPauseMenu);
-
-      document.getElementById('resumeBtn').addEventListener('click', () => {
-        this.togglePause();
-      });
-
-      document.getElementById('muteToggleBtn').addEventListener('click', () => {
-        window.toggleMute();
-      });
-
-      // Update mute button text based on current mute status
-      const muteToggleBtn = document.getElementById('muteToggleBtn');
-      if (muteToggleBtn) {
-        if (this.isMuted) {
-          muteToggleBtn.textContent = '🔇 Suara: OFF';
-        } else {
-          muteToggleBtn.textContent = '🔊 Suara: ON';
-        }
-      }
-
-      document.getElementById('quitBtn').addEventListener('click', () => {
-        this.quitToMenu();
-      });
-    } else {
-      pauseMenu.style.display = 'flex';
-      this.updateMuteDisplay();
+    if (cheatsUnlocked && !cheatSection && controlSection) {
+      controlSection.insertAdjacentHTML('afterend', cheatHTML);
+    } else if (!cheatsUnlocked && cheatSection) {
+      cheatSection.remove();
     }
+
+    const muteToggleBtn = pauseMenu.querySelector('#muteToggleBtn');
+    if (muteToggleBtn) {
+      muteToggleBtn.textContent = this.isMuted
+        ? '🔇 Suara: OFF'
+        : '🔊 Suara: ON';
+    }
+
+    pauseMenu.style.display = 'flex';
   }
 
   hidePauseMenu() {
@@ -483,16 +456,11 @@ export class GameManager {
     document.getElementById('winPopup').style.display = 'none';
     document.getElementById('losePopup').style.display = 'none';
     this.hidePauseMenu();
-
-    // Show how to play again
     this.showHowToPlay();
   }
 
   updateUI() {
-    // Update timer - ensure values are never negative
     let displayMinutes, displaySeconds;
-
-    // If remaining time is positive, compute normally; if zero or negative, show 00:00
     if (this.timeRemaining > 0) {
       displayMinutes = Math.floor(this.timeRemaining / 60);
       displaySeconds = Math.floor(this.timeRemaining % 60);
@@ -516,7 +484,6 @@ export class GameManager {
     }
   }
 
-  // Centralized mute functionality
   addAudioElement(audioElement) {
     if (!this.allAudioElements.includes(audioElement)) {
       this.allAudioElements.push(audioElement);
@@ -526,7 +493,6 @@ export class GameManager {
   muteAllAudio() {
     this.allAudioElements.forEach((audio) => {
       if (audio && typeof audio.pause === 'function') {
-        // Store original volume to restore later
         if (audio.volume !== 0) {
           audio._originalVolume = audio.volume;
         }
@@ -539,7 +505,6 @@ export class GameManager {
   unmuteAllAudio() {
     this.allAudioElements.forEach((audio) => {
       if (audio) {
-        // Restore original volume or set to default
         audio.volume = audio._originalVolume || 0.5;
       }
     });
@@ -549,10 +514,10 @@ export class GameManager {
   toggleMute() {
     if (this.isMuted) {
       this.unmuteAllAudio();
-      return false; // returns false because it's now unmuted
+      return false;
     } else {
       this.muteAllAudio();
-      return true; // returns true because it's now muted
+      return true;
     }
   }
 }
