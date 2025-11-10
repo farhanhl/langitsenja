@@ -6,6 +6,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 export default defineConfig({
   root: '.', // Root directory adalah project root
+  publicDir: 'public', // Gunakan folder public untuk file statis
+  base: './', // Gunakan path relative agar bisa deploy di subfolder
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
