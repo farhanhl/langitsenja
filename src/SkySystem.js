@@ -72,7 +72,7 @@ export class SkySystem {
     this.scene.add(this.skyMesh);
 
     const sunGeometry = new THREE.SphereGeometry(10, 16, 16);
-    const sunMaterial = new THREE.MeshBasicMaterial({
+    const sunMaterial = new THREE.MeshStandardMaterial({
       color: 0xffaa00,
       emissive: 0xffaa00,
     });
@@ -91,7 +91,7 @@ export class SkySystem {
     this.scene.add(this.sunGlow);
 
     const moonGeometry = new THREE.SphereGeometry(8, 16, 16);
-    const moonMaterial = new THREE.MeshBasicMaterial({
+    const moonMaterial = new THREE.MeshStandardMaterial({
       color: 0xddddff,
       emissive: 0x888899,
       transparent: true,

@@ -354,7 +354,7 @@ export class GameManager {
 
     if (!pauseMenu) {
       const newPauseMenu = document.createElement('div');
-      const cheatsUnlocked = this.gameState === 'won';
+      const cheatsUnlocked = this.gameState == 'won';
       console.log(cheatsUnlocked);
       console.log(this.gameState);
       newPauseMenu.id = 'pauseMenu';

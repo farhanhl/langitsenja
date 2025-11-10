@@ -153,7 +153,7 @@ export class HorrorNPCManager {
     group.add(head);
 
     const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
-    const eyeMaterial = new THREE.MeshBasicMaterial({
+    const eyeMaterial = new THREE.MeshStandardMaterial({
       color: 0xff0000,
       emissive: 0xff0000,
       emissiveIntensity: 1,
@@ -197,7 +197,7 @@ export class HorrorNPCManager {
     group.add(head);
 
     const eyeGeometry = new THREE.CircleGeometry(0.1, 8);
-    const eyeMaterial = new THREE.MeshBasicMaterial({
+    const eyeMaterial = new THREE.MeshStandardMaterial({
       color: 0x00ff00,
       emissive: 0x00ff00,
       emissiveIntensity: 1,
@@ -259,7 +259,7 @@ export class HorrorNPCManager {
     group.add(head);
 
     const eyeGeometry = new THREE.SphereGeometry(0.12, 8, 8);
-    const eyeMaterial = new THREE.MeshBasicMaterial({
+    const eyeMaterial = new THREE.MeshStandardMaterial({
       color: 0xff0000,
       emissive: 0xff0000,
       emissiveIntensity: 1,
