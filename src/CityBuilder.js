@@ -1,6 +1,63 @@
 import * as THREE from 'three';
 
 export class CityBuilder {
+  addCanvasTextLabel(
+    parent,
+    {
+      text = 'TEXT',
+      w = 1.0,
+      h = 0.5,
+      centerX = 0,
+      y = 0,
+      z = 0,
+      fg = '#ffffff',
+      bg = 'transparent',
+      font = 'bold 120px Arial',
+      align = 'center',
+      baseline = 'middle',
+    }
+  ) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = fg;
+    ctx.font = font;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+
+    let size = 120;
+    do {
+      ctx.font = `bold ${size}px Arial`;
+      size -= 6;
+    } while (ctx.measureText(text).width > canvas.width * 0.8 && size > 20);
+
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 4;
+    const mat = new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    plane.position.set(centerX, y, z);
+    plane.renderOrder = 999;
+    parent.add(plane);
+
+    tex.needsUpdate = true;
+    if (plane.material) {
+      plane.material.needsUpdate = true;
+    }
+
+    return plane;
+  }
   constructor(scene) {
     this.scene = scene;
     this.buildings = [];
@@ -1034,6 +1091,24 @@ export class CityBuilder {
     poseMechanic(mechanic);
     group.add(mechanic);
 
+    const signBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(2.0, 0.22, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x2b2b2b, emissive: 0x000000 })
+    );
+    signBoard.position.set(0, 2.1, 1.6);
+    stall.add(signBoard);
+
+    this.addCanvasTextLabel(stall, {
+      text: 'TAMBAL BAN',
+      w: 1.8,
+      h: 0.3,
+      centerX: 0,
+      y: 2.1,
+      z: 1.65,
+      fg: '#ffffff',
+      bg: 'transparent',
+    });
+
     const ambient = new THREE.PointLight(0xffddaa, 0.5, 12, 2.0);
     ambient.position.set(-1.2, 2.0, 0.8);
     group.add(ambient);
@@ -1390,6 +1465,24 @@ export class CityBuilder {
       glass.position.set(spot.x + 0.22, 0.1, spot.z - 0.05);
       group.add(glass);
     }
+
+    const signBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.22, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0x2b2b2b, emissive: 0x000000 })
+    );
+    signBoard.position.set(0, 2.1, -0.6);
+    group.add(signBoard);
+
+    this.addCanvasTextLabel(group, {
+      text: 'ANGKRINGAN',
+      w: 2.0,
+      h: 0.3,
+      centerX: 0,
+      y: 2.12,
+      z: -0.55,
+      fg: '#ffffff',
+      bg: 'transparent',
+    });
 
     const warm = new THREE.PointLight(0xffe3b1, 0.8, 12, 2.0);
     warm.position.set(-2.6, 2.2, 1.5);
@@ -3394,21 +3487,16 @@ export class CityBuilder {
     );
     sign.position.set(0, 2.15, 1.05);
     cart.add(sign);
-    function addSignText(str, startX, y, z, scaleX = 0.08, space = 0.06) {
-      for (let i = 0; i < str.length; i++) {
-        if (str[i] === ' ') {
-          startX += space * 2;
-          continue;
-        }
-        const letter = new THREE.Mesh(
-          new THREE.BoxGeometry(scaleX, 0.14, 0.02),
-          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
-        );
-        letter.position.set(startX + i * (scaleX + space), y, z);
-        cart.add(letter);
-      }
-    }
-    addSignText('WARUNG KOPI', -0.9, 2.16, 1.12, 0.09, 0.05);
+    this.addCanvasTextLabel(cart, {
+      text: 'WARUNG KOPI',
+      w: 2.2,
+      h: 0.3,
+      centerX: 0,
+      y: 2.16,
+      z: 1.1,
+      fg: '#ffffff',
+      bg: 'transparent',
+    });
 
     const bulb = new THREE.Mesh(
       new THREE.SphereGeometry(0.22, 16, 16),
@@ -4169,31 +4257,17 @@ export class CityBuilder {
     const sign = box(2.4, 0.22, 0.08, matSignBg);
     sign.position.set(0, 2.0, 0.86);
     cart.add(sign);
-    function addFlatText(
-      str,
-      centerX,
-      y,
-      z,
-      charW = 0.12,
-      charH = 0.14,
-      space = 0.04
-    ) {
-      const startX =
-        centerX -
-        (str.replace(/ /g, '').length * charW + (str.length - 1) * space) / 2;
-      let idx = 0;
-      for (let i = 0; i < str.length; i++) {
-        if (str[i] === ' ') {
-          idx++;
-          continue;
-        }
-        const letter = box(charW, charH, 0.02, matSignTx);
-        letter.position.set(startX + i * (charW + space), y, z);
-        cart.add(letter);
-        idx++;
-      }
-    }
-    addFlatText('BAKSO', 0, 2.02, 0.9, 0.16, 0.16, 0.05);
+
+    this.addCanvasTextLabel(cart, {
+      text: 'BAKSO',
+      w: 2.0,
+      h: 0.4,
+      centerX: 0,
+      y: 2,
+      z: 0.92,
+      fg: '#ffffff',
+      bg: 'transparent',
+    });
 
     const bulb = new THREE.Mesh(
       new THREE.SphereGeometry(0.22, 16, 16),
@@ -4556,30 +4630,16 @@ export class CityBuilder {
     const sign = box(2.3, 0.22, 0.08, matSignBg);
     sign.position.set(0, 1.95, 0.86);
     cart.add(sign);
-    function addFlatText(
-      str,
-      centerX,
-      y,
-      z,
-      charW = 0.13,
-      charH = 0.15,
-      space = 0.05
-    ) {
-      const visibleChars = str.replace(/ /g, '').length;
-      const totalW = visibleChars * charW + (str.length - 1) * space;
-      let cursor = centerX - totalW / 2;
-      for (let i = 0; i < str.length; i++) {
-        if (str[i] === ' ') {
-          cursor += space;
-          continue;
-        }
-        const letter = box(charW, charH, 0.02, matSignTx);
-        letter.position.set(cursor + charW / 2, y, z);
-        cart.add(letter);
-        cursor += charW + space;
-      }
-    }
-    addFlatText('BATAGOR', 0, 1.97, 0.9);
+    this.addCanvasTextLabel(cart, {
+      text: 'BATAGOR',
+      w: 2.2,
+      h: 0.4,
+      centerX: 0,
+      y: 1.95,
+      z: 0.92,
+      fg: '#ffffff',
+      bg: 'transparent',
+    });
 
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matLamp);
     bulb.position.set(0, 1.9, 0);
@@ -4931,30 +4991,16 @@ export class CityBuilder {
     const sign = box(2.0, 0.22, 0.08, matSignBg);
     sign.position.set(0, 1.95, 0.86);
     cart.add(sign);
-    function addFlatText(
-      str,
-      centerX,
-      y,
-      z,
-      charW = 0.13,
-      charH = 0.15,
-      space = 0.05
-    ) {
-      const visible = str.replace(/ /g, '').length;
-      const totalW = visible * charW + (str.length - 1) * space;
-      let cursor = centerX - totalW / 2;
-      for (let i = 0; i < str.length; i++) {
-        if (str[i] === ' ') {
-          cursor += space;
-          continue;
-        }
-        const letter = box(charW, charH, 0.02, matSignTx);
-        letter.position.set(cursor + charW / 2, y, z);
-        cart.add(letter);
-        cursor += charW + space;
-      }
-    }
-    addFlatText('SEBLAK', 0, 1.97, 0.9);
+    this.addCanvasTextLabel(cart, {
+      text: 'SEBLAK',
+      w: 2.0,
+      h: 0.4,
+      centerX: 0,
+      y: 1.95,
+      z: 0.92,
+      fg: '#ffffff',
+      bg: 'transparent',
+    });
 
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matLamp);
     bulb.position.set(0, 1.9, 0);
