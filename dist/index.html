@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Langit Senja</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/js/main-DoOeYwAG.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/css/main-Du_r7v7A.css">
+  </head>
+  <body>
+    <div id="loading">Loading Langit Senja...</div>
+    <div id="howToPlay" class="modal">
+      <div class="modal-content">
+        <h2>Langit Senja</h2>
+        <div class="instructions">
+          <p>
+            <strong>Objektif:</strong> Temukan 5 temanmu sebelum waktu habis!
+          </p>
+          <p>
+            <strong>Ketentuan:</strong> Jika waktu habis, malam akan tiba dan
+            makhluk menyeramkan akan muncul!
+          </p>
+          <p>
+            <strong>Menang:</strong> Temukan semua teman sebelum waktu habis!
+          </p>
+        </div>
+        <button id="startGameBtn">Mengerti & Mulai Bermain</button>
+      </div>
+    </div>
+    <div id="mobileModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <h2>Device Not Supported</h2>
+        <p>
+          Maaf, permainan ini belum mendukung perangkat mobile. Silakan gunakan
+          komputer atau laptop untuk pengalaman terbaik.
+        </p>
+      </div>
+    </div>
+
+    <div id="ui">
+      <div id="timer">05:00</div>
+      <div id="friendCounter">Teman Ditemukan: 0/5</div>
+      <div id="interactionPrompt">Tekan [E] untuk berinteraksi</div>
+      <div id="dialogue">
+        <div class="npc-name"></div>
+        <div class="message"></div>
+      </div>
+      <div id="winPopup" class="popup">
+        <h2>Kamu Menang!</h2>
+        <p>Kamu sudah bisa melihat daftar cheat di halaman pause</p>
+        <button onclick="closePopup()">Tutup</button>
+      </div>
+      <div id="losePopup" class="popup">
+        <h2>Kamu Kalah!</h2>
+        <p>Waktu habis! nikmati waktu malam bersama mereka...</p>
+        <button onclick="closePopup()">Tutup</button>
+        <button onclick="resetGame()" class="secondary">Coba Lagi</button>
+      </div>
+    </div>
+
+    <button id="pauseButton" class="pause-button" onclick="togglePause()">
+      <span class="icon">⏸️</span>
+    </button>
+
+  </body>
+</html>

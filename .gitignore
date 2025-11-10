@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.nyc_output/
+coverage/
+.env
+*.log
+.DS_Store
+.vercel/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

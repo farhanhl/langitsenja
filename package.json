@@ -5,7 +5,9 @@
   "main": "index.html",
   "scripts": {
     "start": "npx http-server -p 8000 -o",
-    "dev": "npx http-server -p 8000 -c-1 -o"
+    "dev": "npx http-server -p 8000 -c-1 -o",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [
     "threejs",
@@ -15,5 +17,11 @@
   ],
   "author": "",
   "license": "MIT",
-  "devDependencies": {}
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.1",
+    "rollup-plugin-obfuscator": "^1.1.0",
+    "terser": "^5.44.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "vite": "^5.0.0"
+  }
 }
