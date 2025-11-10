@@ -44,63 +44,27 @@ export class GameManager {
     this.dayMusic.loop = true;
     this.dayMusic.volume = 0.5;
 
-    // Create night music
     this.nightMusic = new Audio('music/night.mp3');
     this.nightMusic.loop = true;
     this.nightMusic.volume = 0.5;
 
-    // Create special NPC found sound
     this.foundSound = new Audio('music/found.mp3');
     this.foundSound.volume = 0.8;
 
-    // Array to track all audio elements in the game for centralized mute control
     this.allAudioElements = [this.dayMusic, this.nightMusic, this.foundSound];
 
-    // Flag to track if audio is initialized
     this.audioInitialized = false;
-    this.isMuted = false; // Track global mute state
-
-    // Audio prompt will be shown when user starts the game
-  }
-
-  showAudioPrompt() {
-    const audioPrompt = document.getElementById('audioPrompt');
-    const startBtn = document.getElementById('startAudioBtn');
-
-    if (audioPrompt && startBtn) {
-      audioPrompt.style.display = 'block';
-
-      startBtn.addEventListener('click', () => {
-        this.audioInitialized = true;
-        this.playDayMusic();
-        audioPrompt.style.display = 'none';
-      });
-
-      // Also allow keyboard/click anywhere to start
-      const startAudio = (e) => {
-        if (!this.audioInitialized) {
-          this.audioInitialized = true;
-          this.playDayMusic();
-          audioPrompt.style.display = 'none';
-
-          document.removeEventListener('keydown', startAudio);
-        }
-      };
-
-      document.addEventListener('keydown', startAudio);
-    }
+    this.isMuted = false;
   }
 
   playDayMusic() {
     if (this.currentMusic === 'day') return;
 
-    // Stop night music if playing
     if (this.nightMusic) {
       this.nightMusic.pause();
       this.nightMusic.currentTime = 0;
     }
 
-    // Play day music
     if (this.dayMusic) {
       this.dayMusic.play().catch((err) => {});
       this.currentMusic = 'day';
@@ -110,13 +74,11 @@ export class GameManager {
   playNightMusic() {
     if (this.currentMusic === 'night') return;
 
-    // Stop day music if playing
     if (this.dayMusic) {
       this.dayMusic.pause();
       this.dayMusic.currentTime = 0;
     }
 
-    // Play night music
     if (this.nightMusic) {
       this.nightMusic.play().catch((err) => {});
       this.currentMusic = 'night';
@@ -397,8 +359,28 @@ export class GameManager {
       newPauseMenu.className = 'modal';
       newPauseMenu.innerHTML = `
         <div class="modal-content">
-          <h2>Langit Senja</h2>
-          <button id="resumeBtn">Lanjutkan</button>
+          <h2 class="modal-title">Langit Senja</h2>
+          <div class="control-section">
+            <strong class="control-title">Kontrol:</strong>
+            <div class="control-parent">
+              <p class="control-list"><span class="control-list-span">WASD / Arrow</span> - Bergerak</p>
+              <p class="control-list"><span class="control-list-span">Shift</span> - Lari</p>
+              <p class="control-list"><span class="control-list-span">Spacebar</span> - Lompat</p>
+              <p class="control-list"><span class="control-list-span">Mouse</span> - Putar Kamera</p>
+              <p class="control-list"><span class="control-list-span">E</span> - Berinteraksi</p>
+              <p class="control-list"><span class="control-list-span">F</span> - FullScreen</p>
+              <p class="control-list"><span class="control-list-span">ESC</span> - Menu Pause</p>
+            </div>
+          </div>
+          <div class="button-list">
+            <button id="resumeBtn">Lanjutkan</button>
+          </div>
+          <div class="button-list">
+            <button id="muteToggleBtn">🔊 Suara: ON</button>
+          </div>
+          <div class="button-list">
+            <button id="quitBtn"> Keluar</button>
+          </div>
         </div>
       `;
       document.body.appendChild(newPauseMenu);
@@ -406,8 +388,28 @@ export class GameManager {
       document.getElementById('resumeBtn').addEventListener('click', () => {
         this.togglePause();
       });
+
+      document.getElementById('muteToggleBtn').addEventListener('click', () => {
+        window.toggleMute();
+      });
+
+      // Update mute button text based on current mute status
+      const muteToggleBtn = document.getElementById('muteToggleBtn');
+      if (muteToggleBtn) {
+        if (this.isMuted) {
+          muteToggleBtn.textContent = '🔇 Suara: OFF';
+        } else {
+          muteToggleBtn.textContent = '🔊 Suara: ON';
+        }
+      }
+
+      document.getElementById('quitBtn').addEventListener('click', () => {
+        this.quitToMenu();
+      });
     } else {
       pauseMenu.style.display = 'flex';
+      // Update mute button text when menu is displayed
+      this.updateMuteDisplay();
     }
   }
 
@@ -415,6 +417,17 @@ export class GameManager {
     const pauseMenu = document.getElementById('pauseMenu');
     if (pauseMenu) {
       pauseMenu.style.display = 'none';
+    }
+  }
+
+  updateMuteDisplay() {
+    const muteToggleBtn = document.getElementById('muteToggleBtn');
+    if (muteToggleBtn) {
+      if (this.isMuted) {
+        muteToggleBtn.textContent = '🔇 Suara: OFF';
+      } else {
+        muteToggleBtn.textContent = '🔊 Suara: ON';
+      }
     }
   }
 
@@ -454,7 +467,7 @@ export class GameManager {
   updateUI() {
     // Update timer - ensure values are never negative
     let displayMinutes, displaySeconds;
-    
+
     // If remaining time is positive, compute normally; if zero or negative, show 00:00
     if (this.timeRemaining > 0) {
       displayMinutes = Math.floor(this.timeRemaining / 60);
@@ -463,7 +476,7 @@ export class GameManager {
       displayMinutes = 0;
       displaySeconds = 0;
     }
-    
+
     this.timerElement.textContent = `${displayMinutes}:${displaySeconds
       .toString()
       .padStart(2, '0')}`;

@@ -43,16 +43,6 @@ body {
   border-radius: 10px;
   font-size: 18px;
 }
-#controls {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 15px;
-  border-radius: 10px;
-  font-size: 14px;
-}
 #interactionPrompt {
   position: absolute;
   bottom: 200px;
@@ -161,39 +151,6 @@ body {
   text-align: center;
   font-size: 24px;
 }
-#audioPrompt {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.95);
-  color: white;
-  padding: 30px 50px;
-  border-radius: 15px;
-  text-align: center;
-  font-size: 18px;
-  display: none;
-  pointer-events: auto;
-  z-index: 1000;
-  border: 3px solid #ffcc00;
-  box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
-}
-#audioPrompt button {
-  margin-top: 20px;
-  padding: 15px 40px;
-  background: #ffcc00;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  color: black;
-  transition: all 0.3s;
-}
-#audioPrompt button:hover {
-  background: #ffdd00;
-  transform: scale(1.05);
-}
 
 /* How to Play Modal */
 .modal {
@@ -212,14 +169,53 @@ body {
 
 .modal .modal-content {
   background: rgba(30, 30, 30, 0.98);
-  border-radius: 20px;
-  padding: 40px;
   max-width: 600px;
   width: 90%;
   text-align: center;
-  box-shadow: 0 0 50px rgba(255, 204, 0, 0.7);
   border: 3px solid #ffcc00;
   color: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  min-width: 400px;
+}
+
+.modal .modal-title {
+  color: #fff;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.control-section {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.control-title {
+  color: #fff;
+  display: block;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.control-parent {
+  text-align: left;
+  color: #ddd;
+}
+
+.control-list {
+  margin: 8px 0;
+}
+
+.control-list-span {
+  font-weight: bold;
+}
+
+.button-list {
+  margin: 15px 0;
 }
 
 .modal h2 {
@@ -269,7 +265,7 @@ body {
 }
 
 /* Mute Button */
-.mute-button {
+.pause-button {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -288,30 +284,35 @@ body {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
-.mute-button:hover {
+.pause-button:hover {
   background: rgba(0, 0, 0, 0.95);
   transform: scale(1.1);
   box-shadow: 0 6px 15px rgba(255, 204, 0, 0.5);
   border-color: #ffdd00;
 }
 
-.mute-button:active {
+.pause-button:active {
   transform: scale(0.95);
 }
 
-.mute-button .icon {
+.pause-button .icon {
   font-size: 28px;
   user-select: none;
   transition: transform 0.2s;
 }
 
-.mute-button.muted .icon {
+.pause-button.muted .icon {
   transform: scale(0.9);
+}
+
+.mt-3 {
+  margin-top: 30px;
 }
 
 /* Pulse animation untuk mute button */
 @keyframes muteButtonPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   }
   50% {
@@ -319,6 +320,6 @@ body {
   }
 }
 
-.mute-button:hover {
+.pause-button:hover {
   animation: muteButtonPulse 2s ease-in-out infinite;
 }

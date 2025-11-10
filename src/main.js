@@ -98,8 +98,166 @@ class LangitSenja {
       this.gameManager
     );
     this.cheatCodeManager = new CheatCodeManager(this);
+
+    this.createMinimap();
+
     document.getElementById('loading').style.display = 'none';
     this.animate();
+  }
+
+  createMinimap() {
+    const minimapContainer = document.createElement('div');
+    minimapContainer.id = 'minimap-container';
+    minimapContainer.style.position = 'absolute';
+    minimapContainer.style.top = '10px';
+    minimapContainer.style.left = '10px';
+    minimapContainer.style.width = '200px';
+    minimapContainer.style.height = '200px';
+    minimapContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    minimapContainer.style.border = '2px solid #fff';
+    minimapContainer.style.borderRadius = '5px';
+    minimapContainer.style.zIndex = '100';
+    minimapContainer.style.overflow = 'hidden';
+
+    const minimapCanvas = document.createElement('canvas');
+    minimapCanvas.id = 'minimap';
+    minimapCanvas.width = 200;
+    minimapCanvas.height = 200;
+    minimapCanvas.style.width = '100%';
+    minimapCanvas.style.height = '100%';
+    minimapCanvas.style.display = 'block';
+
+    minimapContainer.appendChild(minimapCanvas);
+    document.body.appendChild(minimapContainer);
+
+    this.minimapCanvas = minimapCanvas;
+    this.minimapCtx = minimapCanvas.getContext('2d');
+
+    this.drawMinimap();
+  }
+
+  drawMinimap() {
+    if (
+      !this.minimapCtx ||
+      !this.cityData ||
+      !this.player ||
+      !this.player.position
+    )
+      return;
+
+    const ctx = this.minimapCtx;
+    const canvas = this.minimapCanvas;
+
+    const playerX = this.player.position.x;
+    const playerZ = this.player.position.z;
+
+    const viewRange = 40;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#6b8e23';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const worldSize = viewRange * 2;
+    const scale = canvas.width / worldSize;
+
+    if (this.cityData.roads) {
+      ctx.fillStyle = '#333333';
+      this.cityData.roads.forEach((road) => {
+        const roadWidth = road.geometry.parameters.width;
+        const roadDepth = road.geometry.parameters.depth;
+        const roadMinX = road.position.x - roadWidth / 2;
+        const roadMaxX = road.position.x + roadWidth / 2;
+        const roadMinZ = road.position.z - roadDepth / 2;
+        const roadMaxZ = road.position.z + roadDepth / 2;
+
+        const viewMinX = playerX - viewRange;
+        const viewMaxX = playerX + viewRange;
+        const viewMinZ = playerZ - viewRange;
+        const viewMaxZ = playerZ + viewRange;
+
+        const overlapsX = roadMinX <= viewMaxX && roadMaxX >= viewMinX;
+        const overlapsZ = roadMinZ <= viewMaxZ && roadMaxZ >= viewMinZ;
+
+        if (overlapsX && overlapsZ) {
+          const renderMinX = Math.max(roadMinX, viewMinX);
+          const renderMaxX = Math.min(roadMaxX, viewMaxX);
+          const renderMinZ = Math.max(roadMinZ, viewMinZ);
+          const renderMaxZ = Math.min(roadMaxZ, viewMaxZ);
+
+          const renderStartX = (renderMinX - viewMinX) * scale;
+          const renderStartZ = (renderMinZ - viewMinZ) * scale;
+          const renderWidth = (renderMaxX - renderMinX) * scale;
+          const renderHeight = (renderMaxZ - renderMinZ) * scale;
+
+          if (renderWidth > 0 && renderHeight > 0) {
+            ctx.fillRect(renderStartX, renderStartZ, renderWidth, renderHeight);
+          }
+        }
+      });
+    }
+
+    if (this.cityData.buildings) {
+      this.cityData.buildings.forEach((building) => {
+        if (!building.boundingBox) return;
+
+        const buildingMinX = building.boundingBox.min.x;
+        const buildingMaxX = building.boundingBox.max.x;
+        const buildingMinZ = building.boundingBox.min.z;
+        const buildingMaxZ = building.boundingBox.max.z;
+
+        const viewMinX = playerX - viewRange;
+        const viewMaxX = playerX + viewRange;
+        const viewMinZ = playerZ - viewRange;
+        const viewMaxZ = playerZ + viewRange;
+
+        const overlapsX = buildingMinX <= viewMaxX && buildingMaxX >= viewMinX;
+        const overlapsZ = buildingMinZ <= viewMaxZ && buildingMaxZ >= viewMinZ;
+
+        if (overlapsX && overlapsZ) {
+          const renderMinX = Math.max(buildingMinX, viewMinX);
+          const renderMaxX = Math.min(buildingMaxX, viewMaxX);
+          const renderMinZ = Math.max(buildingMinZ, viewMinZ);
+          const renderMaxZ = Math.min(buildingMaxZ, viewMaxZ);
+
+          const renderStartX = (renderMinX - viewMinX) * scale;
+          const renderStartZ = (renderMinZ - viewMinZ) * scale;
+          const renderWidth = (renderMaxX - renderMinX) * scale;
+          const renderHeight = (renderMaxZ - renderMinZ) * scale;
+
+          if (renderWidth > 0 && renderHeight > 0) {
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(renderStartX, renderStartZ, renderWidth, renderHeight);
+          }
+        }
+      });
+    }
+
+    const centerX = canvas.width / 2;
+    const centerZ = canvas.height / 2;
+
+    ctx.fillStyle = '#0000ff';
+    ctx.beginPath();
+    ctx.arc(centerX, centerZ, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    const playerRotation = this.player.mesh ? this.player.mesh.rotation.y : 0;
+    const arrowLength = 8;
+    const arrowX = centerX + Math.sin(playerRotation) * arrowLength;
+    const arrowZ = centerZ - Math.cos(playerRotation) * arrowLength;
+
+    ctx.strokeStyle = '#0000ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerZ);
+    ctx.lineTo(arrowX, arrowZ);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(centerX, centerZ, 6, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   setupLighting() {
@@ -193,6 +351,14 @@ class LangitSenja {
     }
 
     this.renderer.render(this.scene, this.camera);
+
+    if (this.minimapUpdateCounter === undefined) {
+      this.minimapUpdateCounter = 0;
+    }
+    this.minimapUpdateCounter++;
+    if (this.minimapUpdateCounter % 5 === 0) {
+      this.drawMinimap();
+    }
   }
 
   handleResize() {
@@ -267,6 +433,11 @@ class LangitSenja {
     );
     window.removeEventListener('keydown', this.onMKey || this.handleMKey, true);
     window.removeEventListener('keydown', this.onFKey || this.handleFKey, true);
+
+    const minimapContainer = document.getElementById('minimap-container');
+    if (minimapContainer) {
+      minimapContainer.remove();
+    }
   }
 }
 
@@ -287,25 +458,27 @@ window.resetGame = function () {
 };
 
 window.toggleMute = function () {
-  const muteButton = document.getElementById('muteButton');
-  const icon = muteButton.querySelector('.icon');
-
   if (!window.game || !window.game.gameManager) {
     return;
   }
 
   const gameManager = window.game.gameManager;
-  const wasMuted = gameManager.isMuted;
-
   const isNowMuted = gameManager.toggleMute();
-
-  if (isNowMuted) {
-    muteButton.classList.add('muted');
-    icon.textContent = '🔇';
-  } else {
-    muteButton.classList.remove('muted');
-    icon.textContent = '🔊';
+  const muteToggleBtn = document.getElementById('muteToggleBtn');
+  if (muteToggleBtn) {
+    if (isNowMuted) {
+      muteToggleBtn.textContent = '🔇 Suara: OFF';
+    } else {
+      muteToggleBtn.textContent = '🔊 Suara: ON';
+    }
   }
+
+  return isNowMuted;
+};
+
+window.togglePause = function () {
+  const gameManager = window.game.gameManager;
+  gameManager.togglePause();
 };
 
 window.toggleFullscreen = function () {
@@ -351,3 +524,5 @@ window.addEventListener(
   window.game.handleFKey.bind(window.game),
   true
 );
+
+window.addEventListener('load', function () {});

@@ -26,24 +26,9 @@
         <button id="startGameBtn">Mengerti & Mulai Bermain</button>
       </div>
     </div>
-    <div id="audioPrompt">
-      <p>🎵 Klik untuk memulai musik background</p>
-      <button id="startAudioBtn">Mulai Musik</button>
-    </div>
     <div id="ui">
       <div id="timer">05:00</div>
       <div id="friendCounter">Teman Ditemukan: 0/5</div>
-      <div id="controls">
-        <strong>Kontrol:</strong><br />
-        WASD / Arrow - Bergerak<br />
-        Shift - Lari<br />
-        Spacebar - Lompat<br />
-        Mouse - Putar Kamera<br />
-        E - Berinteraksi<br />
-        M - Mute / Unmute<br />
-        F - FullScreen <br />
-        ESC - Menampilkan Mouse<br />
-      </div>
       <div id="interactionPrompt">Tekan [E] untuk berinteraksi</div>
       <div id="dialogue">
         <div class="npc-name"></div>
@@ -62,8 +47,8 @@
       </div>
     </div>
 
-    <button id="muteButton" class="mute-button" onclick="toggleMute()">
-      <span class="icon">🔊</span>
+    <button id="pauseButton" class="pause-button" onclick="togglePause()">
+      <span class="icon">⏸️</span>
     </button>
     <script type="importmap">
       {
