@@ -17,6 +17,9 @@ import { FrustumCuller } from './FrustumCuller.js';
 import { BatchRenderer } from './BatchRenderer.js';
 import { DistanceCuller } from './DistanceCuller.js';
 import { LODManager } from './LODManager.js';
+import { InstancedMeshManager } from './InstancedMeshManager.js';
+import { TextureManager } from './TextureManager.js';
+import { AnimationPoolManager } from './AnimationPoolManager.js';
 
 class LangitSenja {
   constructor() {
@@ -27,6 +30,13 @@ class LangitSenja {
       0.1,
       1000
     );
+    
+    // Initialize FPS counter
+    this.fps = 0;
+    this.frameCount = 0;
+    this.lastFpsUpdate = performance.now();
+    this.lastFrameTime = performance.now();
+    
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -44,6 +54,10 @@ class LangitSenja {
 
     document.body.appendChild(this.renderer.domElement);
     this.renderer.domElement.id = 'gameCanvas';
+    
+    // Initialize FPS counter HUD
+    this.createFpsCounter();
+    
     this.clock = new THREE.Clock();
 
     this.onResize = this.handleResize.bind(this);
@@ -98,6 +112,11 @@ class LangitSenja {
       this.gameManager
     );
     this.cheatCodeManager = new CheatCodeManager(this);
+
+    // Initialize optimization managers
+    this.instancedMeshManager = new InstancedMeshManager(this.scene);
+    this.textureManager = new TextureManager(this.renderer);
+    this.animationPoolManager = new AnimationPoolManager();
 
     this.createMinimap();
 
@@ -331,6 +350,11 @@ class LangitSenja {
       this.batchRenderer.update();
     }
 
+    // Update animation pool manager
+    if (this.animationPoolManager) {
+      this.animationPoolManager.update(delta);
+    }
+
     if (this.distanceCuller && this.player) {
       this.distanceCuller.player = this.player;
       if (this.npcManager && this.npcManager.npcs) {
@@ -351,6 +375,9 @@ class LangitSenja {
     }
 
     this.renderer.render(this.scene, this.camera);
+    
+    // Update FPS counter
+    this.updateFpsCounter();
 
     if (this.minimapUpdateCounter === undefined) {
       this.minimapUpdateCounter = 0;
@@ -361,6 +388,55 @@ class LangitSenja {
     }
   }
 
+  createFpsCounter() {
+    // Create FPS counter element
+    const fpsCounter = document.createElement('div');
+    fpsCounter.id = 'fps-counter';
+    fpsCounter.style.position = 'absolute';
+    fpsCounter.style.top = '10px';
+    fpsCounter.style.right = '10px';
+    fpsCounter.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    fpsCounter.style.color = '#00ff00';
+    fpsCounter.style.padding = '5px 10px';
+    fpsCounter.style.borderRadius = '5px';
+    fpsCounter.style.fontFamily = 'monospace';
+    fpsCounter.style.fontSize = '14px';
+    fpsCounter.style.zIndex = '1000';
+    fpsCounter.style.pointerEvents = 'none';
+    fpsCounter.textContent = 'FPS: 0';
+    
+    document.body.appendChild(fpsCounter);
+    this.fpsCounterElement = fpsCounter;
+  }
+  
+  updateFpsCounter() {
+    const now = performance.now();
+    const deltaTime = now - this.lastFrameTime;
+    this.lastFrameTime = now;
+    
+    // Calculate FPS
+    this.frameCount++;
+    if (now - this.lastFpsUpdate >= 1000) { // Update every second
+      this.fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsUpdate));
+      this.frameCount = 0;
+      this.lastFpsUpdate = now;
+      
+      // Update the display
+      if (this.fpsCounterElement) {
+        this.fpsCounterElement.textContent = `FPS: ${this.fps}`;
+        
+        // Change color based on performance
+        if (this.fps > 50) {
+          this.fpsCounterElement.style.color = '#00ff00'; // Green for good performance
+        } else if (this.fps > 30) {
+          this.fpsCounterElement.style.color = '#ffff00'; // Yellow for medium performance
+        } else {
+          this.fpsCounterElement.style.color = '#ff5555'; // Red for poor performance
+        }
+      }
+    }
+  }
+  
   handleResize() {
     if (this) {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -437,6 +513,12 @@ class LangitSenja {
     const minimapContainer = document.getElementById('minimap-container');
     if (minimapContainer) {
       minimapContainer.remove();
+    }
+    
+    // Remove FPS counter element
+    const fpsCounter = document.getElementById('fps-counter');
+    if (fpsCounter) {
+      fpsCounter.remove();
     }
   }
 }
