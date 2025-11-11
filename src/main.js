@@ -21,6 +21,7 @@ import { InstancedMeshManager } from './InstancedMeshManager.js';
 import { TextureManager } from './TextureManager.js';
 import { AnimationPoolManager } from './AnimationPoolManager.js';
 import { CityStreamer } from './CityStreamer.js';
+import { OcclusionCuller } from './OcclusionCuller.js';
 
 class LangitSenja {
   constructor() {
@@ -122,6 +123,18 @@ class LangitSenja {
 
     // Initialize city streaming system with a 100 unit load distance and 120 unit unload distance
     this.cityStreamer = new CityStreamer(this.scene, this.cityData, 100, 120);
+
+    // Initialize occlusion culling system
+    this.occlusionCuller = new OcclusionCuller(this.camera, this.renderer);
+    
+    // Set up occluders (buildings that block view of other objects)
+    if (this.cityData.buildings) {
+      this.cityData.buildings.forEach(building => {
+        if (building.mesh) {
+          this.occlusionCuller.addOccluder(building.mesh);
+        }
+      });
+    }
 
     this.createMinimap();
 
@@ -381,6 +394,10 @@ class LangitSenja {
 
     this.renderer.render(this.scene, this.camera);
     // Update city streaming based on player position
+    // Update occlusion culling
+    if (this.occlusionCuller) {
+      this.occlusionCuller.update();
+    }
     if (this.cityStreamer && this.player && this.player.position) {
       this.cityStreamer.update(this.player.position);
     }
@@ -513,6 +530,11 @@ class LangitSenja {
     // Dispose of city streamer
     if (this.cityStreamer) {
       this.cityStreamer.dispose();
+
+    // Dispose of occlusion culler
+    if (this.occlusionCuller) {
+      this.occlusionCuller.dispose();
+    }
     }
 
     window.removeEventListener('resize', this.onResize || this.handleResize);

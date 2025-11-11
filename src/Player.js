@@ -289,34 +289,28 @@ export class Player {
       }
     }
 
-    // Check collision with special NPCs (including FarhanHL)
     if (this.game && this.game.npcManager && this.game.npcManager.specialNPCs) {
       for (const specialNPC of this.game.npcManager.specialNPCs) {
         if (!specialNPC.mesh) continue;
-
-        // Simple horizontal distance check first as optimization
         const horizontalDistance = Math.sqrt(
           Math.pow(this.position.x - specialNPC.mesh.position.x, 2) +
-          Math.pow(this.position.z - specialNPC.mesh.position.z, 2)
+            Math.pow(this.position.z - specialNPC.mesh.position.z, 2)
         );
 
-        if (horizontalDistance < (playerRadius + 0.4)) {
-          // Check vertical overlap
+        if (horizontalDistance < playerRadius + 0.4) {
           const playerBottom = this.position.y - 0.9;
           const playerTop = this.position.y + 0.9;
-          const npcBottom = specialNPC.mesh.position.y - 0.9;  // Assuming NPC position.y is ~0.9
+          const npcBottom = specialNPC.mesh.position.y - 0.9;
           const npcTop = specialNPC.mesh.position.y + 0.9;
 
-          // Check if there's vertical overlap
           if (playerTop > npcBottom && playerBottom < npcTop) {
-            // There's a 3D collision - push horizontally to resolve
             const direction = new THREE.Vector3()
               .subVectors(this.position, specialNPC.mesh.position)
-              .setY(0)  // Only push horizontally
+              .setY(0)
               .normalize();
 
             if (direction.length() > 0) {
-              const pushDistance = (playerRadius + 0.4) - horizontalDistance;
+              const pushDistance = playerRadius + 0.4 - horizontalDistance;
               this.position.add(direction.multiplyScalar(pushDistance));
             }
           }
