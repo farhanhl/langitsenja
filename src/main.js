@@ -20,6 +20,7 @@ import { LODManager } from './LODManager.js';
 import { InstancedMeshManager } from './InstancedMeshManager.js';
 import { TextureManager } from './TextureManager.js';
 import { AnimationPoolManager } from './AnimationPoolManager.js';
+import { CityStreamer } from './CityStreamer.js';
 
 class LangitSenja {
   constructor() {
@@ -118,6 +119,9 @@ class LangitSenja {
     this.instancedMeshManager = new InstancedMeshManager(this.scene);
     this.textureManager = new TextureManager(this.renderer);
     this.animationPoolManager = new AnimationPoolManager();
+
+    // Initialize city streaming system with a 100 unit load distance and 120 unit unload distance
+    this.cityStreamer = new CityStreamer(this.scene, this.cityData, 100, 120);
 
     this.createMinimap();
 
@@ -376,6 +380,10 @@ class LangitSenja {
     }
 
     this.renderer.render(this.scene, this.camera);
+    // Update city streaming based on player position
+    if (this.cityStreamer && this.player && this.player.position) {
+      this.cityStreamer.update(this.player.position);
+    }
     
     // Update FPS counter
     this.updateFpsCounter();
@@ -500,6 +508,11 @@ class LangitSenja {
 
     if (this.renderer) {
       this.renderer.dispose();
+    }
+
+    // Dispose of city streamer
+    if (this.cityStreamer) {
+      this.cityStreamer.dispose();
     }
 
     window.removeEventListener('resize', this.onResize || this.handleResize);
