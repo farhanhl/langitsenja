@@ -22,6 +22,8 @@ import { TextureManager } from './TextureManager.js';
 import { AnimationPoolManager } from './AnimationPoolManager.js';
 import { CityStreamer } from './CityStreamer.js';
 import { OcclusionCuller } from './OcclusionCuller.js';
+import { Quadtree } from './Quadtree.js';
+import { HierarchicalCuller } from './HierarchicalCuller.js';
 
 class LangitSenja {
   constructor() {
@@ -134,6 +136,38 @@ class LangitSenja {
           this.occlusionCuller.addOccluder(building.mesh);
         }
       });
+    }
+
+    // Initialize hierarchical culling system using quadtree for spatial partitioning
+    this.hierarchicalCuller = new HierarchicalCuller(this.camera, {
+      regionSize: 50,           // Each region is 50x50 units
+      visibilityDistance: 120,  // Show regions within 120 units
+      maxObjectsPerRegion: 10   // Max objects per quadtree cell
+    });
+
+    // Initialize hierarchical culling with city objects
+    if (this.cityData.buildings) {
+      const allCityObjects = [];
+      
+      // Add buildings
+      this.cityData.buildings.forEach(building => {
+        if (building.mesh) {
+          allCityObjects.push(building.mesh);
+        }
+      });
+      
+      // Add roads
+      if (this.cityData.roads) {
+        allCityObjects.push(...this.cityData.roads);
+      }
+      
+      // Add sidewalks
+      if (this.cityData.sidewalks) {
+        allCityObjects.push(...this.cityData.sidewalks);
+      }
+      
+      // Add other objects that should be in the hierarchy
+      this.hierarchicalCuller.initialize(allCityObjects);
     }
 
     this.createMinimap();
@@ -397,6 +431,10 @@ class LangitSenja {
     // Update occlusion culling
     if (this.occlusionCuller) {
       this.occlusionCuller.update();
+    // Update hierarchical culling
+    if (this.hierarchicalCuller) {
+      this.hierarchicalCuller.update();
+    }
     }
     if (this.cityStreamer && this.player && this.player.position) {
       this.cityStreamer.update(this.player.position);

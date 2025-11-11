@@ -36,7 +36,7 @@ export class NPCManager {
       return;
     }
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 20; i++) {
       const color = colors[i % colors.length];
       const path =
         this.cityData.sidewalkPaths[i % this.cityData.sidewalkPaths.length];
