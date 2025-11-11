@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 
 export class Player {
-  constructor(scene, camera, cityData, gameManager) {
+  constructor(scene, camera, cityData, gameManager, game) {
     this.scene = scene;
     this.camera = camera;
     this.cityData = cityData;
     this.gameManager = gameManager; // Added reference to game manager
+    this.game = game; // Added reference to main game instance to access NPC manager
 
     // Player properties
     this.position = new THREE.Vector3(0, 0.9, 5);
@@ -16,6 +17,11 @@ export class Player {
     this.gravity = -25;
     this.isOnGround = false;
     this.height = 1.8;
+    
+    // Store original values for cheat modifications
+    this.originalSpeed = this.speed;
+    this.originalSprintSpeed = this.sprintSpeed;
+    this.originalJumpSpeed = this.jumpSpeed;
 
     // Camera properties
     this.cameraDistance = 6;
@@ -188,14 +194,45 @@ export class Player {
       this.isOnGround = false;
     }
 
-    // Update position
-    this.position.x += this.velocity.x * delta;
+    // Calculate intended movement
+    const movementX = this.velocity.x * delta;
+    const movementZ = this.velocity.z * delta;
+    const movementDistance = Math.sqrt(movementX * movementX + movementZ * movementZ);
+    
+    // If the movement is too large for a single frame, subdivide it
+    // This prevents tunneling through buildings at high speeds
+    const playerRadius = 0.5;
+    const maxStepSize = playerRadius * 0.9; // Keep steps slightly smaller than player radius
+    
+    if (movementDistance > maxStepSize) {
+      // Calculate how many steps we need to subdivide the movement
+      const steps = Math.ceil(movementDistance / maxStepSize);
+      const stepX = movementX / steps;
+      const stepZ = movementZ / steps;
+      
+      // Move in smaller steps to prevent tunneling
+      for (let i = 0; i < steps; i++) {
+        this.position.x += stepX;
+        this.position.z += stepZ;
+        
+        // Map boundary check
+        this.enforceMapBoundaries();
+        
+        // Check collision after each small step
+        this.handleBuildingCollision();
+      }
+    } else {
+      // Normal movement for slower speeds
+      this.position.x += this.velocity.x * delta;
+      this.position.z += this.velocity.z * delta;
+      
+      // Map boundary check
+      this.enforceMapBoundaries();
+    }
+    
+    // Handle vertical movement (Y-axis) separately
     this.position.y += this.velocity.y * delta;
-    this.position.z += this.velocity.z * delta;
-
-    // Map boundary check (prevent player from leaving the map)
-    this.enforceMapBoundaries();
-
+    
     // Ground collision
     const groundY = this.getGroundHeight(this.position.x, this.position.z);
     if (this.position.y <= groundY) {
@@ -205,8 +242,8 @@ export class Player {
     } else {
       this.isOnGround = false;
     }
-
-    // Building collision
+    
+    // Final collision check
     this.handleBuildingCollision();
 
     // Update mesh position and rotation
@@ -228,36 +265,80 @@ export class Player {
   }
 
   handleBuildingCollision() {
-    if (!this.cityData || !this.cityData.buildings) return;
+    if (!this.cityData) return;
 
     const playerRadius = 0.5;
 
-    for (const building of this.cityData.buildings) {
-      const bBox = building.boundingBox;
-      if (!bBox) continue;
+    // Check collision with buildings
+    if (this.cityData.buildings) {
+      for (const building of this.cityData.buildings) {
+        const bBox = building.boundingBox;
+        if (!bBox) continue;
 
-      // Simple AABB collision
-      const closestX = Math.max(
-        bBox.min.x,
-        Math.min(this.position.x, bBox.max.x)
-      );
-      const closestZ = Math.max(
-        bBox.min.z,
-        Math.min(this.position.z, bBox.max.z)
-      );
+        // Simple AABB collision
+        const closestX = Math.max(
+          bBox.min.x,
+          Math.min(this.position.x, bBox.max.x)
+        );
+        const closestZ = Math.max(
+          bBox.min.z,
+          Math.min(this.position.z, bBox.max.z)
+        );
 
-      const distX = this.position.x - closestX;
-      const distZ = this.position.z - closestZ;
-      const distanceSquared = distX * distX + distZ * distZ;
+        const distX = this.position.x - closestX;
+        const distZ = this.position.z - closestZ;
+        const distanceSquared = distX * distX + distZ * distZ;
 
-      if (distanceSquared < playerRadius * playerRadius) {
-        // Push player out
-        const distance = Math.sqrt(distanceSquared);
-        if (distance > 0) {
-          const pushX = (distX / distance) * (playerRadius - distance);
-          const pushZ = (distZ / distance) * (playerRadius - distance);
-          this.position.x += pushX;
-          this.position.z += pushZ;
+        if (distanceSquared < playerRadius * playerRadius) {
+          // Push player out from collision
+          const distance = Math.sqrt(distanceSquared);
+          if (distance > 0) {
+            const pushX = (distX / distance) * (playerRadius - distance);
+            const pushZ = (distZ / distance) * (playerRadius - distance);
+            this.position.x += pushX;
+            this.position.z += pushZ;
+          }
+        }
+      }
+    }
+
+    // Check collision with NPCs (walking NPCs)
+    if (this.game && this.game.npcManager && this.game.npcManager.npcs) {
+      for (const npc of this.game.npcManager.npcs) {
+        if (npc.type !== 'walking' || !npc.mesh) continue;
+        
+        // Calculate distance between player and NPC
+        const distance = this.position.distanceTo(npc.mesh.position);
+        const combinedRadius = playerRadius + 0.4; // NPC has roughly 0.4 collision radius
+        
+        if (distance < combinedRadius) {
+          // Calculate the direction vector from NPC to player
+          const direction = new THREE.Vector3().subVectors(this.position, npc.mesh.position).normalize();
+          
+          // Push player away from NPC
+          const pushDistance = combinedRadius - distance;
+          this.position.add(direction.multiplyScalar(pushDistance));
+        }
+      }
+    }
+
+    // Check collision with vehicle NPCs (motorcycles and cars)
+    if (this.game && this.game.npcManager && this.game.npcManager.vehicleNPCs) {
+      for (const vehicle of this.game.npcManager.vehicleNPCs) {
+        if (!vehicle.mesh) continue;
+        
+        // Calculate distance between player and vehicle
+        const distance = this.position.distanceTo(vehicle.mesh.position);
+        // Vehicles have different sizes, use a reasonable collision radius
+        const combinedRadius = playerRadius + (vehicle.type === 'car' ? 1.2 : 0.8);
+        
+        if (distance < combinedRadius) {
+          // Calculate the direction vector from vehicle to player
+          const direction = new THREE.Vector3().subVectors(this.position, vehicle.mesh.position).normalize();
+          
+          // Push player away from vehicle
+          const pushDistance = combinedRadius - distance;
+          this.position.add(direction.multiplyScalar(pushDistance));
         }
       }
     }
@@ -313,6 +394,8 @@ export class Player {
       Math.min(zBoundary, this.position.z)
     );
   }
+  
+
 
   getPosition() {
     return this.position.clone();
@@ -330,5 +413,24 @@ export class Player {
     if (this.mesh && this.mesh.parent) {
       this.mesh.parent.remove(this.mesh);
     }
+  }
+  
+  // Methods to modify player attributes for cheat codes
+  activateKangarooCheat() {
+    this.jumpSpeed = this.originalJumpSpeed * 10; // 10x higher jumps
+  }
+  
+  deactivateKangarooCheat() {
+    this.jumpSpeed = this.originalJumpSpeed;
+  }
+  
+  activateFlashCheat() {
+    this.speed = this.originalSpeed * 5; // 5x faster movement
+    this.sprintSpeed = this.originalSprintSpeed * 5; 
+  }
+  
+  deactivateFlashCheat() {
+    this.speed = this.originalSpeed;
+    this.sprintSpeed = this.originalSprintSpeed;
   }
 }

@@ -342,6 +342,8 @@ export class GameManager {
         <p class="control-list"><span class="control-list-span">NIGHT</span> - Ubah waktu malam</p>
         <p class="control-list"><span class="control-list-span">RAIN</span> - Cuaca hujan</p>
         <p class="control-list"><span class="control-list-span">CLEAR</span> - Cuaca cerah</p>
+        <p class="control-list"><span class="control-list-span">KANGAROO</span> - Lompat 10x lebih tinggi</p>
+        <p class="control-list"><span class="control-list-span">FLASH</span> - Lari 5x lebih cepat</p>
       </div>
     </div>
   `;

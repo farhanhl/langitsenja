@@ -16,6 +16,8 @@ export class CheatCodeManager {
       NIGHT: () => this.activateNight(),
       RAIN: () => this.activateRain(),
       CLEAR: () => this.activateClear(),
+      KANGAROO: () => this.activateKangaroo(),
+      FLASH: () => this.activateFlash(),
     };
 
     this.cheatSound = new Audio('/music/cheat.mp3');
@@ -181,6 +183,40 @@ export class CheatCodeManager {
 
     this.game.gameManager.activateClearCheat();
     this.showNotification('CLEAR Activated', 'danger');
+  }
+
+  activateKangaroo() {
+    if (!this.game.player) {
+      return;
+    }
+
+    // Toggle kangaroo cheat - if already active, deactivate it
+    if (this.game.player.kangarooActive) {
+      this.game.player.deactivateKangarooCheat();
+      this.game.player.kangarooActive = false;
+      this.showNotification('KANGAROO Deactivated', 'info');
+    } else {
+      this.game.player.activateKangarooCheat();
+      this.game.player.kangarooActive = true;
+      this.showNotification('KANGAROO Activated - 10x Higher Jumps!', 'danger');
+    }
+  }
+
+  activateFlash() {
+    if (!this.game.player) {
+      return;
+    }
+
+    // Toggle flash cheat - if already active, deactivate it
+    if (this.game.player.flashActive) {
+      this.game.player.deactivateFlashCheat();
+      this.game.player.flashActive = false;
+      this.showNotification('FLASH Deactivated', 'info');
+    } else {
+      this.game.player.activateFlashCheat();
+      this.game.player.flashActive = true;
+      this.showNotification('FLASH Activated - 5x Faster Movement!', 'danger');
+    }
   }
 
   showNotification(message, type = 'info') {

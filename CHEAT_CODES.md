@@ -130,6 +130,39 @@ Untuk mengaktifkan cheat code, cukup **ketik kode rahasia** saat bermain (tidak 
 
 ---
 
+## 🦘 KANGAROO
+
+**Kode:** Ketik `KANGAROO`
+
+**Efek:**
+- 🦘 Player bisa lompat 10x lebih tinggi dari biasanya
+- Fitur lompat normal tetap berfungsi (Spacebar)
+- Efek bisa diaktifkan/dinonaktifkan bergantian
+- Membuat eksplorasi kota menjadi lebih mudah dan menyenangkan
+
+**Fitur Visual:**
+- Player bisa melompat sangat tinggi
+- Efek gravitasi tetap berlaku
+- Tidak mempengaruhi gerakan horizontal
+
+---
+
+## ⚡ FLASH
+
+**Kode:** Ketik `FLASH`
+
+**Efek:**
+- ⚡ Player berjalan dan berlari 5x lebih cepat dari biasanya
+- Fitur sprint (Shift) tetap berfungsi
+- Efek bisa diaktifkan/dinonaktifkan bergantian
+- Membuat pergerakan dalam kota menjadi sangat cepat
+
+**Fitur Visual:**
+- Player bergerak dengan kecepatan tinggi
+- Tidak mempengaruhi kemampuan lompat
+
+---
+
 ## 💡 Tips & Tricks
 
 1. **Kombinasi Cheat:**
@@ -197,5 +230,7 @@ Easter eggs created with ❤️ using Three.js
 | NIGHT | - | 🌙 Change time to night |
 | RAIN | - | 🌧️ Start raining |
 | CLEAR | - | ☀️ Clear weather |
+| KANGAROO | - | 🦘 10x higher jumps |
+| FLASH | - | ⚡ 5x faster movement |
 
 **Happy Cheating!** 😎

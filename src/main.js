@@ -78,7 +78,8 @@ class LangitSenja {
       this.scene,
       this.camera,
       this.cityData,
-      this.gameManager
+      this.gameManager,
+      this
     );
     this.npcManager = new NPCManager(this.scene, this.cityData);
     this.npcManager.createNPCs();
