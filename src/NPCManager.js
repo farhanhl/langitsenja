@@ -698,7 +698,8 @@ export class NPCManager {
     ];
 
     specialCharacters.forEach((char) => {
-      const npc = this.createMinecraftCharacter(0xff00ff);
+      const color = this.getRandomColor();
+      const npc = this.createMinecraftCharacter(color);
       npc.position.set(char.position.x, 0.9, char.position.z);
       const nameTag = this.createNameTag(char.name);
       nameTag.position.y = 2.5;
@@ -714,8 +715,12 @@ export class NPCManager {
     });
   }
 
+  getRandomColor() {
+    return Math.floor(Math.random() * 0xffffff);
+  }
+
   createFarhanNPC() {
-    const farhan = this.createMinecraftCharacter(0xffd700);
+    const farhan = this.createFarhanCharacter();
     farhan.position.set(0, 0.9, -6.5);
     const nameTag = this.createNameTag('Farhan Hadi Lutfi');
     nameTag.position.y = 2.5;
@@ -734,6 +739,117 @@ export class NPCManager {
       isFarhan: true,
       nameTag: nameTag,
     });
+  }
+
+  createFarhanCharacter(scale = 1) {
+    const group = new THREE.Group();
+
+    // Create body with gold color (standard Minecraft character body)
+    const bodyWidth = 0.8 * scale;
+    const bodyHeight = 1.2 * scale;
+    const bodyDepth = 0.4 * scale;
+    const bodyGeometry = new THREE.BoxGeometry(
+      bodyWidth,
+      bodyHeight,
+      bodyDepth
+    );
+
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+      color: 0x000000, // gold color
+      roughness: 0.8,
+      metalness: 0.2,
+    });
+
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.y = 0.6 * scale;
+    body.castShadow = true;
+    group.add(body);
+
+    // Add front logo as a separate plane in front of the body
+    const textureLoader = new THREE.TextureLoader();
+    let logoPlane;
+
+    try {
+      const logoTexture = textureLoader.load('src/farhanhl.jpg');
+      // Configure the texture to maintain 1:1 aspect ratio
+      logoTexture.wrapS = THREE.ClampToEdgeWrapping;
+      logoTexture.wrapT = THREE.ClampToEdgeWrapping;
+      logoTexture.generateMipmaps = false;
+      logoTexture.minFilter = THREE.LinearFilter;
+
+      // Create a plane for the logo
+      // To maintain 1:1 aspect ratio, we'll use equal width and height
+      const logoSize = Math.min(bodyWidth * 0.8, bodyHeight * 0.6); // Make logo smaller than the body
+      const logoGeometry = new THREE.PlaneGeometry(logoSize, logoSize);
+      const logoMaterial = new THREE.MeshStandardMaterial({
+        map: logoTexture,
+        side: THREE.DoubleSide, // Show on both sides if needed, but will be placed at front
+        transparent: true, // In case logo has transparency
+        roughness: 0.7,
+        metalness: 0.3,
+      });
+
+      logoPlane = new THREE.Mesh(logoGeometry, logoMaterial);
+      // Position the logo in the front center of the body
+      logoPlane.position.set(0, 0.6 * scale, bodyDepth / 2 + 0.01); // Slightly in front of the body
+      logoPlane.rotation.y = 0; // Face forward
+      group.add(logoPlane);
+    } catch (error) {
+      // If texture fails to load, continue without logo (just the gold body)
+      console.warn(
+        'Could not load FarhanHL logo texture, using gold body instead'
+      );
+    }
+
+    // Head (maintain original skin color)
+    const headGeometry = new THREE.BoxGeometry(
+      0.6 * scale,
+      0.6 * scale,
+      0.6 * scale
+    );
+    const headMaterial = new THREE.MeshStandardMaterial({ color: 0xfdbcb4 });
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.y = 1.5 * scale;
+    head.castShadow = true;
+    group.add(head);
+
+    // Arms (use gold color to match theme)
+    const armGeometry = new THREE.BoxGeometry(
+      0.3 * scale,
+      0.9 * scale,
+      0.3 * scale
+    );
+    const armMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+
+    const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+    leftArm.position.set(-0.6 * scale, 0.6 * scale, 0);
+    leftArm.castShadow = true;
+    group.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+    rightArm.position.set(0.6 * scale, 0.6 * scale, 0);
+    rightArm.castShadow = true;
+    group.add(rightArm);
+
+    // Legs (use dark blue to match original theme)
+    const legGeometry = new THREE.BoxGeometry(
+      0.3 * scale,
+      0.9 * scale,
+      0.3 * scale
+    );
+    const legMaterial = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+
+    const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+    leftLeg.position.set(-0.25 * scale, -0.45 * scale, 0);
+    leftLeg.castShadow = true;
+    group.add(leftLeg);
+
+    const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+    rightLeg.position.set(0.25 * scale, -0.45 * scale, 0);
+    rightLeg.castShadow = true;
+    group.add(rightLeg);
+
+    return group;
   }
 
   createNameTag(text) {

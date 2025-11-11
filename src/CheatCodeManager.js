@@ -190,7 +190,6 @@ export class CheatCodeManager {
       return;
     }
 
-    // Toggle kangaroo cheat - if already active, deactivate it
     if (this.game.player.kangarooActive) {
       this.game.player.deactivateKangarooCheat();
       this.game.player.kangarooActive = false;
@@ -198,7 +197,7 @@ export class CheatCodeManager {
     } else {
       this.game.player.activateKangarooCheat();
       this.game.player.kangarooActive = true;
-      this.showNotification('KANGAROO Activated - 10x Higher Jumps!', 'danger');
+      this.showNotification('KANGAROO Activated', 'danger');
     }
   }
 
@@ -207,7 +206,6 @@ export class CheatCodeManager {
       return;
     }
 
-    // Toggle flash cheat - if already active, deactivate it
     if (this.game.player.flashActive) {
       this.game.player.deactivateFlashCheat();
       this.game.player.flashActive = false;
@@ -215,7 +213,7 @@ export class CheatCodeManager {
     } else {
       this.game.player.activateFlashCheat();
       this.game.player.flashActive = true;
-      this.showNotification('FLASH Activated - 5x Faster Movement!', 'danger');
+      this.showNotification('FLASH Activated', 'danger');
     }
   }
 
