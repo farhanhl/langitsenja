@@ -242,6 +242,9 @@ export class Godzilla {
     const mesh = building.mesh;
     if (!mesh) return;
 
+    // Remove the building's bounding box to prevent future collisions
+    building.boundingBox = null;
+
     let fallSpeed = 0;
     const destroyAnimation = () => {
       fallSpeed += 0.1;
