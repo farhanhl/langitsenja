@@ -5221,7 +5221,7 @@ export class CityBuilder {
       return plane;
     }
 
-    addCanvasTextLabel({
+    const textPlane = addCanvasTextLabel({
       text: 'DISEWAKAN',
       w: 2.9,
       h: 0.8,
@@ -5256,6 +5256,11 @@ export class CityBuilder {
       }
       reg(board, 'PlangDisewakan_Board');
       reg(pole, 'PlangDisewakan_Pole');
+      reg(frameT, 'PlangDisewakan_FrameTop');
+      reg(frameB, 'PlangDisewakan_FrameBottom');
+      reg(frameL, 'PlangDisewakan_FrameLeft');
+      reg(frameR, 'PlangDisewakan_FrameRight');
+      reg(textPlane, 'PlangDisewakan_Text');
     }
 
     return group;
