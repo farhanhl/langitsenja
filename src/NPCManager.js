@@ -767,7 +767,7 @@ export class NPCManager {
     let logoPlane;
 
     try {
-      const logoTexture = textureLoader.load('public/farhanhl.jpg');
+      const logoTexture = textureLoader.load('/farhanhl.jpg');
       logoTexture.wrapS = THREE.ClampToEdgeWrapping;
       logoTexture.wrapT = THREE.ClampToEdgeWrapping;
       logoTexture.generateMipmaps = false;

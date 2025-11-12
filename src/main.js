@@ -21,7 +21,6 @@ import { InstancedMeshManager } from './InstancedMeshManager.js';
 import { TextureManager } from './TextureManager.js';
 import { AnimationPoolManager } from './AnimationPoolManager.js';
 import { CityStreamer } from './CityStreamer.js';
-import { OcclusionCuller } from './OcclusionCuller.js';
 import { Quadtree } from './Quadtree.js';
 import { HierarchicalCuller } from './HierarchicalCuller.js';
 
@@ -34,13 +33,12 @@ class LangitSenja {
       0.1,
       1000
     );
-    
-    // Initialize FPS counter
+
     this.fps = 0;
     this.frameCount = 0;
     this.lastFpsUpdate = performance.now();
     this.lastFrameTime = performance.now();
-    
+
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -58,10 +56,9 @@ class LangitSenja {
 
     document.body.appendChild(this.renderer.domElement);
     this.renderer.domElement.id = 'gameCanvas';
-    
-    // Initialize FPS counter HUD
+
     this.createFpsCounter();
-    
+
     this.clock = new THREE.Clock();
 
     this.onResize = this.handleResize.bind(this);
@@ -118,55 +115,35 @@ class LangitSenja {
     );
     this.cheatCodeManager = new CheatCodeManager(this);
 
-    // Initialize optimization managers
     this.instancedMeshManager = new InstancedMeshManager(this.scene);
     this.textureManager = new TextureManager(this.renderer);
     this.animationPoolManager = new AnimationPoolManager();
 
-    // Initialize city streaming system with a 100 unit load distance and 120 unit unload distance
     this.cityStreamer = new CityStreamer(this.scene, this.cityData, 100, 120);
 
-    // Initialize occlusion culling system
-    this.occlusionCuller = new OcclusionCuller(this.camera, this.renderer);
-    
-    // Set up occluders (buildings that block view of other objects)
-    if (this.cityData.buildings) {
-      this.cityData.buildings.forEach(building => {
-        if (building.mesh) {
-          this.occlusionCuller.addOccluder(building.mesh);
-        }
-      });
-    }
-
-    // Initialize hierarchical culling system using quadtree for spatial partitioning
     this.hierarchicalCuller = new HierarchicalCuller(this.camera, {
-      regionSize: 50,           // Each region is 50x50 units
-      visibilityDistance: 120,  // Show regions within 120 units
-      maxObjectsPerRegion: 10   // Max objects per quadtree cell
+      regionSize: 50,
+      visibilityDistance: 120,
+      maxObjectsPerRegion: 10,
     });
 
-    // Initialize hierarchical culling with city objects
     if (this.cityData.buildings) {
       const allCityObjects = [];
-      
-      // Add buildings
-      this.cityData.buildings.forEach(building => {
+
+      this.cityData.buildings.forEach((building) => {
         if (building.mesh) {
           allCityObjects.push(building.mesh);
         }
       });
-      
-      // Add roads
+
       if (this.cityData.roads) {
         allCityObjects.push(...this.cityData.roads);
       }
-      
-      // Add sidewalks
+
       if (this.cityData.sidewalks) {
         allCityObjects.push(...this.cityData.sidewalks);
       }
-      
-      // Add other objects that should be in the hierarchy
+
       this.hierarchicalCuller.initialize(allCityObjects);
     }
 
@@ -402,7 +379,6 @@ class LangitSenja {
       this.batchRenderer.update();
     }
 
-    // Update animation pool manager
     if (this.animationPoolManager) {
       this.animationPoolManager.update(delta);
     }
@@ -427,20 +403,10 @@ class LangitSenja {
     }
 
     this.renderer.render(this.scene, this.camera);
-    // Update city streaming based on player position
-    // Update occlusion culling
-    if (this.occlusionCuller) {
-      this.occlusionCuller.update();
-    // Update hierarchical culling
-    if (this.hierarchicalCuller) {
-      this.hierarchicalCuller.update();
-    }
-    }
     if (this.cityStreamer && this.player && this.player.position) {
       this.cityStreamer.update(this.player.position);
     }
-    
-    // Update FPS counter
+
     this.updateFpsCounter();
 
     if (this.minimapUpdateCounter === undefined) {
@@ -453,7 +419,6 @@ class LangitSenja {
   }
 
   createFpsCounter() {
-    // Create FPS counter element
     const fpsCounter = document.createElement('div');
     fpsCounter.id = 'fps-counter';
     fpsCounter.style.position = 'absolute';
@@ -468,39 +433,38 @@ class LangitSenja {
     fpsCounter.style.zIndex = '1000';
     fpsCounter.style.pointerEvents = 'none';
     fpsCounter.textContent = 'FPS: 0';
-    
+
     document.body.appendChild(fpsCounter);
     this.fpsCounterElement = fpsCounter;
   }
-  
+
   updateFpsCounter() {
     const now = performance.now();
     const deltaTime = now - this.lastFrameTime;
     this.lastFrameTime = now;
-    
-    // Calculate FPS
+
     this.frameCount++;
-    if (now - this.lastFpsUpdate >= 1000) { // Update every second
-      this.fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsUpdate));
+    if (now - this.lastFpsUpdate >= 1000) {
+      this.fps = Math.round(
+        (this.frameCount * 1000) / (now - this.lastFpsUpdate)
+      );
       this.frameCount = 0;
       this.lastFpsUpdate = now;
-      
-      // Update the display
+
       if (this.fpsCounterElement) {
         this.fpsCounterElement.textContent = `FPS: ${this.fps}`;
-        
-        // Change color based on performance
+
         if (this.fps > 50) {
-          this.fpsCounterElement.style.color = '#00ff00'; // Green for good performance
+          this.fpsCounterElement.style.color = '#00ff00';
         } else if (this.fps > 30) {
-          this.fpsCounterElement.style.color = '#ffff00'; // Yellow for medium performance
+          this.fpsCounterElement.style.color = '#ffff00';
         } else {
-          this.fpsCounterElement.style.color = '#ff5555'; // Red for poor performance
+          this.fpsCounterElement.style.color = '#ff5555';
         }
       }
     }
   }
-  
+
   handleResize() {
     if (this) {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -565,14 +529,8 @@ class LangitSenja {
       this.renderer.dispose();
     }
 
-    // Dispose of city streamer
     if (this.cityStreamer) {
       this.cityStreamer.dispose();
-
-    // Dispose of occlusion culler
-    if (this.occlusionCuller) {
-      this.occlusionCuller.dispose();
-    }
     }
 
     window.removeEventListener('resize', this.onResize || this.handleResize);
@@ -588,8 +546,7 @@ class LangitSenja {
     if (minimapContainer) {
       minimapContainer.remove();
     }
-    
-    // Remove FPS counter element
+
     const fpsCounter = document.getElementById('fps-counter');
     if (fpsCounter) {
       fpsCounter.remove();
@@ -660,7 +617,6 @@ window.toggleFullscreen = function () {
   }
 };
 
-// Mobile device detection function
 function isMobileDevice() {
   return (
     typeof window.orientation !== 'undefined' ||
@@ -691,10 +647,8 @@ document.addEventListener('DOMContentLoaded', function () {
       pauseButton.style.display = 'none';
     }
 
-    // Prevent game initialization
     return;
   } else {
-    // Initialize the game if not on mobile
     window.game = new LangitSenja();
 
     window.addEventListener(

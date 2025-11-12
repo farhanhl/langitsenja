@@ -5,9 +5,13 @@ import { resolve } from 'path';
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Impor plugin obfuscator dan konfigurasinya
-const obfuscatorPlugin = isProduction ? [
-  require('rollup-plugin-javascript-obfuscator')(require('./obfuscator.config.js'))
-] : [];
+const obfuscatorPlugin = isProduction
+  ? [
+      require('rollup-plugin-javascript-obfuscator')(
+        require('./obfuscator.config.js')
+      ),
+    ]
+  : [];
 
 export default defineConfig({
   root: '.', // Root directory adalah project root
@@ -39,7 +43,7 @@ export default defineConfig({
       },
       format: {
         comments: false, // Hilangkan komentar
-      }
+      },
     },
     rollupOptions: {
       input: {
@@ -51,14 +55,14 @@ export default defineConfig({
         // Konfigurasi untuk output
         assetFileNames: (assetInfo) => {
           let extType = assetInfo.name.split('.').at(1);
-          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+          if (/png|jpg|svg|gif|tiff|bmp|ico/i.test(extType)) {
             extType = 'img';
           }
           return `assets/${extType}/[name]-[hash][extname]`;
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-      }
+      },
     },
   },
 });
