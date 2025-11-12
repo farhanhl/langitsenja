@@ -4,8 +4,8 @@
   "description": "Langit Senja - A Three.js open-world exploration game",
   "main": "index.html",
   "scripts": {
-    "start": "npx http-server -p 8000 -o",
-    "dev": "npx http-server -p 8000 -c-1 -o",
+    "start": "vite",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
