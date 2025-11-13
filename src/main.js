@@ -23,6 +23,7 @@ import { AnimationPoolManager } from './AnimationPoolManager.js';
 import { CityStreamer } from './CityStreamer.js';
 import { Quadtree } from './Quadtree.js';
 import { HierarchicalCuller } from './HierarchicalCuller.js';
+import { TelegramLogger } from './TelegramLogger.js';
 
 class LangitSenja {
   constructor() {
@@ -66,6 +67,9 @@ class LangitSenja {
     this.onMKey = this.handleMKey.bind(this);
     this.onFKey = this.handleFKey.bind(this);
 
+    // Initialize Telegram logger and log website open
+    this.telegramLogger = new TelegramLogger();
+    
     this.init();
   }
 
@@ -650,6 +654,11 @@ document.addEventListener('DOMContentLoaded', function () {
     return;
   } else {
     window.game = new LangitSenja();
+
+    // Log website open when game is initialized
+    if (window.game && window.game.telegramLogger) {
+      window.game.telegramLogger.logWebsiteOpen();
+    }
 
     window.addEventListener(
       'resize',

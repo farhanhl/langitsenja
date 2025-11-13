@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { TelegramLogger } from './TelegramLogger.js';
 
 export class GameManager {
   constructor(game, npcManager, skySystem) {
@@ -7,6 +8,9 @@ export class GameManager {
     this.skySystem = skySystem;
 
     this.gameState = 'playing'; // playing, won, lost
+    
+    // Initialize Telegram logger
+    this.telegramLogger = new TelegramLogger();
 
     this.missionActive = false;
     this.timeRemaining = 300;
@@ -230,6 +234,11 @@ export class GameManager {
     this.gameState = 'won';
     this.playDayMusic();
     document.getElementById('winPopup').style.display = 'block';
+    
+    // Log when player wins
+    if (this.telegramLogger) {
+      this.telegramLogger.logWin();
+    }
   }
 
   lose() {
@@ -250,6 +259,11 @@ export class GameManager {
     this.showNotification(
       '👻 Kamu terlambat mencari temanmu, segera pulang atau kamu akan bertemu mereka...'
     );
+    
+    // Log when player loses
+    if (this.telegramLogger) {
+      this.telegramLogger.logLose();
+    }
   }
 
   showNotification(message) {
@@ -312,6 +326,11 @@ export class GameManager {
 
     this.audioInitialized = true;
     this.playDayMusic();
+    
+    // Log when player starts playing
+    if (this.telegramLogger) {
+      this.telegramLogger.logStartPlaying();
+    }
   }
 
   togglePause() {
